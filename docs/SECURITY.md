@@ -17,7 +17,7 @@ Keamanan melindungi saldo, transaksi, identitas warga, bukti privat, operasi pet
 - Password di-hash menggunakan driver Laravel yang direkomendasikan dan tersedia pada PHP 8.5, dengan Argon2id bila lingkungan mendukung secara stabil; parameter ditinjau dan rehash saat login bila kebijakan berubah.
 - Password plaintext tidak disimpan, dicatat, dikirim kembali, atau diketahui admin.
 - Minimal 10 karakter, konfirmasi, dan penolakan password umum mengikuti [VALIDATION.md](VALIDATION.md).
-- Perubahan kata sandi hanya melalui dua jalur. Jalur berbantuan langsung hanya untuk pengguna yang benar-benar lupa kata sandi dan tidak dapat login: admin dengan `user.reset-password` dan `session.revoke` mengubah target lain dalam scope sah sesudah verifikasi `tatap_muka` atau `callback_nomor_terdaftar` dan alasan tervalidasi 10–1000 karakter. Admin tidak dapat menargetkan diri sendiri.
+- Perubahan kata sandi hanya melalui dua jalur. Jalur berbantuan langsung hanya untuk pengguna yang benar-benar lupa kata sandi dan tidak dapat login: admin atau superadmin berizin melalui alur PasswordAssistance, dengan `user.reset-password` dan `session.revoke`, mengubah target lain dalam scope sah sesudah verifikasi `tatap_muka` atau `callback_nomor_terdaftar` dan alasan tervalidasi 10–1000 karakter. Aktor berizin tidak dapat menargetkan diri sendiri.
 - Jalur mandiri hanya dari profil pengguna terautentikasi dengan verifikasi kata sandi saat ini, kata sandi baru, dan konfirmasi tervalidasi.
 - Kata sandi tidak disimpan, diketahui admin, diaudit, atau dicatat pada log. Audit hanya mencatat aktor, metode, alasan, dan hasil.
 - Jalur berbantuan menyimpan hash kata sandi baru, mencabut seluruh sesi aktif target, dan mengaudit secara atomik. Jalur mandiri menyimpan hash dan mencabut sesi aktif lain sambil mempertahankan sesi saat ini bila memungkinkan secara teknis, atau mencabut seluruh sesi dan meminta autentikasi ulang bila tidak memungkinkan. Tidak ada reset publik, token, masa berlaku, penyimpanan atau pengiriman token, email, SMS, WhatsApp, rate limit reset, maupun respons permintaan reset.
@@ -138,6 +138,7 @@ Gunakan incident ID dan masking. Akses ke log dibatasi pengelola teknis.
 
 ## 11. Secret dan konfigurasi
 
+- Pengaturan teknis non-secret dapat dikelola melalui UI terotorisasi dengan `system.settings.manage`, validasi server, scope teknis, dan audit. UI ini tidak menerima, menampilkan, atau menyimpan secret.
 - Secret hanya melalui `.env`/secret store CI/hosting; `.env` tidak di-commit dan tidak berada di document root.
 - `APP_KEY`, credential DB/mail/S3, token deployment, dan credential backup berbeda antar-environment.
 - `APP_DEBUG=false` di produksi.

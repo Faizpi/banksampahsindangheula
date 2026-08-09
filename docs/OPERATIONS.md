@@ -12,7 +12,7 @@ Dokumen ini menjadi SOP harian bagi warga, petugas, bendahara, admin, dan pengel
 | Petugas | Identifikasi, timbang, setoran, pickup, tugas, bukti, layanan berbantuan/keliling. | Rekap tugas, alat, bukti, insiden. |
 | Bendahara | Verifikasi penerima, pembayaran disetujui, kas, bukti, rekonsiliasi. | Kas awal/akhir, daftar paid/pending, bukti. |
 | Admin | Verifikasi, master/harga, approve, kapasitas/jadwal, koreksi, laporan/audit. | Keputusan tertunda, koreksi, selisih, perubahan master. |
-| Superadmin teknis | Deploy, akses teknis, backup/restore, cron, health, insiden teknis; bersama admin membuka panel back-office (`backoffice.access`). | Release, backup, secret/access rotation, log insiden. |
+| Superadmin teknis | Deploy, akses teknis, metadata backup/restore, cron, health, insiden teknis; bersama admin membuka panel back-office (`backoffice.access`). Eksekusi artefak backup/restore dilakukan melalui deployment/SOP, bukan UI aplikasi. | Release, backup, secret/access rotation, log insiden. |
 
 ## 3. Pembukaan pelayanan
 
@@ -139,10 +139,10 @@ Petugas/admin melakukan checklist sebelum menerima transaksi:
 
 ## 11. SOP perubahan kata sandi
 
-### A. Perubahan berbantuan langsung oleh admin
+### A. Perubahan berbantuan langsung oleh admin atau superadmin
 
 1. Gunakan jalur ini hanya ketika pengguna benar-benar lupa kata sandi dan tidak dapat login. Pengguna yang masih dapat login harus memakai perubahan mandiri dari profilnya sendiri.
-2. Dari data pengguna/warga, admin dengan `user.reset-password` dan `session.revoke` memilih pengguna target dalam scope yang sah. Admin tidak boleh memilih dirinya sendiri.
+2. Dari data pengguna/warga melalui alur PasswordAssistance, admin atau superadmin dengan `user.reset-password` dan `session.revoke` memilih pengguna target dalam scope yang sah. Aktor berizin tidak boleh memilih dirinya sendiri.
 3. Verifikasi target dilakukan secara `tatap_muka` atau melalui `callback_nomor_terdaftar`. Kanal lain tidak cukup.
 4. Isi metode verifikasi dan alasan 10–1000 karakter. Jangan meminta, menyimpan, mengulang, atau mencatat kata sandi lama.
 5. Masukkan kata sandi baru dan konfirmasi. Server memvalidasi konfirmasi, minimum 10 karakter, dan kebijakan password umum/terbocor bila tersedia; kata sandi tidak masuk audit atau log.
@@ -204,6 +204,8 @@ Petugas/admin melakukan checklist sebelum menerima transaksi:
 5. Catat alat, waktu, transaksi terdampak, dan tindakan. Transaksi yang terlanjur final salah mengikuti koreksi, bukan edit.
 
 ## 17. Backup dan restore
+
+UI aplikasi hanya mengelola metadata, status, dan verifikasi backup/restore. Eksekusi dump, penyalinan, dan pemulihan artefak aktual tetap dilakukan melalui deployment/SOP terpisah.
 
 ### Backup
 

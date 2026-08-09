@@ -20,7 +20,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `petugas` | Setoran, penjemputan, layanan keliling, layanan berbantuan, pembayaran/penyerahan bila ditugaskan. | Scope penugasan/area; tidak mengubah harga, role, atau saldo langsung. |
 | `bendahara` | Pembayaran pencairan yang telah disetujui, bukti, kas, dan rekonsiliasi. | Tidak menyetujui pencairan secara default dan tidak mengoreksi saldo. |
 | `admin` | Operasional, master data, verifikasi, persetujuan, laporan, koreksi bila permission khusus diberikan. | Tidak mengelola konfigurasi teknis berisiko tinggi atau melewati mekanisme ledger. |
-| `superadmin` | Konfigurasi teknis, role/permission, status sistem, backup, restore, dan retensi teknis. | Tidak otomatis berwenang melakukan tindakan keuangan operasional. |
+| `superadmin` | Konfigurasi teknis non-secret, role/permission, status sistem, metadata backup/restore, dan retensi teknis. | Tidak otomatis berwenang melakukan tindakan keuangan operasional atau eksekusi artefak backup/restore di luar deployment/SOP. |
 
 ## 3. Katalog permission granular
 
@@ -34,7 +34,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `user.view.all` | Bersama `user.view`, melihat seluruh pengguna aktif. |
 | `user.create` / `user.update` / `user.activate` | Kelola pengguna sesuai scope record yang sama; permission tindakan tetap wajib. |
 | `user.verify` / `user.reject` | Memutuskan verifikasi warga; penolakan wajib alasan. |
-| `user.reset-password` | Mengubah langsung kata sandi pengguna target yang benar-benar lupa kata sandi dan tidak dapat login, setelah metode verifikasi `tatap_muka`/`callback_nomor_terdaftar` serta alasan 10–1000 karakter tervalidasi; tidak dapat menargetkan diri sendiri. |
+| `user.reset-password` | Melalui alur PasswordAssistance, mengubah langsung kata sandi pengguna target yang benar-benar lupa kata sandi dan tidak dapat login. Admin atau superadmin berizin wajib memakai metode verifikasi `tatap_muka`/`callback_nomor_terdaftar` serta alasan 10–1000 karakter tervalidasi; tidak dapat menargetkan diri sendiri. |
 | `role.view` / `role.manage` | Melihat atau mengelola role dan permission. |
 | `session.revoke` | Mengakhiri sesi pengguna target sesuai kewenangan; wajib bersama `user.reset-password` untuk perubahan kata sandi administratif. |
 | `backoffice.access` | Mengizinkan masuk ke panel teknis back-office Filament saja. Bukan permission domain/bisnis, tidak memberi akses resource, action, data, atau bypass policy. Baseline diberikan kepada `admin` dan `superadmin` (superadmin mewarisi seluruh hak admin ditambah permission teknis). |
@@ -101,7 +101,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `reconciliation.approve` | Mengesahkan rekonsiliasi; sebaiknya bukan pembuat yang sama. |
 | `system.settings.manage` | Mengelola konfigurasi teknis non-secret melalui UI. |
 | `system.maintenance` | Maintenance mode dan pemeriksaan sistem. |
-| `backup.run` / `backup.view` / `backup.restore` | Menjalankan, melihat, atau memulihkan backup. |
+| `backup.run` / `backup.view` / `backup.restore` | Mengelola metadata, status, dan verifikasi backup/restore. Eksekusi artefak aktual tetap melalui deployment/SOP, bukan UI aplikasi. |
 | `audit.retention.execute` | Menjalankan retensi teknis yang disetujui. |
 
 ## 4. Matriks role-permission
