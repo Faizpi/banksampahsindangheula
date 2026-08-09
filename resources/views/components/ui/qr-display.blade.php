@@ -22,7 +22,11 @@
         }
         return $url;
     };
-    $safeImage = $safeUrl($imageSrc);
+    // QR presenters generate a local base64 image. Keep the general URL guard
+    // for remote sources, while allowing only strict, non-scriptable image data.
+    $safeImage = is_string($imageSrc) && preg_match('/^data:image\/(?:png|jpe?g|webp|gif|svg\+xml);base64,[A-Za-z0-9+\/]+={0,2}$/', $imageSrc) === 1
+        ? $imageSrc
+        : $safeUrl($imageSrc);
     $download = $safeUrl($downloadHref);
     $print = $safeUrl($printHref);
     $reference = is_string($maskedReference) && str_contains($maskedReference, '*') ? $maskedReference : null;

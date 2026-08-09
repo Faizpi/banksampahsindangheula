@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\Pickups\Models\PickupRequests;
 
+use App\Domain\Pickups\Enums\PickupStatus;
 use App\Domain\Pickups\Models\PickupRequest;
 use App\Domain\Pickups\Services\PickupService;
 use App\Filament\Resources\Pickups\Models\PickupRequests\Pages\ManagePickupRequests;
@@ -56,7 +57,7 @@ final class PickupRequestResource extends Resource
                 TextColumn::make('customer.name')->label('Warga')->searchable(),
                 TextColumn::make('serviceArea.name')->label('Area')->searchable(),
                 TextColumn::make('selected_date')->label('Tanggal')->date('d M Y')->sortable(),
-                TextColumn::make('status')->label('Status')->formatStateUsing(fn (string $state): string => str_replace('_', ' ', $state))->badge(),
+                TextColumn::make('status')->label('Status')->formatStateUsing(fn (PickupStatus|string $state): string => str_replace('_', ' ', $state instanceof PickupStatus ? $state->value : $state))->badge(),
                 TextColumn::make('assignedStaff.name')->label('Petugas')->placeholder('Belum ditugaskan'),
             ])
             ->recordActions([
