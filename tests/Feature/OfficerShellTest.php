@@ -147,6 +147,9 @@ final class OfficerShellTest extends TestCase
             'Setoran' => '/petugas/pindai',
             'Akun' => '/profil/kata-sandi',
         ], 'Tugas', 'Navigasi petugas'];
+        yield 'officer task only' => ['officer', [
+            'Tugas' => '/dashboard/petugas',
+        ], 'Tugas', 'Navigasi petugas'];
         yield 'officer one optional' => ['officer', [
             'Tugas' => '/dashboard/petugas',
             'Layanan' => '/petugas/layanan-keliling',
@@ -174,8 +177,7 @@ final class OfficerShellTest extends TestCase
     public static function invalidNavigationProvider(): iterable
     {
         yield 'unknown persona' => ['admin', self::OFFICER_DESTINATIONS, 'Tugas', 'Officer navigation persona must be officer or treasurer.'];
-        yield 'missing core' => ['officer', ['Tugas' => '/tugas', 'Setoran' => '/setoran', 'Layanan' => '/layanan'], 'Tugas', 'Officer navigation must contain Tugas and Akun.'];
-        yield 'too few' => ['officer', ['Tugas' => '/tugas', 'Akun' => '/akun'], 'Tugas', 'Officer navigation must contain between three and five destinations.'];
+        yield 'missing core' => ['officer', ['Setoran' => '/setoran', 'Akun' => '/akun'], 'Akun', 'Officer navigation must contain Tugas.'];
         yield 'foreign officer item' => ['officer', ['Tugas' => '/tugas', 'Pembayaran' => '/bayar', 'Akun' => '/akun'], 'Tugas', 'Officer navigation destinations are invalid for persona officer.'];
         yield 'foreign treasurer item' => ['treasurer', ['Tugas' => '/tugas', 'Pindai' => '/pindai', 'Akun' => '/akun'], 'Tugas', 'Officer navigation destinations are invalid for persona treasurer.'];
         yield 'reordered' => ['officer', ['Setoran' => '/setoran', 'Tugas' => '/tugas', 'Akun' => '/akun'], 'Tugas', 'Officer navigation destinations must follow canonical order.'];

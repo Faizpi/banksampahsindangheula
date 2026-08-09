@@ -11,13 +11,21 @@
         @else
             <div class="grid gap-3">
                 @foreach ($todayPickups as $pickup)
+                    @if ($canOperatePickups)
                     <a href="{{ route('officer.pickup.task', $pickup) }}" class="flex min-h-[72px] items-center justify-between gap-3 rounded-xl border border-border bg-warm-canvas p-4 transition hover:border-forest-600 hover:shadow-xs">
+                    @else
+                    <div class="flex min-h-[72px] items-center justify-between gap-3 rounded-xl border border-border bg-warm-canvas p-4">
+                    @endif
                         <span class="min-w-0">
                             <span class="block text-label font-bold text-deep-green">{{ $pickup->request_number }}</span>
                             <span class="mt-1 block truncate text-body-sm text-text-secondary">{{ $pickup->customer?->name ?? 'Nasabah' }} · {{ $pickup->address }}</span>
                         </span>
                         <span class="shrink-0 rounded-full border border-info-bg bg-info-bg px-3 py-1 text-caption font-semibold text-sky-blue">{{ ucwords(str_replace('_', ' ', $pickup->status->value)) }}</span>
+                    @if ($canOperatePickups)
                     </a>
+                    @else
+                    </div>
+                    @endif
                 @endforeach
             </div>
         @endif
@@ -27,14 +35,7 @@
 <div class="grid gap-6">
 <section aria-labelledby="officer-metrics-title" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
     <h2 id="officer-metrics-title" class="sr-only">Ringkasan operasional</h2>
-    @foreach ([
-        ['label' => 'Pickup perlu ditangani', 'value' => $metrics['pending_pickups'], 'tone' => 'text-terracotta'],
-        ['label' => 'Pickup selesai hari ini', 'value' => $metrics['completed_pickups'], 'tone' => 'text-forest-600'],
-        ['label' => 'Draf setoran', 'value' => $metrics['draft_deposits'], 'tone' => 'text-harvest-gold'],
-        ['label' => 'Tugas sembako', 'value' => $metrics['grocery_tasks'], 'tone' => 'text-harvest-gold'],
-        ['label' => 'Layanan keliling aktif', 'value' => $metrics['active_mobile_services'].' aktif', 'tone' => 'text-sky-blue'],
-        ['label' => 'Nasabah dalam tugas', 'value' => $metrics['assigned_customers'], 'tone' => 'text-forest-600'],
-    ] as $metric)
+    @foreach ($metrics as $metric)
         <div class="rounded-xl border border-border bg-surface p-4 shadow-xs">
             <p class="text-caption font-semibold text-text-secondary">{{ $metric['label'] }}</p>
             <p class="mt-2 text-h2 font-bold tabular-nums {{ $metric['tone'] }}">{{ $metric['value'] }}</p>
@@ -42,53 +43,85 @@
     @endforeach
 </section>
 
+@if ($canViewPickups || $canViewDeposits || $canShowGroceryTasks || $canViewMobileServices)
 <section aria-labelledby="officer-queues-title" class="grid gap-4 lg:grid-cols-2">
     <h2 id="officer-queues-title" class="sr-only">Antrean kerja petugas</h2>
+    @if ($canViewPickups)
     <x-ui.panel title="Pickup terlambat" description="Prioritaskan tugas yang melewati tanggal jadwal.">
         @if ($latePickups->isEmpty())
             <x-ui.empty-state title="Tidak ada pickup terlambat" description="Semua pickup dalam antrean Anda masih sesuai jadwal." />
         @else
             <div class="grid gap-3">
                 @foreach ($latePickups as $pickup)
+                    @if ($canOperatePickups)
                     <a href="{{ route('officer.pickup.task', $pickup) }}" class="block rounded-xl border border-danger-bg bg-danger-bg p-4 transition hover:border-terracotta">
+                    @else
+                    <div class="block rounded-xl border border-danger-bg bg-danger-bg p-4">
+                    @endif
                         <p class="text-label font-bold text-deep-green">{{ $pickup->request_number }}</p>
                         <p class="mt-1 text-body-sm text-text-secondary">{{ $pickup->customer?->name ?? 'Nasabah' }} · {{ $pickup->address }}</p>
+                    @if ($canOperatePickups)
                     </a>
+                    @else
+                    </div>
+                    @endif
                 @endforeach
             </div>
         @endif
     </x-ui.panel>
+    @endif
 
+    @if ($canViewDeposits)
     <x-ui.panel title="Draf setoran" description="Lanjutkan draf yang dibuat oleh akun Anda.">
         @if ($draftDeposits->isEmpty())
             <x-ui.empty-state title="Tidak ada draf setoran" description="Draf setoran Anda yang belum selesai akan muncul di sini." />
         @else
             <div class="grid gap-3">
                 @foreach ($draftDeposits as $deposit)
+                    @if ($canResumeDeposits)
                     <a href="{{ route('officer.deposit-form', ['customerId' => $deposit->customer_id, 'draftId' => $deposit->id]) }}" class="block rounded-xl border border-warning-bg bg-warning-bg p-4 transition hover:border-harvest-gold">
+                    @else
+                    <div class="block rounded-xl border border-warning-bg bg-warning-bg p-4">
+                    @endif
                         <p class="text-label font-bold text-deep-green">{{ $deposit->deposit_number }}</p>
                         <p class="mt-1 text-body-sm text-text-secondary">{{ $deposit->customer?->name ?? 'Nasabah' }} · Draf belum difinalisasi</p>
+                    @if ($canResumeDeposits)
                     </a>
+                    @else
+                    </div>
+                    @endif
                 @endforeach
             </div>
         @endif
     </x-ui.panel>
+    @endif
 
+    @if ($canShowGroceryTasks)
     <x-ui.panel title="Tugas sembako" description="Persiapan dan penyerahan sesuai assignment.">
         @if ($groceryTasks->isEmpty())
             <x-ui.empty-state title="Tidak ada tugas sembako" description="Tugas sembako yang siap diproses akan muncul di sini." />
         @else
             <div class="grid gap-3">
                 @foreach ($groceryTasks as $redemption)
+                    @if ($canAccessGroceryTasks)
                     <a href="{{ $groceryTasksHref }}" class="block rounded-xl border border-border bg-warm-canvas p-4 transition hover:border-harvest-gold">
+                    @else
+                    <div class="block rounded-xl border border-border bg-warm-canvas p-4">
+                    @endif
                         <p class="text-label font-bold text-deep-green">{{ $redemption->request_number }}</p>
                         <p class="mt-1 text-body-sm text-text-secondary">{{ $redemption->customer?->name ?? 'Nasabah' }} · {{ ucwords(str_replace('_', ' ', $redemption->status->value)) }}</p>
+                    @if ($canAccessGroceryTasks)
                     </a>
+                    @else
+                    </div>
+                    @endif
                 @endforeach
             </div>
         @endif
     </x-ui.panel>
+    @endif
 
+    @if ($canViewMobileServices)
     <x-ui.panel title="Layanan keliling" description="Buka atau tutup titik yang menugaskan Anda.">
         @if ($mobileServices->isEmpty())
             <x-ui.empty-state title="Tidak ada jadwal keliling" description="Jadwal yang menugaskan Anda akan muncul di sini." />
@@ -103,7 +136,9 @@
             </div>
         @endif
     </x-ui.panel>
+    @endif
 </section>
+@endif
 
 {{-- Header + Mascot --}}
 <section aria-labelledby="officer-dashboard-title" class="rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6">
@@ -126,6 +161,7 @@
 <section aria-labelledby="officer-actions-title">
     <h2 id="officer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Aksi Utama</h2>
     <div class="grid grid-cols-2 gap-3">
+        @if ($canIdentifyCustomers)
         <a href="{{ $identificationHref }}"
             class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-sm">
             <div class="flex size-11 items-center justify-center rounded-xl bg-success-bg text-forest-600 transition-colors group-hover:bg-forest-600 group-hover:text-white">
@@ -138,7 +174,9 @@
                 <p class="mt-0.5 text-body-sm text-text-secondary">Cari atau pindai nasabah</p>
             </div>
         </a>
+        @endif
 
+        @if ($canAccessMobileServices)
         <a href="{{ route('officer.mobile-services') }}"
             class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-sky-blue hover:shadow-sm">
             <div class="flex size-11 items-center justify-center rounded-xl bg-info-bg text-sky-blue transition-colors group-hover:bg-sky-blue group-hover:text-white">
@@ -151,7 +189,9 @@
                 <p class="mt-0.5 text-body-sm text-text-secondary">Titik layanan hari ini</p>
             </div>
         </a>
+        @endif
 
+        @if ($canAccessGroceryTasks)
         <a href="{{ $groceryTasksHref }}"
             class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-harvest-gold hover:shadow-sm">
             <div class="flex size-11 items-center justify-center rounded-xl bg-warning-bg text-harvest-gold transition-colors group-hover:bg-harvest-gold group-hover:text-white">
@@ -164,6 +204,7 @@
                 <p class="mt-0.5 text-body-sm text-text-secondary">Persiapan &amp; serah terima</p>
             </div>
         </a>
+        @endif
 
         @if ($canViewStatistics)
             <a href="{{ $statisticsHref }}"
@@ -178,6 +219,7 @@
             </a>
         @endif
 
+        @if ($canViewProfile)
         <a href="{{ route('profile.password') }}"
             class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-sm">
             <div class="flex size-11 items-center justify-center rounded-xl bg-disabled-bg text-text-secondary transition-colors group-hover:bg-warm-canvas">
@@ -190,10 +232,12 @@
                 <p class="mt-0.5 text-body-sm text-text-secondary">Kata sandi &amp; keamanan</p>
             </div>
         </a>
+        @endif
     </div>
 </section>
 
 {{-- Panduan Kerja --}}
+@if ($canIdentifyCustomers)
 <section aria-labelledby="officer-guide-title">
     <x-ui.panel>
         <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -212,6 +256,7 @@
         </div>
     </x-ui.panel>
 </section>
+@endif
 
 </div>{{-- /grid gap-6 (Livewire single root) --}}
 </div>

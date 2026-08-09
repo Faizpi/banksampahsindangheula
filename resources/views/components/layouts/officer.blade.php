@@ -5,6 +5,8 @@
 @php
     $routeName = request()->route()?->getName() ?? '';
     $actor = auth()->user();
+    $access = app(\App\Authorization\PermissionChecker::class);
+    $can = static fn (string $ability): bool => $actor instanceof \App\Models\User && $access->allows($actor, $ability);
     $isTreasurer = $actor && $actor->roles()->where('name', 'bendahara')->exists();
     $persona = match (true) {
         str_starts_with($routeName, 'treasurer.') => 'treasurer',
@@ -15,10 +17,16 @@
     if ($persona === 'treasurer') {
         $destinations = [
             'Tugas'        => route('treasurer.dashboard'),
-            'Pembayaran'   => route('treasurer.withdrawal.payments'),
-            'Rekonsiliasi' => route('treasurer.reports'),
-            'Akun'         => route('profile.password'),
         ];
+        if ($can('withdrawal.pay')) {
+            $destinations['Pembayaran'] = route('treasurer.withdrawal.payments');
+        }
+        if ($can('report.view')) {
+            $destinations['Rekonsiliasi'] = route('treasurer.reports');
+        }
+        if ($can('profile.view')) {
+            $destinations['Akun'] = route('profile.password');
+        }
         $activeNav = match (true) {
             $routeName === 'treasurer.dashboard' => 'Tugas',
             str_starts_with($routeName, 'treasurer.withdrawal') => 'Pembayaran',
@@ -28,16 +36,26 @@
     } else {
         $destinations = [
             'Tugas'   => route('officer.dashboard'),
-            'Setoran' => route('officer.customer-identification'),
-            'Layanan' => route('officer.mobile-services'),
-            'Akun'    => route('profile.password'),
         ];
+        if ($can('customer.view')) {
+            $destinations['Setoran'] = route('officer.customer-identification');
+        }
+        if ($can('mobile-service.operate')) {
+            $destinations['Layanan'] = route('officer.mobile-services');
+        }
+        if ($can('profile.view')) {
+            $destinations['Akun'] = route('profile.password');
+        }
         $activeNav = match (true) {
             in_array($routeName, ['officer.dashboard', 'officer.pickup.task', 'officer.grocery.tasks'], true) => 'Tugas',
             in_array($routeName, ['officer.customer-identification', 'officer.deposit-form'], true) => 'Setoran',
             $routeName === 'officer.mobile-services' => 'Layanan',
             default => 'Akun',
         };
+    }
+
+    if (! array_key_exists($activeNav, $destinations)) {
+        $activeNav = 'Tugas';
     }
 @endphp
 

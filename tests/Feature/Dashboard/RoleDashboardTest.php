@@ -69,6 +69,10 @@ final class RoleDashboardTest extends TestCase
             ->assertSee('Saat ada tugas yang ditugaskan kepada Anda, tugas tersebut akan muncul di sini.')
             ->assertSee('Selamat bertugas!')
             ->assertSee('Navigasi petugas')
+            ->assertDontSee('Identifikasi Warga')
+            ->assertDontSee('Tugas Sembako')
+            ->assertDontSee('Jadwal Keliling')
+            ->assertDontSee('Profil Akun')
             ->assertDontSee('Data Warga Lain');
     }
 
