@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Identity\Models\Roles;
 
 use App\Domain\Identity\Actions\ManageRoles as ManageRolesAction;
+use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Support\SystemRoles;
 use App\Filament\Resources\Identity\Models\Roles\Pages\ManageRoles;
@@ -30,7 +31,9 @@ final class RoleResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUsers;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Data Master';
+    protected static string|UnitEnum|null $navigationGroup = 'Identitas & Akses';
+
+    protected static ?int $navigationSort = 60;
 
     protected static ?string $navigationLabel = 'Role';
 
@@ -61,7 +64,7 @@ final class RoleResource extends Resource
                 ->schema([
                     CheckboxList::make('permissions')
                         ->label('Permission')
-                        ->relationship('permissions', 'name')
+                        ->options(fn (): array => Permission::query()->orderBy('name')->pluck('name', 'id')->all())
                         ->columns(3)
                         ->columnSpanFull(),
                 ]),

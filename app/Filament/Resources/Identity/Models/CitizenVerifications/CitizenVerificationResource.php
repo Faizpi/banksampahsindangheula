@@ -27,7 +27,9 @@ final class CitizenVerificationResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedUserGroup;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Data Master';
+    protected static string|UnitEnum|null $navigationGroup = 'Identitas & Akses';
+
+    protected static ?int $navigationSort = 20;
 
     protected static ?string $navigationLabel = 'Verifikasi Warga';
 

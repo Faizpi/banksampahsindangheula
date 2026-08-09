@@ -31,7 +31,9 @@ final class PasswordAssistanceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Data Master';
+    protected static string|UnitEnum|null $navigationGroup = 'Identitas & Akses';
+
+    protected static ?int $navigationSort = 40;
 
     protected static ?string $navigationLabel = 'Bantuan Kata Sandi';
 
