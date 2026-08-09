@@ -39,10 +39,14 @@
 
     {{-- Filter Form --}}
     <x-ui.panel title="Filter periode" description="Terapkan rentang tanggal untuk menyesuaikan laporan.">
-        <form wire:submit="refreshReport" class="grid gap-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end" aria-label="Filter laporan">
+        <form wire:submit="refreshReport" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Filter laporan">
+            <x-ui.select wire:model="reportType" name="reportType" label="Jenis laporan" :options="$reportTypes" />
             <x-ui.input wire:model="start" name="start" label="Mulai" type="date" />
             <x-ui.input wire:model="end" name="end" label="Sampai (eksklusif)" type="date" />
-            <x-ui.button type="submit" wire:loading.attr="disabled" class="sm:self-end">
+            <x-ui.input wire:model="serviceAreaId" name="serviceAreaId" label="ID area (opsional)" type="number" min="1" />
+            <x-ui.input wire:model="status" name="status" label="Status (opsional)" />
+            <x-ui.input wire:model="search" name="search" label="Cari nomor/scope" />
+            <x-ui.button type="submit" wire:loading.attr="disabled" class="lg:self-end">
                 <span wire:loading.remove>Terapkan</span>
                 <span wire:loading>Memuat...</span>
             </x-ui.button>
@@ -60,6 +64,35 @@
                 </span>
                 <span wire:loading wire:target="export">Menyiapkan...</span>
             </x-ui.button>
+        </div>
+    </x-ui.panel>
+
+    <x-ui.panel title="Hasil laporan" description="Read-only. Data mengikuti scope dan filter yang diterapkan.">
+        <div class="overflow-x-auto">
+            <table class="min-w-full text-left text-sm" aria-label="Hasil laporan">
+                <thead class="border-b border-border text-caption text-text-secondary">
+                    <tr>
+                        <th class="px-3 py-2 font-semibold">Referensi</th>
+                        <th class="px-3 py-2 font-semibold">Waktu</th>
+                        <th class="px-3 py-2 font-semibold">Subjek</th>
+                        <th class="px-3 py-2 font-semibold">Status</th>
+                        <th class="px-3 py-2 text-right font-semibold">Nilai</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-border">
+                    @forelse ($rows as $row)
+                        <tr>
+                            <td class="whitespace-nowrap px-3 py-2 font-medium text-deep-green">{{ $row['reference'] }}</td>
+                            <td class="whitespace-nowrap px-3 py-2 text-text-secondary">{{ $row['date'] }}</td>
+                            <td class="px-3 py-2 text-text-secondary">{{ $row['subject_id'] }}</td>
+                            <td class="px-3 py-2 text-text-secondary">{{ $row['status'] }}</td>
+                            <td class="px-3 py-2 text-right amount-tabular">{{ $row['amount'] === '' ? '—' : 'Rp '.number_format((int) $row['amount'], 0, ',', '.') }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="5" class="px-3 py-6 text-center text-text-secondary">Tidak ada data untuk filter ini.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
     </x-ui.panel>
 </section>
