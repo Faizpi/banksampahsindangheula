@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Withdrawals;
 
+use App\Authorization\PermissionChecker;
 use App\Domain\AuditReconciliation\Models\AuditLog;
 use App\Domain\CustomersRegions\Actions\ManageRegions;
 use App\Domain\CustomersRegions\Models\ServiceArea;
@@ -19,13 +20,16 @@ use App\Domain\Notifications\Events\NotificationRequested;
 use App\Domain\Withdrawals\Enums\WithdrawalStatus;
 use App\Domain\Withdrawals\Models\WithdrawalRequest;
 use App\Domain\Withdrawals\Services\WithdrawalService;
+use App\Livewire\Treasurer\WithdrawalPayments;
 use App\Models\User;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use LogicException;
 use Tests\TestCase;
 
@@ -136,6 +140,59 @@ final class WithdrawalWaveTest extends TestCase
         $wrongPayer->staffProfile()->create(['staff_number' => 'W6-WRONG-'.$wrongPayer->id, 'service_area_id' => null, 'active_from' => today(), 'active_to' => null]);
         $this->expectException(ValidationException::class);
         $service->assignPayer($approver, $approved, $wrongPayer);
+    }
+
+    public function test_lane_b_record_query_requires_direct_view_permission(): void
+    {
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request']);
+        $this->credit($customer, 50_000);
+        $withdrawal = app(WithdrawalService::class)->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-record-auth-key-0001');
+
+        $this->expectException(AuthorizationException::class);
+        app(WithdrawalService::class)->visibleFor($customer)->whereKey($withdrawal->id)->get();
+    }
+
+    public function test_lane_b_payable_query_requires_direct_payment_permission(): void
+    {
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 50_000);
+        $withdrawal = app(WithdrawalService::class)->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-payable-auth-key-0001');
+
+        $this->expectException(AuthorizationException::class);
+        app(WithdrawalService::class)->payableFor($customer)->whereKey($withdrawal->id)->get();
+    }
+
+    public function test_payment_boundary_allows_bendahara_and_assigned_petugas_but_denies_unassigned_payment(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 100_000);
+        $approver = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $bendahara = User::factory()->create(['status' => UserStatus::Active]);
+        $bendahara->roles()->attach(Role::query()->where('name', 'bendahara')->sole());
+        $bendahara->staffProfile()->create(['staff_number' => 'W6-BEN-'.$bendahara->id, 'service_area_id' => $area->id, 'active_from' => today(), 'active_to' => null]);
+        $petugas = User::factory()->create(['status' => UserStatus::Active]);
+        $petugas->roles()->attach(Role::query()->where('name', 'petugas')->sole());
+        $petugas->staffProfile()->create(['staff_number' => 'W6-PET-'.$petugas->id, 'service_area_id' => $area->id, 'active_from' => today(), 'active_to' => null]);
+        $service = app(WithdrawalService::class);
+        $withdrawal = $service->approve($approver, $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-role-boundary-request-0001'), true);
+        $withdrawal = $service->assignPayer($approver, $withdrawal, $bendahara);
+
+        self::assertTrue(app(PermissionChecker::class)->allows($bendahara, 'withdrawal.pay'));
+        self::assertTrue(app(PermissionChecker::class)->allows($petugas, 'withdrawal.pay'));
+        self::assertTrue(app(WithdrawalService::class)->payableFor($bendahara)->whereKey($withdrawal->id)->exists());
+        self::assertFalse(app(WithdrawalService::class)->payableFor($petugas)->whereKey($withdrawal->id)->exists());
+
+        Livewire::actingAs($petugas)
+            ->test(WithdrawalPayments::class)
+            ->assertSee('Bendahara atau petugas yang ditugaskan sebagai payer');
+
+        $this->expectException(AuthorizationException::class);
+        $service->pay($petugas, $withdrawal, 'kartu_nasabah', (string) $customer->customerProfile?->customer_number, UploadedFile::fake()->image('unassigned.png'), 'w6-role-boundary-payment-0001');
     }
 
     public function test_lane_c_payment_verifies_recipient_keeps_proof_private_and_posts_one_outgoing_entry(): void

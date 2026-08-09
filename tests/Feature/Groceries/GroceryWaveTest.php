@@ -20,14 +20,17 @@ use App\Domain\Ledger\Models\LedgerAccount;
 use App\Domain\Ledger\Models\LedgerEntry;
 use App\Domain\Ledger\Services\LedgerService;
 use App\Domain\Notifications\Events\NotificationRequested;
+use App\Livewire\Officer\GroceryTasks;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use LogicException;
 use Tests\TestCase;
 
@@ -67,6 +70,70 @@ final class GroceryWaveTest extends TestCase
 
         $this->expectException(ValidationException::class);
         $action->create($manager, 'GRC-A-003', 'Paket Valid', 'Beras dan minyak', 50_000, '2026-08-10', '2026-08-09');
+    }
+
+    public function test_lane_b_ready_for_handover_query_requires_direct_handover_permission(): void
+    {
+        [$customer, $package] = $this->customerAndPackage();
+        $this->grant($customer, ['grocery.request', 'grocery.view']);
+        $this->credit($customer, 100_000);
+
+        $this->expectException(AuthorizationException::class);
+        app(GroceryService::class)->readyForHandover($customer)->get();
+    }
+
+    public function test_officer_grocery_lane_accepts_handover_only_staff_and_denies_users_without_staff_action_permission(): void
+    {
+        $handoverOfficer = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($handoverOfficer, ['user.view', 'user.view.all', 'grocery.view', 'grocery.handover']);
+
+        Livewire::actingAs($handoverOfficer)
+            ->test(GroceryTasks::class)
+            ->assertSee('Tugas Sembako')
+            ->assertSee('Handover hanya tersedia bagi petugas dengan permission penyerahan, dan memerlukan verifikasi penerima serta bukti privat.');
+
+        $unauthorized = User::factory()->create(['status' => UserStatus::Active]);
+
+        Livewire::actingAs($unauthorized)
+            ->test(GroceryTasks::class)
+            ->assertForbidden();
+        $this->actingAs($unauthorized)->get(route('officer.grocery.tasks'))->assertForbidden();
+    }
+
+    public function test_filament_grocery_path_denies_handover_without_direct_handover_permission(): void
+    {
+        [$customer, $package] = $this->customerAndPackage();
+        $this->grant($customer, ['grocery.request', 'grocery.view']);
+        $this->credit($customer, 100_000);
+        $redemption = app(GroceryService::class)->request($customer, ['package_id' => $package->id], 'w7-filament-handover-denial-0001');
+        $admin = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($admin, ['user.view', 'user.view.all', 'grocery.view', 'grocery.approve', 'grocery.prepare']);
+
+        self::assertFalse(Gate::forUser($admin)->allows('handover', $redemption));
+    }
+
+    public function test_authorized_handover_ui_exposes_ready_action_and_private_proof_form(): void
+    {
+        [$customer, $package] = $this->customerAndPackage();
+        $this->grant($customer, ['grocery.request', 'grocery.view']);
+        $this->credit($customer, 100_000);
+        $approver = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($approver, ['grocery.approve', 'grocery.view', 'user.view.all']);
+        $officer = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($officer, ['grocery.view', 'grocery.prepare', 'grocery.handover', 'grocery.package.view', 'user.view.all']);
+        $service = app(GroceryService::class);
+        $redemption = $service->request($customer, ['package_id' => $package->id], 'w7-ui-handover-request-0001');
+        $redemption = $service->approve($approver, $redemption, true, 'Ketersediaan UI dikonfirmasi.');
+        $redemption = $service->ready($officer, $service->prepare($officer, $redemption));
+
+        Livewire::actingAs($officer)
+            ->test(GroceryTasks::class)
+            ->assertSee($redemption->request_number)
+            ->assertSee('Proses Handover')
+            ->call('select', $redemption->id)
+            ->assertSee('Verifikasi penerima dan bukti')
+            ->assertSee('Bukti handover')
+            ->assertSee('Bukti disimpan privat');
     }
 
     public function test_lane_b_request_snapshots_value_creates_one_hold_and_same_retry_returns_original(): void
