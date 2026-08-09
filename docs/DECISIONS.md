@@ -29,17 +29,17 @@ IMP-019 menetapkan fondasi teknis back-office Filament 5 sesuai ADR ini: instala
 ## ADR-003 — Hostinger shared hosting
 
 - **Status:** Accepted
-- **Konteks:** Infrastruktur final adalah Hostinger Web Hosting Premium/Business dengan hPanel, SSH/SFTP, Composer 2, MariaDB, dan cron.
+- **Konteks:** Infrastruktur final adalah Hostinger Web Hosting Premium/Business dengan hPanel, SSH/SFTP, Composer 2, MySQL 8.0.30-compatible, dan cron.
 - **Keputusan:** Arsitektur/deploy mengikuti batas shared hosting. Aset Vite dibangun lokal/CI. Queue `sync` atau database one-shot berbatas waktu via cron. PHP web/CLI wajib 8.5.
 - **Konsekuensi:** Biaya/operasi sederhana, tetapi tidak ada root, Supervisor, Redis, Horizon, WebSocket, worker permanen, atau konfigurasi Nginx sendiri. Job harus singkat dan dapat dipulihkan.
 - **Alternatif ditolak:** asumsi VPS karena tidak sesuai hosting final.
 - **Referensi:** [DEPLOYMENT.md](DEPLOYMENT.md), [OPERATIONS.md](OPERATIONS.md).
 
-## ADR-004 — MariaDB terkelola kompatibel MySQL
+## ADR-004 — MySQL 8.0.30 melalui Laragon
 
 - **Status:** Accepted
-- **Konteks:** Hostinger menyediakan MariaDB terkelola dan aplikasi memerlukan transaksi ACID, FK, index, serta locking.
-- **Keputusan:** Gunakan MariaDB/InnoDB melalui driver MySQL Laravel. SQLite `:memory:` adalah runtime test normatif untuk gate implementasi harian; migration dan query diuji terhadap versi MariaDB aktual melalui release-validation disposable terjadwal sebelum UAT/production. Perilaku engine-specific, termasuk trigger IMP-107, tetap membutuhkan bukti MariaDB tersendiri dan tidak dibuktikan oleh SQLite.
+- **Konteks:** Pengembangan lokal memakai Laragon dengan MySQL 8.0.30 dan aplikasi memerlukan transaksi ACID, FK, index, serta locking.
+- **Keputusan:** Gunakan MySQL 8.0.30/InnoDB melalui driver MySQL Laravel. SQLite `:memory:` adalah runtime test normatif untuk gate implementasi harian; migration dan query diuji terhadap MySQL aktual melalui release-validation disposable terjadwal sebelum UAT/production. Perilaku engine-specific, termasuk trigger IMP-107, tetap membutuhkan bukti MySQL tersendiri dan tidak dibuktikan oleh SQLite.
 - **Konsekuensi:** Dapat memakai transaction/row lock/constraint, tetapi fitur khusus MySQL yang tidak kompatibel harus dihindari atau diuji. Rupiah BIGINT, berat DECIMAL.
 - **Alternatif ditolak:** database embedded atau layanan terpisah yang menambah operasi.
 - **Referensi:** [DATA_MODEL.md](DATA_MODEL.md).

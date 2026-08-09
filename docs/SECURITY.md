@@ -148,7 +148,7 @@ Gunakan incident ID dan masking. Akses ke log dibatasi pengelola teknis.
 
 ## 12. Database dan backup
 
-- MariaDB memakai user least privilege, password kuat, host restriction bila tersedia, dan TLS bila didukung.
+- MySQL 8.0.30 memakai user least privilege, password kuat, host restriction bila tersedia, dan TLS bila didukung.
 - Backup database harian dan media berkala; salinan terenkripsi/terproteksi berada terpisah dari hosting utama.
 - Backup memuat checksum, status, waktu, dan retensi; akses terbatas.
 - Uji restore berkala dilakukan pada environment terisolasi, bukan menimpa produksi.
@@ -208,7 +208,7 @@ Khusus dugaan saldo ganda: hentikan pengulangan, periksa idempotency/audit/ledge
 - CSV formula injection dan XSS konten lulus.
 - Dependency audit tanpa risiko kritis tak tertangani.
 - Backup terbaru valid dan rollback tersedia.
-- Rehearsal MariaDB disposable release tercatat sebelum UAT/production; bila IMP-107 termasuk baseline rilis, bukti trigger append-only/immutability MariaDB terisolasi tersedia. Hasil SQLite tidak diperlakukan sebagai bukti MariaDB.
+- Rehearsal MySQL 8.0.30 disposable release tercatat sebelum UAT/production; bila IMP-107 termasuk baseline rilis, bukti trigger append-only/immutability MySQL terisolasi tersedia. Hasil SQLite tidak diperlakukan sebagai bukti MySQL production.
 - Cron/timezone serta queue terbatas terverifikasi.
 - Secret scan source/build/log lulus.
 

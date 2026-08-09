@@ -2,7 +2,7 @@
 
 ## 1. Ruang lingkup
 
-Panduan ini menetapkan capability contract untuk hosting Laravel yang menyediakan PHP web/CLI yang kompatibel, SSH/SFTP atau upload artefak, Composer 2, MariaDB/MySQL-compatible, HTTPS, document root yang dapat diarahkan ke `public/`, writable runtime directories, dan cron/scheduler bila dibutuhkan. Tidak mengasumsikan root, Supervisor, Redis, Horizon, WebSocket, daemon, konfigurasi Nginx/Apache global, atau Node.js produksi.
+Panduan ini menetapkan capability contract untuk hosting Laravel yang menyediakan PHP web/CLI yang kompatibel, SSH/SFTP atau upload artefak, Composer 2, MySQL 8.0.30-compatible, HTTPS, document root yang dapat diarahkan ke `public/`, writable runtime directories, dan cron/scheduler bila dibutuhkan. Tidak mengasumsikan root, Supervisor, Redis, Horizon, WebSocket, daemon, konfigurasi Nginx/Apache global, atau Node.js produksi.
 
 Nilai path, domain, user, binary PHP, dan kemampuan scheduler harus dikonfirmasi pada provider yang dipilih. Secret tidak ditulis dalam dokumentasi atau command history. Jika provider tidak dapat menyajikan hanya direktori `public/` atau menjaga media privat di luar public exposure, hasilnya **HOST INCOMPATIBLE / NO-GO**.
 
@@ -33,9 +33,9 @@ Gunakan pengaturan document root provider atau symlink yang didukung paket. Bila
 ## 3. Capability prerequisites
 
 1. Domain aktif dan sertifikat SSL valid; paksa HTTPS setelah pengujian.
-2. PHP web dan CLI kompatibel dengan `composer.json` (`^8.3`) dan versinya selaras. Target local/CI saat ini adalah PHP 8.5, tetapi PHP 8.5 bukan minimum Composer. Verifikasi ekstensi yang diwajibkan dependency terkunci dan fitur aplikasi yang dipilih: OpenSSL, PDO MySQL/MariaDB, Mbstring, Tokenizer, XML, Ctype, JSON, Fileinfo, Intl, dan Zip; GD/Imagick serta BCMath bersifat kondisional bila fitur atau pemeriksaan platform dependency yang dipilih membutuhkannya.
+2. PHP web dan CLI kompatibel dengan `composer.json` (`^8.3`) dan versinya selaras. Target local/CI saat ini adalah PHP 8.5, tetapi PHP 8.5 bukan minimum Composer. Verifikasi ekstensi yang diwajibkan dependency terkunci dan fitur aplikasi yang dipilih: OpenSSL, PDO MySQL, Mbstring, Tokenizer, XML, Ctype, JSON, Fileinfo, Intl, dan Zip; GD/Imagick serta BCMath bersifat kondisional bila fitur atau pemeriksaan platform dependency yang dipilih membutuhkannya.
 3. Composer 2 tersedia dan memakai PHP CLI yang sama dengan runtime target; verifikasi `php -v` dan `composer --version`.
-4. Database MariaDB/MySQL-compatible, user least-privilege, host, port, TLS policy bila diwajibkan, `utf8mb4`, dan InnoDB tersedia. SQLite evidence tidak membuktikan engine compatibility.
+4. Database MySQL 8.0.30-compatible, user least-privilege, host, port, TLS policy bila diwajibkan, `utf8mb4`, dan InnoDB tersedia. SQLite evidence tidak membuktikan engine compatibility.
 5. Document root dapat diarahkan tepat ke `public/` (atau layout front-controller setara yang membuktikan source tidak terekspos).
 6. PHP process dapat menulis `storage/` dan `bootstrap/cache/`; `storage/app/media` tetap privat dan tidak menjadi target public storage link.
 7. Cron/scheduler tersedia bila schedule dijalankan; timezone provider/cron diketahui. Aplikasi menggunakan `Asia/Jakarta`.
@@ -70,7 +70,7 @@ APP_DEBUG=false
 APP_URL=https://<application-domain>
 APP_TIMEZONE=Asia/Jakarta
 LOG_LEVEL=warning
-DB_CONNECTION=mariadb
+DB_CONNECTION=mysql
 DB_HOST=<managed-database-host>
 DB_PORT=3306
 DB_DATABASE=<application-database>
@@ -127,7 +127,7 @@ Jangan menjalankan `composer update` di produksi. Jika provider memerlukan path 
 3. Jalankan pemeriksaan migration: `php artisan migrate:status`.
 4. Jalankan `php artisan migrate --force` hanya setelah backup dan rollback dinilai.
 5. Jalankan seeder produksi hanya jika bersifat idempotent dan disebut pada runbook release; jangan menjalankan seed data demo. Satu-satunya seeder yang diizinkan adalah bootstrap admin awal melalui `Database\Seeders\InitialAdminSeeder` yang idempotent (`updateOrCreate` pada email) dan ter-gate env: set `APP_INITIAL_ADMIN_EMAIL` dan `APP_INITIAL_ADMIN_PASSWORD` **sementara** bersama `php artisan db:seed --class=DatabaseSeeder --force`, lalu setelah sukses kosongkan nilai pada environment privat dan rotasi kata sandi menjadi kredensial pilihan operator. Idempotensi `updateOrCreate` memastikan menjalankan ulang seeder tidak membuat admin ganda.
-6. Trigger `audit_logs_prevent_update`/`audit_logs_prevent_delete` dibuat non-fatal (try/catch + `LOG` warning) pada migration `create_audit_logs_table`; buktikan pada MySQL/MariaDB bahwa kedua trigger aktif melalui `SHOW TRIGGERS`, dan pastikan database user memiliki hak yang diperlukan (mis. `SUPER`/`SET_USER_ID` atau `log_bin_trust_function_creators=1` bila binary logging aktif) agar tercipta sungguhan. Jika trigger tidak aktif, audit immutability IMP-107 tidak terjaga dan harus diselesaikan sebelum go-live.
+6. Trigger `audit_logs_prevent_update`/`audit_logs_prevent_delete` dibuat non-fatal (try/catch + `LOG` warning) pada migration `create_audit_logs_table`; buktikan pada MySQL 8.0.30 bahwa kedua trigger aktif melalui `SHOW TRIGGERS`, dan pastikan database user memiliki hak yang diperlukan (mis. `SUPER`/`SET_USER_ID` atau `log_bin_trust_function_creators=1` bila binary logging aktif) agar tercipta sungguhan. Jika trigger tidak aktif, audit immutability IMP-107 tidak terjaga dan harus diselesaikan sebelum go-live.
 7. Bersihkan cache lama, lalu jalankan cache produksi yang kompatibel:
 
 ```bash
@@ -186,7 +186,7 @@ Jika owner menyetujui topology ini, scheduler menjalankan worker one-shot berbat
 
 ## 9. Migration aman
 
-Sebelum UAT/production, jalankan dan catat satu rehearsal MariaDB disposable terjadwal yang terisolasi dari database primer: migration fresh dan upgrade bila relevan, rollback/remigrate/no-op/cleanup, serta keputusan backup/restore. Ini adalah release-validation yang berdiri sendiri, bukan blocker quality gate harian per-IMP; hasil SQLite tidak membuktikan kompatibilitas MariaDB. Bila IMP-107 berada pada baseline rilis, rehearsal mencakup proof trigger append-only/immutability MariaDB terisolasi.
+Sebelum UAT/production, jalankan dan catat satu rehearsal MySQL 8.0.30 disposable terjadwal yang terisolasi dari database primer: migration fresh dan upgrade bila relevan, rollback/remigrate/no-op/cleanup, serta keputusan backup/restore. Ini adalah release-validation yang berdiri sendiri, bukan blocker quality gate harian per-IMP; hasil SQLite tidak membuktikan kompatibilitas MySQL. Bila IMP-107 berada pada baseline rilis, rehearsal mencakup proof trigger append-only/immutability MySQL terisolasi.
 
 - Migration forward-only diutamakan; `down()` tidak dianggap satu-satunya rollback data.
 - Hindari operasi tabel besar yang mengunci lama. Gunakan pola expand/migrate/contract lintas release bila diperlukan.
@@ -272,9 +272,9 @@ Backup disimpan terpisah dari akun hosting utama, dienkripsi/dilindungi, diverif
 - [ ] File sensitif tidak terekspos.
 - [ ] PHP web dan CLI memenuhi `^8.3` dan selaras; PHP 8.5 target local/CI; Composer 2.
 - [ ] Build Vite/Tailwind dari lokal/CI tersedia.
-- [ ] Rehearsal MariaDB disposable dan migration terverifikasi sebagai release-validation terpisah; jika berlaku, proof trigger IMP-107 tercatat. Bukti SQLite tidak diklaim sebagai bukti MariaDB.
+- [ ] Rehearsal MySQL 8.0.30 disposable dan migration terverifikasi sebagai release-validation terpisah; jika berlaku, proof trigger IMP-107 tercatat. Bukti SQLite tidak diklaim sebagai bukti MySQL.
 - [ ] Bootstrap admin awal via `InitialAdminSeeder` berhasil secara idempotent; nilai `APP_INITIAL_ADMIN_*` sudah dikosongkan dan kata sandi dirotasi operator.
-- [ ] Kedua trigger `audit_logs_prevent_update`/`audit_logs_prevent_delete` aktif pada MySQL/MariaDB (`SHOW TRIGGERS`); IMMUTABLE audit IMP-107 terjaga.
+- [ ] Kedua trigger `audit_logs_prevent_update`/`audit_logs_prevent_delete` aktif pada MySQL 8.0.30 (`SHOW TRIGGERS`); IMMUTABLE audit IMP-107 terjaga.
 - [ ] Cache produksi dibangun; debug mati.
 - [ ] Storage privat dan route file diuji.
 - [ ] Permission, idempotensi, ledger, hold, QR, publik lulus.

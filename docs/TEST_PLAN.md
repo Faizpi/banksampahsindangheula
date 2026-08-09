@@ -22,7 +22,8 @@ Prioritas: P0 finansial/otorisasi/privasi; P1 operasional utama; P2 informasi/pr
 ## 3. Environment dan data
 
 - Unit/feature dan quality gate implementasi harian memakai SQLite `:memory:` sebagai database test terisolasi normatif.
-- Suite kritis MariaDB-compatible adalah satu release-validation terjadwal pada environment disposable sebelum UAT/production, dengan evidence environment/runner/waktu/skenario terpisah; bukan blocker completion per-IMP. Hasil SQLite tidak membuktikan perilaku MariaDB, termasuk locking, constraint, transaction, atau trigger khusus engine.
+- Runtime lokal memakai Laragon dengan MySQL 8.0.30 dan InnoDB. Laragon adalah stack lokal, bukan engine database; bukti runtime ini terpisah dari suite SQLite.
+- Suite kritis untuk MySQL 8.0.30 tetap berupa release-validation terjadwal pada environment disposable sebelum UAT/production, dengan evidence environment/runner/waktu/skenario terpisah. Hasil SQLite tidak membuktikan perilaku MySQL production, termasuk locking, constraint, transaction, atau trigger khusus engine.
 - Browser test memakai environment nonproduksi dengan storage/mail/queue fake atau sandbox terkontrol.
 - Clock dapat dibekukan pada `Asia/Jakarta` untuk expiry, periode harga, target, dan rekonsiliasi.
 - Factory menyediakan lima role, beberapa RT/RW, warga lintas scope, harga lama/baru, saldo/hold, status terminal, file privat, dan record koreksi/reversal.
@@ -259,6 +260,8 @@ Peserta: minimal perwakilan warga smartphone, warga tanpa smartphone, petugas la
 
 Setiap skenario memuat data awal, langkah, expected result, hasil aktual, bukti, severity, dan tanda tangan/keputusan. UAT mencakup 36 flow pada [USER_FLOWS.md](USER_FLOWS.md), dengan fokus bahasa, kejelasan status, prosedur gagal, bukti, dan tugas nyata.
 
+Eksekusi teknis browser untuk transaksi kritis sudah direkam di [UAT_EVIDENCE.md](UAT_EVIDENCE.md): 10/10 flow Chromium pada disposable Laragon MySQL lulus tanpa browser error. Hasil ini belum menggantikan observasi stakeholder, rekonsiliasi, atau approval tertulis.
+
 Kriteria penerimaan:
 
 - Tidak ada defect P0/P1 terbuka.
@@ -270,9 +273,9 @@ Kriteria penerimaan:
 
 ## 11. Deployment dan operasi test
 
-- PHP web/CLI 8.5, Composer 2, extension, MariaDB compatibility.
-- Release rehearsal MariaDB disposable: migration fresh dan upgrade dari snapshot bila relevan, durasi, rollback/remigrate/no-op/cleanup, dan bukti terpisah sebelum UAT/production; tidak dipenuhi oleh hasil SQLite.
-- Untuk IMP-107, rehearsal tersebut mencakup skenario trigger MariaDB terisolasi yang membuktikan penegakan append-only/immutability; hasil SQLite tidak dapat menjadi penggantinya.
+- PHP web/CLI 8.5, Composer 2, extension, serta Laragon MySQL 8.0.30 untuk pemeriksaan runtime lokal.
+- Release rehearsal MySQL 8.0.30 disposable: migration fresh dan upgrade dari snapshot bila relevan, durasi, rollback/remigrate/no-op/cleanup, dan bukti terpisah sebelum UAT/production; tidak dipenuhi oleh hasil SQLite atau smoke Laragon.
+- Untuk IMP-107, rehearsal tersebut mencakup skenario trigger MySQL terisolasi yang membuktikan penegakan append-only/immutability; hasil SQLite tidak dapat menjadi penggantinya.
 - Document root/exposure probe `.env`, vendor, storage, source.
 - Scheduler heartbeat dan expiry pada timezone cron Hostinger.
 - Queue sync/database one-shot, retry, failed job, no daemon.
@@ -314,7 +317,7 @@ Sebelum release:
 
 - Seluruh suite wajib hijau dan test flaky diselesaikan.
 - Coverage domain kritis mencapai target.
-- Test P0 concurrency, permission, QR/publik, file, dan ledger lulus pada MariaDB kompatibel sebagai satu suite release-validation disposable yang tercatat terpisah; untuk IMP-107, trigger append-only/immutability juga terbukti pada MariaDB. Hasil SQLite `:memory:` tetap evidence harian dan tidak dapat diklaim sebagai proof MariaDB.
+- Test P0 concurrency, permission, QR/publik, file, dan ledger lulus pada MySQL 8.0.30 sebagai satu suite release-validation disposable yang tercatat terpisah; untuk IMP-107, trigger append-only/immutability juga terbukti pada MySQL. Hasil SQLite `:memory:` dan runtime MySQL Laragon tetap evidence harian, bukan proof deployment production.
 - Browser, accessibility, responsive, security, UAT, deployment, backup/restore lulus.
 - Defect residual memiliki owner, severity, mitigasi, dan tidak melanggar baseline/acceptance criteria.
 - Laporan test mencatat commit, environment, waktu, runner, hasil, coverage, artefak, dan approval.

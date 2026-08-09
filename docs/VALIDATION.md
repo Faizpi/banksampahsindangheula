@@ -8,7 +8,7 @@
 4. Kegagalan mengembalikan pesan Bahasa Indonesia yang spesifik pada field atau tindakan, mempertahankan input aman, memindahkan fokus ke ringkasan kesalahan, dan tidak menjalankan efek sukses.
 5. Unique constraint, foreign key, check constraint yang didukung, dan database transaction melindungi invariant setelah validasi aplikasi.
 6. Zona waktu input/tampilan adalah `Asia/Jakarta`; waktu tersimpan memakai representasi konsisten yang ditetapkan arsitektur.
-7. SQLite `:memory:` memvalidasi perilaku aplikasi dan intent schema portabel pada gate harian. Perilaku production-engine MariaDB—termasuk locking, transaction, constraint, dan trigger bila relevan—memerlukan evidence release-validation MariaDB terpisah sebelum UAT/production; hasil SQLite tidak boleh diklaim sebagai buktinya.
+7. SQLite `:memory:` memvalidasi perilaku aplikasi dan intent schema portabel pada gate harian. Perilaku production-engine MySQL 8.0.30, termasuk locking, transaction, constraint, dan trigger bila relevan, memerlukan evidence release-validation MySQL terpisah sebelum UAT/production; hasil SQLite tidak boleh diklaim sebagai buktinya.
 
 ## 2. Normalisasi umum
 

@@ -15,7 +15,7 @@ Dokumentasi ini menjadi kontrak pengembangan Sistem Informasi Bank Sampah Digita
 - Blade, Livewire 4, Alpine.js bawaan Livewire.
 - Tailwind CSS 4.1+.
 - Filament 5 untuk back-office.
-- MariaDB terkelola yang kompatibel dengan MySQL.
+- MySQL 8.0.30 melalui Laragon.
 - Hostinger Web Hosting Premium atau Business.
 - Pest 4.
 

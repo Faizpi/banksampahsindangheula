@@ -259,7 +259,7 @@ Tinjau audit, failed task, rekonsiliasi, backup, cron, dan contact list. Superad
 | Harian | scheduler heartbeat, failed jobs, backup, error log, storage/inode, hold kedaluwarsa |
 | Mingguan | permission/assignment anomali, kapasitas, transaksi ganda, koreksi, statistik, file temp |
 | Bulanan | dependency/security update, restore sample, performa DB, quota hosting, SSL/domain, SOP |
-| Saat pergantian/rilis | akses, secret, rehearsal MariaDB disposable sebelum UAT/production, backup, rollback, restore, smoke test, training |
+| Saat pergantian/rilis | akses, secret, rehearsal MySQL 8.0.30 disposable sebelum UAT/production, backup, rollback, restore, smoke test, training |
 
 ## 20. Eskalasi
 

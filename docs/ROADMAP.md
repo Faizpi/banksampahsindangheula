@@ -15,7 +15,7 @@ Urutan berikut adalah urutan pengerjaan, bukan pembagian ruang lingkup.
 ### Fondasi
 
 - Laravel 13, PHP 8.5, Livewire 4, Tailwind CSS 4.1+, Filament 5, Pest 4.
-- MariaDB, autentikasi, role/permission, audit, penyimpanan privat, dan design system.
+- MySQL 8.0.30, autentikasi, role/permission, audit, penyimpanan privat, dan design system.
 - Konfigurasi test, formatting, static analysis, dan build aset.
 
 ### Akun dan master data

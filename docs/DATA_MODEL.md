@@ -2,7 +2,7 @@
 
 ## 1. Prinsip
 
-MariaDB/InnoDB menjadi sumber data transaksional. ID internal memakai `BIGINT UNSIGNED` atau ULID secara konsisten. Rupiah memakai `BIGINT`; berat memakai `DECIMAL(15,3)` dan tidak pernah `FLOAT`. File disimpan pada storage, bukan blob database. Semua status memakai PHP backed enum/value object dan constraint yang kompatibel. Waktu bisnis ditampilkan dalam `Asia/Jakarta`.
+MySQL 8.0.30/InnoDB menjadi sumber data transaksional. ID internal memakai `BIGINT UNSIGNED` atau ULID secara konsisten. Rupiah memakai `BIGINT`; berat memakai `DECIMAL(15,3)` dan tidak pernah `FLOAT`. File disimpan pada storage, bukan blob database. Semua status memakai PHP backed enum/value object dan constraint yang kompatibel. Waktu bisnis ditampilkan dalam `Asia/Jakarta`.
 
 Kebijakan penghapusan: data finansial, audit, status, bukti, dan rekonsiliasi tidak dihapus operasional; master bereferensi dinonaktifkan atau soft-delete; pivot yang tidak memiliki histori boleh cascade; FK histori umumnya `RESTRICT`, sedangkan pelaku yang dinonaktifkan tetap dipertahankan.
 

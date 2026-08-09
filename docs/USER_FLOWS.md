@@ -36,7 +36,7 @@ Dokumen ini adalah representasi tekstual normatif dari 36 diagram pada dokumen f
 
 ### FL-05 — Arsitektur Sistem Tingkat Tinggi
 - **Aktor:** pengguna, pengelola teknis.
-- **Alur utama:** perangkat → browser/PWA → Blade/Livewire/Alpine/Tailwind → Laravel/PHP → modul domain → MariaDB/storage privat → Hostinger terkelola → backup terpisah.
+- **Alur utama:** perangkat → browser/PWA → Blade/Livewire/Alpine/Tailwind → Laravel/PHP → modul domain → MySQL 8.0.30/storage privat → Hostinger terkelola → backup terpisah.
 - **Keputusan/gagal:** pekerjaan yang melampaui batas shared hosting tidak mengasumsikan worker permanen; gunakan proses sinkron/cron terbatas.
 - **Hasil:** modular monolith dapat dioperasikan di Hostinger.
 - **Jejak:** NFR-HOST-001, PWA-001; [ARCHITECTURE.md](ARCHITECTURE.md).
