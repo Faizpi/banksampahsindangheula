@@ -15,6 +15,88 @@
         <x-ui.mascot variant="6" bubble="Cari warga dengan mudah!" bubblePosition="top" class="h-28 w-auto shrink-0" />
     </div>
 
+    @if ($scannerOpen)
+        <x-ui.panel title="Pindai QR nasabah" description="Arahkan kamera ke QR kartu nasabah. QR hanya berisi token acak; nama tetap harus dikonfirmasi." state="success">
+            <div
+                x-data="{
+                    stream: null,
+                    detector: null,
+                    running: false,
+                    error: '',
+                    async start() {
+                        if (!('BarcodeDetector' in window) || ! navigator.mediaDevices?.getUserMedia) {
+                            this.error = 'Peramban ini belum mendukung pemindaian QR kamera. Gunakan nomor nasabah sebagai alternatif.';
+                            return;
+                        }
+
+                        try {
+                            const formats = await BarcodeDetector.getSupportedFormats();
+                            if (! formats.includes('qr_code')) {
+                                this.error = 'Pemindaian QR belum tersedia di peramban ini. Gunakan nomor nasabah sebagai alternatif.';
+                                return;
+                            }
+                            this.detector = new BarcodeDetector({ formats: ['qr_code'] });
+                            this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+                            this.$refs.video.srcObject = this.stream;
+                            await this.$refs.video.play();
+                            this.running = true;
+                            this.read();
+                        } catch (exception) {
+                            this.error = exception?.name === 'NotAllowedError'
+                                ? 'Izin kamera ditolak. Gunakan nomor nasabah sebagai alternatif.'
+                                : 'Kamera tidak dapat digunakan. Gunakan nomor nasabah sebagai alternatif.';
+                            this.stop();
+                        }
+                    },
+                    async read() {
+                        if (! this.running) return;
+                        try {
+                            const codes = await this.detector.detect(this.$refs.video);
+                            const rawValue = codes[0]?.rawValue;
+                            if (typeof rawValue === 'string' && rawValue !== '') {
+                                this.stop();
+                                await $wire.scan(rawValue);
+                                return;
+                            }
+                        } catch (exception) {
+                            this.error = 'QR belum terbaca. Pastikan kartu berada di dalam bingkai.';
+                        }
+                        if (this.running) requestAnimationFrame(() => this.read());
+                    },
+                    stop() {
+                        this.running = false;
+                        this.stream?.getTracks().forEach((track) => track.stop());
+                        this.stream = null;
+                        if (this.$refs.video) this.$refs.video.srcObject = null;
+                    }
+                }"
+                x-init="start()"
+                x-on:livewire:navigating.window="stop()"
+                class="space-y-4"
+            >
+                <div class="relative overflow-hidden rounded-xl border border-border bg-deep-green">
+                    <video x-ref="video" class="aspect-video w-full object-cover" playsinline muted aria-label="Pratinjau kamera pemindai QR"></video>
+                    <div class="pointer-events-none absolute inset-8 rounded-xl border-2 border-white/80"></div>
+                </div>
+                <p x-show="error" x-text="error" role="alert" class="text-body-sm font-semibold text-terracotta"></p>
+                @error('token')
+                    <p role="alert" class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                @enderror
+                <div class="flex flex-col gap-3 sm:flex-row">
+                    <x-ui.button type="button" variant="secondary" x-on:click="stop(); $wire.closeScanner()">Tutup Pemindai</x-ui.button>
+                    <x-ui.button type="button" variant="quiet" x-on:click="stop(); start()">Coba Lagi</x-ui.button>
+                </div>
+            </div>
+        </x-ui.panel>
+    @else
+        <x-ui.panel title="Pindai dengan kamera" description="Gunakan kamera perangkat untuk membaca QR kartu nasabah. Token tidak ditampilkan di layar.">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p class="text-body-sm text-text-secondary">Jika kamera tidak tersedia atau izin ditolak, gunakan nomor atau nama warga di bawah.</p>
+                <x-ui.button type="button" wire:click="openScanner">Buka Pemindai QR</x-ui.button>
+            </div>
+        </x-ui.panel>
+    @endif
+
     {{-- Search Form --}}
     <x-ui.panel title="Cari dengan nomor nasabah" description="Gunakan nomor kartu sebagai alternatif ketika pemindaian tidak tersedia.">
         <form wire:submit="find" class="space-y-4" aria-describedby="identification-help">
@@ -49,14 +131,67 @@
                     </div>
                     <p class="text-h2 font-bold text-deep-green">{{ $candidate->name }}</p>
                     <p class="text-body-sm text-text-secondary">Nomor referensi: {{ $candidate->maskedNumber() }}</p>
-                    <div class="mt-4">
-                        <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId]) }}"
+                            <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                                <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId, 'assistedServiceId' => $assistedServiceId]) }}"
 
                             class="inline-flex min-h-touch items-center gap-2 rounded-xl bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700">
                             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                             Mulai Setoran
-                        </a>
-                    </div>
+                                </a>
+                            </div>
+                            @if ($mobileServices->isNotEmpty())
+                                <div class="mt-4 rounded-xl border border-border bg-warm-canvas p-4">
+                                    <x-ui.select name="mobileServiceId" label="Jadwal keliling (opsional)" wire:model="mobileServiceId">
+                                        <option value="">Setoran langsung</option>
+                                        @foreach ($mobileServices as $mobileService)
+                                            <option value="{{ $mobileService->id }}">{{ $mobileService->point }} · {{ $mobileService->starts_at->format('d M H:i') }}</option>
+                                        @endforeach
+                                    </x-ui.select>
+                                    <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId]) }}?{{ http_build_query(array_filter(['mobileServiceId' => $mobileServiceId, 'assistedServiceId' => $assistedServiceId])) }}" class="mt-3 inline-flex min-h-touch items-center justify-center rounded-xl border-2 border-forest-600 px-5 text-label font-bold text-forest-700 transition hover:bg-success-bg">Mulai Setoran Keliling</a>
+                                </div>
+                            @endif
+
+                            @if ($canCreateAssisted)
+                        <div class="mt-5 rounded-xl border border-border bg-warm-canvas p-4">
+                            <p class="text-label font-bold text-deep-green">Layanan berbantuan</p>
+                            <p class="mt-1 text-body-sm text-text-secondary">Catat layanan atas nama warga setelah persetujuan terpisah. Kata sandi tidak pernah diminta.</p>
+                            @if ($assistedRecorded)
+                                <p role="status" class="mt-3 text-body-sm font-semibold text-forest-700">Layanan berbantuan tercatat dengan persetujuan dan bukti privat.</p>
+                                @if ($assistedServiceId)
+                                    <button type="button" wire:click="handoff" wire:loading.attr="disabled" class="mt-3 inline-flex min-h-touch items-center rounded-xl border-2 border-forest-600 px-5 text-label font-bold text-forest-700 transition hover:bg-success-bg">Serahkan Bukti dan Saldo</button>
+                                @endif
+                                @if (session('assisted-handoff'))
+                                    @php($handoff = session('assisted-handoff'))
+                                    <div role="status" class="mt-4 rounded-xl border border-border bg-warm-canvas p-4">
+                                        <p class="text-label font-bold text-deep-green">Handoff selesai</p>
+                                        <p class="mt-1 text-body-sm text-text-secondary">Bukti {{ $handoff->receipt['number'] }} · Saldo tersedia Rp {{ number_format($handoff->availableBalance, 0, ',', '.') }}</p>
+                                    </div>
+                                @endif
+                            @else
+                                <div class="mt-4 grid gap-4">
+                                    <label class="flex items-start gap-3 text-body-sm text-text-primary">
+                                        <input type="checkbox" wire:model="assistedConsent" class="mt-1 size-5 rounded border-border text-forest-600 focus:ring-focus" />
+                                        <span>Saya sudah menjelaskan layanan ini dan warga memberikan persetujuan terpisah.</span>
+                                    </label>
+                                    @error('assistedConsent')
+                                        <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                                    @enderror
+                                    <div class="space-y-1.5">
+                                        <label for="assisted-evidence" class="block text-label font-semibold text-deep-green">Bukti persetujuan privat</label>
+                                        <input id="assisted-evidence" wire:model="assistedEvidence" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
+                                            class="block min-h-touch w-full rounded-xl border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus" />
+                                        @error('assistedEvidence')
+                                            <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <x-ui.button type="button" wire:click="recordAssistedService" wire:loading.attr="disabled">
+                                        <span wire:loading.remove wire:target="recordAssistedService">Catat Layanan Berbantuan</span>
+                                        <span wire:loading wire:target="recordAssistedService">Menyimpan...</span>
+                                    </x-ui.button>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             @else
                 <div class="space-y-4">
