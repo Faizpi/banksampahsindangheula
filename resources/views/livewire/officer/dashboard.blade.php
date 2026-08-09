@@ -4,13 +4,106 @@
 
 <x-slot:todayTasks>
     <x-ui.panel title="Tugas hari ini" description="Hanya tugas yang ditugaskan kepada Anda yang ditampilkan.">
-        <x-ui.empty-state
-            title="Belum ada tugas hari ini"
-            description="Saat ada tugas yang ditugaskan kepada Anda, tugas tersebut akan muncul di sini." />
+        @if ($todayPickups->isEmpty())
+            <x-ui.empty-state
+                title="Belum ada tugas hari ini"
+                description="Saat ada tugas yang ditugaskan kepada Anda, tugas tersebut akan muncul di sini." />
+        @else
+            <div class="grid gap-3">
+                @foreach ($todayPickups as $pickup)
+                    <a href="{{ route('officer.pickup.task', $pickup) }}" class="flex min-h-[72px] items-center justify-between gap-3 rounded-xl border border-border bg-warm-canvas p-4 transition hover:border-forest-600 hover:shadow-xs">
+                        <span class="min-w-0">
+                            <span class="block text-label font-bold text-deep-green">{{ $pickup->request_number }}</span>
+                            <span class="mt-1 block truncate text-body-sm text-text-secondary">{{ $pickup->customer?->name ?? 'Nasabah' }} · {{ $pickup->address }}</span>
+                        </span>
+                        <span class="shrink-0 rounded-full border border-info-bg bg-info-bg px-3 py-1 text-caption font-semibold text-sky-blue">{{ ucwords(str_replace('_', ' ', $pickup->status->value)) }}</span>
+                    </a>
+                @endforeach
+            </div>
+        @endif
     </x-ui.panel>
 </x-slot:todayTasks>
 
 <div class="grid gap-6">
+<section aria-labelledby="officer-metrics-title" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <h2 id="officer-metrics-title" class="sr-only">Ringkasan operasional</h2>
+    @foreach ([
+        ['label' => 'Pickup perlu ditangani', 'value' => $metrics['pending_pickups'], 'tone' => 'text-terracotta'],
+        ['label' => 'Pickup selesai hari ini', 'value' => $metrics['completed_pickups'], 'tone' => 'text-forest-600'],
+        ['label' => 'Draf setoran', 'value' => $metrics['draft_deposits'], 'tone' => 'text-harvest-gold'],
+        ['label' => 'Tugas sembako', 'value' => $metrics['grocery_tasks'], 'tone' => 'text-harvest-gold'],
+        ['label' => 'Layanan keliling aktif', 'value' => $metrics['active_mobile_services'].' aktif', 'tone' => 'text-sky-blue'],
+        ['label' => 'Nasabah dalam tugas', 'value' => $metrics['assigned_customers'], 'tone' => 'text-forest-600'],
+    ] as $metric)
+        <div class="rounded-xl border border-border bg-surface p-4 shadow-xs">
+            <p class="text-caption font-semibold text-text-secondary">{{ $metric['label'] }}</p>
+            <p class="mt-2 text-h2 font-bold tabular-nums {{ $metric['tone'] }}">{{ $metric['value'] }}</p>
+        </div>
+    @endforeach
+</section>
+
+<section aria-labelledby="officer-queues-title" class="grid gap-4 lg:grid-cols-2">
+    <h2 id="officer-queues-title" class="sr-only">Antrean kerja petugas</h2>
+    <x-ui.panel title="Pickup terlambat" description="Prioritaskan tugas yang melewati tanggal jadwal.">
+        @if ($latePickups->isEmpty())
+            <x-ui.empty-state title="Tidak ada pickup terlambat" description="Semua pickup dalam antrean Anda masih sesuai jadwal." />
+        @else
+            <div class="grid gap-3">
+                @foreach ($latePickups as $pickup)
+                    <a href="{{ route('officer.pickup.task', $pickup) }}" class="block rounded-xl border border-danger-bg bg-danger-bg p-4 transition hover:border-terracotta">
+                        <p class="text-label font-bold text-deep-green">{{ $pickup->request_number }}</p>
+                        <p class="mt-1 text-body-sm text-text-secondary">{{ $pickup->customer?->name ?? 'Nasabah' }} · {{ $pickup->address }}</p>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    </x-ui.panel>
+
+    <x-ui.panel title="Draf setoran" description="Lanjutkan draf yang dibuat oleh akun Anda.">
+        @if ($draftDeposits->isEmpty())
+            <x-ui.empty-state title="Tidak ada draf setoran" description="Draf setoran Anda yang belum selesai akan muncul di sini." />
+        @else
+            <div class="grid gap-3">
+                @foreach ($draftDeposits as $deposit)
+                    <a href="{{ route('officer.deposit-form', $deposit->customer_id) }}" class="block rounded-xl border border-warning-bg bg-warning-bg p-4 transition hover:border-harvest-gold">
+                        <p class="text-label font-bold text-deep-green">{{ $deposit->deposit_number }}</p>
+                        <p class="mt-1 text-body-sm text-text-secondary">{{ $deposit->customer?->name ?? 'Nasabah' }} · Draf belum difinalisasi</p>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    </x-ui.panel>
+
+    <x-ui.panel title="Tugas sembako" description="Persiapan dan penyerahan sesuai assignment.">
+        @if ($groceryTasks->isEmpty())
+            <x-ui.empty-state title="Tidak ada tugas sembako" description="Tugas sembako yang siap diproses akan muncul di sini." />
+        @else
+            <div class="grid gap-3">
+                @foreach ($groceryTasks as $redemption)
+                    <a href="{{ $groceryTasksHref }}" class="block rounded-xl border border-border bg-warm-canvas p-4 transition hover:border-harvest-gold">
+                        <p class="text-label font-bold text-deep-green">{{ $redemption->request_number }}</p>
+                        <p class="mt-1 text-body-sm text-text-secondary">{{ $redemption->customer?->name ?? 'Nasabah' }} · {{ ucwords(str_replace('_', ' ', $redemption->status->value)) }}</p>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    </x-ui.panel>
+
+    <x-ui.panel title="Layanan keliling" description="Buka atau tutup titik yang menugaskan Anda.">
+        @if ($mobileServices->isEmpty())
+            <x-ui.empty-state title="Tidak ada jadwal keliling" description="Jadwal yang menugaskan Anda akan muncul di sini." />
+        @else
+            <div class="grid gap-3">
+                @foreach ($mobileServices as $service)
+                    <a href="{{ route('officer.mobile-services') }}" class="block rounded-xl border border-info-bg bg-info-bg p-4 transition hover:border-sky-blue">
+                        <p class="text-label font-bold text-deep-green">{{ $service->service_number }} · {{ $service->point }}</p>
+                        <p class="mt-1 text-body-sm text-text-secondary">{{ $service->starts_at->format('d M Y, H:i') }} · {{ ucwords(str_replace('_', ' ', $service->status->value)) }}</p>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    </x-ui.panel>
+</section>
 
 {{-- Header + Mascot --}}
 <section aria-labelledby="officer-dashboard-title" class="rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6">
@@ -108,3 +201,4 @@
 </section>
 
 </div>{{-- /grid gap-6 (Livewire single root) --}}
+</div>
