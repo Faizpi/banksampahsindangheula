@@ -15,6 +15,7 @@ use App\Domain\CustomersRegions\Queries\SearchCustomers;
 use App\Domain\MobileServices\Enums\MobileServiceStatus;
 use App\Domain\MobileServices\Models\MobileService;
 use App\Domain\Platform\Actions\StorePrivateMedia;
+use App\Domain\Withdrawals\Services\WithdrawalService;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -52,11 +53,31 @@ final class CustomerIdentification extends Component
 
     public ?int $mobileServiceId = null;
 
+    public bool $withdrawalConsent = false;
+
+    public ?UploadedFile $withdrawalEvidence = null;
+
+    public string $withdrawalAmount = '';
+
+    public string $withdrawalLocation = '';
+
+    public string $withdrawalDate = '';
+
+    #[Locked]
+    public ?int $assistedWithdrawalServiceId = null;
+
+    #[Locked]
+    public ?int $assistedWithdrawalId = null;
+
+    public string $assistedWithdrawalIdempotencyKey = '';
+
     public function mount(PermissionChecker $permissions): void
     {
         /** @var User|null $actor */
         $actor = auth()->user();
         abort_unless($actor instanceof User && $permissions->allows($actor, 'customer.view'), 403);
+        $this->withdrawalDate = today('Asia/Jakarta')->addDay()->toDateString();
+        $this->assistedWithdrawalIdempotencyKey = (string) str()->uuid();
     }
 
     public function find(SearchCustomers $searchCustomers): void
@@ -172,6 +193,73 @@ final class CustomerIdentification extends Component
         session()->flash('assisted-handoff', $handoff);
     }
 
+    public function requestAssistedWithdrawal(
+        AssistedCustomerServiceAction $service,
+        StorePrivateMedia $mediaStore,
+        WithdrawalService $withdrawals,
+    ): void {
+        if ($this->candidate === null) {
+            throw ValidationException::withMessages(['search' => 'Cari nasabah sebelum membuat pencairan berbantuan.']);
+        }
+        if (! $this->confirmed) {
+            throw ValidationException::withMessages(['search' => 'Konfirmasi nama warga sebelum membuat pencairan berbantuan.']);
+        }
+
+        $this->validate([
+            'withdrawalConsent' => ['accepted'],
+            'withdrawalEvidence' => ['required_if:assistedWithdrawalServiceId,null', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
+            'withdrawalAmount' => ['required', 'integer', 'min:10000'],
+            'withdrawalLocation' => ['required', 'string', 'min:3', 'max:255'],
+            'withdrawalDate' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+        ], [
+            'withdrawalConsent.accepted' => 'Persetujuan warga wajib dicatat.',
+            'withdrawalEvidence.required_if' => 'Bukti privat wajib diunggah.',
+        ]);
+
+        /** @var User $actor */
+        $actor = auth()->user();
+        if ($this->assistedWithdrawalId !== null) {
+            return;
+        }
+
+        if ($this->assistedWithdrawalServiceId === null) {
+            /** @var UploadedFile $evidenceFile */
+            $evidenceFile = $this->withdrawalEvidence;
+            $media = $mediaStore->handle($evidenceFile, $actor);
+
+            try {
+                $record = $service->record(
+                    $actor,
+                    User::query()->findOrFail($this->candidate->userId),
+                    AssistedServiceContract::create(
+                        $this->candidate->userId,
+                        $actor->id,
+                        'pencairan',
+                        Consent::given('assisted-withdrawal-v1'),
+                        EvidenceReference::privateMedia($media->id),
+                    ),
+                );
+                $this->assistedWithdrawalServiceId = $record->id;
+            } catch (Throwable $exception) {
+                Storage::disk($media->disk)->delete($media->path);
+                $media->delete();
+
+                throw $exception;
+            }
+        }
+
+        $withdrawal = $withdrawals->request($actor, [
+            'customer_id' => $this->candidate->userId,
+            'amount' => $this->withdrawalAmount,
+            'pickup_location' => $this->withdrawalLocation,
+            'pickup_date' => $this->withdrawalDate,
+            'assisted_service_id' => $this->assistedWithdrawalServiceId,
+        ], $this->assistedWithdrawalIdempotencyKey);
+        $this->assistedWithdrawalId = $withdrawal->id;
+        $this->withdrawalEvidence = null;
+        session()->flash('success', 'Pencairan berbantuan berhasil diajukan dengan consent dan bukti privat.');
+    }
+
     public function render(PermissionChecker $permissions): View
     {
         /** @var User $actor */
@@ -179,13 +267,16 @@ final class CustomerIdentification extends Component
 
         return view('livewire.officer.customer-identification', [
             'canCreateAssisted' => $permissions->allows($actor, 'customer.create-assisted'),
-            'mobileServices' => MobileService::query()->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))->where('status', MobileServiceStatus::Open)->orderBy('starts_at')->get(),
+            'canCreateAssistedWithdrawal' => $permissions->allows($actor, 'customer.create-assisted') && $permissions->allows($actor, 'withdrawal.request'),
+            'mobileServices' => MobileService::query()->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))->where('status', MobileServiceStatus::Open)->where('ends_at', '>=', now())->orderBy('starts_at')->get(),
         ]);
     }
 
     private function resetCandidate(): void
     {
-        $this->reset(['candidate', 'confirmed', 'assistedRecorded', 'assistedServiceId', 'assistedConsent', 'assistedEvidence', 'mobileServiceId']);
-        $this->resetErrorBag(['search', 'token', 'assistedConsent', 'assistedEvidence']);
+        $this->reset(['candidate', 'confirmed', 'assistedRecorded', 'assistedServiceId', 'assistedConsent', 'assistedEvidence', 'mobileServiceId', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'assistedWithdrawalServiceId', 'assistedWithdrawalId']);
+        $this->withdrawalDate = today('Asia/Jakarta')->addDay()->toDateString();
+        $this->assistedWithdrawalIdempotencyKey = (string) str()->uuid();
+        $this->resetErrorBag(['search', 'token', 'assistedConsent', 'assistedEvidence', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'withdrawalDate']);
     }
 }

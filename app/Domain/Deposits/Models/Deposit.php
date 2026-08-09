@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Deposits\Models;
 
+use App\Domain\CustomersRegions\Contracts\QrToken;
 use App\Domain\Ledger\Models\LedgerEntry;
 use App\Domain\MobileServices\Models\MobileService;
 use App\Domain\Pickups\Models\PickupRequest;
@@ -111,6 +112,18 @@ final class Deposit extends Model
         $value = $this->getAttribute('verification_token_encrypted');
 
         return is_string($value) && $value !== '' ? $value : null;
+    }
+
+    public function rotateVerificationToken(QrToken $token): void
+    {
+        if (! $this->isFinal() || $this->status === self::STATUS_REVERSED) {
+            throw new LogicException('Hanya setoran final yang memiliki QR verifikasi aktif.');
+        }
+
+        $this->forceFill([
+            'verification_token_hash' => $token->hash(),
+            'verification_token_encrypted' => $token->value(),
+        ])->saveQuietly();
     }
 
     protected static function booted(): void

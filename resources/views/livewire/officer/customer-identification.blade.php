@@ -192,6 +192,45 @@
                             @endif
                         </div>
                     @endif
+
+                    @if ($canCreateAssistedWithdrawal)
+                        <div class="mt-5 rounded-xl border border-warning-bg bg-warning-bg p-4">
+                            <p class="text-label font-bold text-deep-green">Pencairan berbantuan</p>
+                            <p class="mt-1 text-body-sm text-text-secondary">Ajukan pencairan atas nama warga setelah persetujuan dan bukti privat tercatat. Nominal akan mengikuti proses approval dan hold saldo yang sama.</p>
+                            @if ($assistedWithdrawalId)
+                                <div role="status" class="mt-3 rounded-xl border border-forest-600 bg-success-bg p-3 text-body-sm text-forest-700">
+                                    Pencairan {{ $assistedWithdrawalId }} berhasil diajukan dan terhubung ke bukti consent.
+                                </div>
+                            @else
+                                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                                    <x-ui.input name="withdrawalAmount" label="Nominal (rupiah)" wire:model="withdrawalAmount" inputmode="numeric" placeholder="Minimal Rp10.000" :error="$errors->first('withdrawalAmount')" />
+                                    <x-ui.input name="withdrawalDate" label="Tanggal pengambilan" wire:model="withdrawalDate" type="date" :error="$errors->first('withdrawalDate')" />
+                                    <x-ui.textarea name="withdrawalLocation" label="Lokasi pengambilan" wire:model="withdrawalLocation" rows="2" class="sm:col-span-2" :error="$errors->first('withdrawalLocation')" />
+                                    <label class="sm:col-span-2 flex items-start gap-3 text-body-sm text-text-primary">
+                                        <input type="checkbox" wire:model="withdrawalConsent" class="mt-1 size-5 rounded border-border text-forest-600 focus:ring-focus" />
+                                        <span>Saya sudah menjelaskan proses pencairan dan warga memberikan persetujuan terpisah.</span>
+                                    </label>
+                                    @error('withdrawalConsent')
+                                        <p class="sm:col-span-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                                    @enderror
+                                    <div class="sm:col-span-2 space-y-1.5">
+                                        <label for="withdrawal-evidence" class="block text-label font-semibold text-deep-green">Bukti persetujuan pencairan</label>
+                                        <input id="withdrawal-evidence" wire:model="withdrawalEvidence" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
+                                            class="block min-h-touch w-full rounded-xl border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus" />
+                                        @error('withdrawalEvidence')
+                                            <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                                        @enderror
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <x-ui.button type="button" wire:click="requestAssistedWithdrawal" wire:loading.attr="disabled">
+                                            <span wire:loading.remove wire:target="requestAssistedWithdrawal">Ajukan Pencairan Berbantuan</span>
+                                            <span wire:loading wire:target="requestAssistedWithdrawal">Memproses...</span>
+                                        </x-ui.button>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             @else
                 <div class="space-y-4">
@@ -212,4 +251,3 @@
         </div>
     @endif
 </section>
-

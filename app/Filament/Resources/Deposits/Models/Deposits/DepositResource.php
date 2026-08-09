@@ -6,6 +6,7 @@ namespace App\Filament\Resources\Deposits\Models\Deposits;
 
 use App\Authorization\PermissionChecker;
 use App\Domain\Corrections\Services\TransactionCorrectionService;
+use App\Domain\Deposits\Actions\RotateDepositVerificationToken;
 use App\Domain\Deposits\Models\Deposit;
 use App\Domain\Ledger\Models\LedgerEntry;
 use App\Filament\Resources\Deposits\Models\Deposits\Pages\ManageDeposits;
@@ -101,6 +102,20 @@ final class DepositResource extends Resource
                         Textarea::make('evidence')->label('Bukti privat')->disabled()->rows(3),
                     ])
                     ->fillForm(fn (Deposit $record): array => self::inspectionData($record)),
+                Action::make('rotateVerificationQr')
+                    ->label('Rotasi QR verifikasi')
+                    ->icon(Heroicon::OutlinedArrowPath)
+                    ->color('warning')
+                    ->visible(fn (Deposit $record): bool => self::verificationRotation()->canRotate(self::actor(), $record))
+                    ->authorize(fn (Deposit $record): bool => self::verificationRotation()->canRotate(self::actor(), $record))
+                    ->requiresConfirmation()
+                    ->modalHeading('Rotasi QR verifikasi setoran')
+                    ->modalDescription('QR lama akan langsung tidak aktif. Warga dapat membuka bukti setoran untuk mendapatkan QR baru.')
+                    ->schema([
+                        Textarea::make('reason')->label('Alasan rotasi')->required()->minLength(10)->maxLength(1000)->rows(4),
+                    ])
+                    ->action(fn (Deposit $record, array $data): Deposit => self::verificationRotation()->handle(self::actor(), $record, (string) $data['reason']))
+                    ->successNotificationTitle('QR verifikasi setoran dirotasi.'),
                 Action::make('correct')
                     ->label('Koreksi')
                     ->icon(Heroicon::OutlinedPencilSquare)
@@ -187,6 +202,11 @@ final class DepositResource extends Resource
     private static function correctionService(): TransactionCorrectionService
     {
         return app(TransactionCorrectionService::class);
+    }
+
+    private static function verificationRotation(): RotateDepositVerificationToken
+    {
+        return app(RotateDepositVerificationToken::class);
     }
 
     private static function actor(): User
