@@ -36,11 +36,15 @@ final class BackofficePanelProvider extends PanelProvider
             ->themeSwitcher(false)
             ->viteTheme('resources/css/filament/backoffice/theme.css')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
+            ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->navigationGroups([
-                NavigationGroup::make('Operasional'),
+                NavigationGroup::make('Identitas & Akses'),
+                NavigationGroup::make('Transaksi & Saldo'),
+                NavigationGroup::make('Operasional Lapangan'),
+                NavigationGroup::make('Program & Publikasi'),
+                NavigationGroup::make('Laporan & Rekonsiliasi'),
                 NavigationGroup::make('Data Master'),
-                NavigationGroup::make('Program'),
-                NavigationGroup::make('Pengawasan'),
+                NavigationGroup::make('Sistem & Teknis'),
             ])
             ->middleware([
                 EncryptCookies::class,

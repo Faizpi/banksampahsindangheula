@@ -139,7 +139,7 @@ Route::livewire('/warga/sembako/{redemption}/bukti', GroceryReceipt::class)
     ->name('citizen.grocery.receipt');
 
 Route::livewire('/petugas/sembako', GroceryTasks::class)
-    ->middleware(['auth', 'session.fresh:30', 'permission:grocery.prepare', 'throttle:financial'])
+    ->middleware(['auth', 'session.fresh:30', 'throttle:financial'])
     ->name('officer.grocery.tasks');
 
 Route::livewire('/petugas/layanan-keliling', MobileServiceTasks::class)
