@@ -26,6 +26,7 @@ use App\Domain\WasteMaster\Support\WasteMasterMutationGuard;
 use App\Livewire\Officer\MobileServiceTasks;
 use App\Livewire\Officer\PickupTask;
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -122,6 +123,37 @@ final class FieldOperationsTest extends TestCase
             ->assertHasNoErrors();
 
         self::assertSame(MobileServiceStatus::Closed, $service->fresh()->status);
+    }
+
+    public function test_mobile_service_tasks_hide_expired_actionable_services_without_hiding_history(): void
+    {
+        $officer = $this->userWith('mobile-service.operate');
+        $now = CarbonImmutable::parse('2026-08-10 10:00:00', 'Asia/Jakarta');
+        CarbonImmutable::setTestNow($now);
+
+        try {
+            $expired = $this->mobileService($officer, MobileServiceStatus::Published);
+            $expired->forceFill(['point' => 'Titik layanan kedaluwarsa', 'ends_at' => $now->subSecond()])->save();
+            $historical = $this->mobileService($officer, MobileServiceStatus::Open);
+            $historical->forceFill(['point' => 'Rekap layanan selesai', 'ends_at' => $now->subSecond()])->save();
+            $current = $this->mobileService($officer, MobileServiceStatus::Published);
+            $current->forceFill(['point' => 'Titik layanan sekarang', 'ends_at' => $now->addHour()])->save();
+            $this->actingAs($officer);
+
+            Livewire::test(MobileServiceTasks::class)
+                ->assertDontSee($expired->point)
+                ->assertDontSee($historical->point)
+                ->assertSee($current->point);
+
+            Livewire::test(MobileServiceTasks::class)->call('open', $expired->id);
+            Livewire::test(MobileServiceTasks::class)
+                ->call('recap', $historical->id)
+                ->assertHasNoErrors();
+
+            self::assertSame(MobileServiceStatus::Published, $expired->fresh()->status);
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
     }
 
     /** @return array{WasteType, WasteCondition} */

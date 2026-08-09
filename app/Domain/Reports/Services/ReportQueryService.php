@@ -60,12 +60,56 @@ final readonly class ReportQueryService
         'reconciliation' => ['business_date', 'scope_key', 'status', 'difference', 'created_by', 'approver_id'],
     ];
 
+    /** @var array<string, list<array{key: string, label: string, format: string}>> */
+    private const SUMMARY_CONTRACT = [
+        'deposits' => [
+            ['key' => 'subject_count', 'label' => 'Nasabah', 'format' => 'count'],
+            ['key' => 'deposit_count', 'label' => 'Setoran', 'format' => 'count'],
+            ['key' => 'total_weight_kg', 'label' => 'Total Berat', 'format' => 'weight'],
+            ['key' => 'total_value', 'label' => 'Total Nilai', 'format' => 'currency'],
+            ['key' => 'plastic_weight_kg', 'label' => 'Plastik', 'format' => 'weight'],
+        ],
+        'withdrawals' => [
+            ['key' => 'customer_count', 'label' => 'Nasabah', 'format' => 'count'],
+            ['key' => 'withdrawal_count', 'label' => 'Pencairan', 'format' => 'count'],
+            ['key' => 'total_amount', 'label' => 'Total Pencairan', 'format' => 'currency'],
+        ],
+        'groceries' => [
+            ['key' => 'customer_count', 'label' => 'Nasabah', 'format' => 'count'],
+            ['key' => 'redemption_count', 'label' => 'Penukaran Sembako', 'format' => 'count'],
+            ['key' => 'total_redeemed_value', 'label' => 'Total Nilai Sembako', 'format' => 'currency'],
+        ],
+        'pickups' => [
+            ['key' => 'customer_count', 'label' => 'Nasabah', 'format' => 'count'],
+            ['key' => 'pickup_count', 'label' => 'Penjemputan', 'format' => 'count'],
+            ['key' => 'estimated_weight_kg', 'label' => 'Estimasi Berat', 'format' => 'weight'],
+        ],
+        'participation' => [
+            ['key' => 'participant_count', 'label' => 'Peserta', 'format' => 'count'],
+            ['key' => 'participation_count', 'label' => 'Partisipasi', 'format' => 'count'],
+            ['key' => 'collected_weight_kg', 'label' => 'Berat Terkumpul', 'format' => 'weight'],
+            ['key' => 'collected_value', 'label' => 'Nilai Terkumpul', 'format' => 'currency'],
+        ],
+        'reconciliation' => [
+            ['key' => 'creator_count', 'label' => 'Pembuat', 'format' => 'count'],
+            ['key' => 'scope_count', 'label' => 'Scope', 'format' => 'count'],
+            ['key' => 'reconciliation_count', 'label' => 'Rekonsiliasi', 'format' => 'count'],
+            ['key' => 'total_difference', 'label' => 'Total Selisih', 'format' => 'currency'],
+        ],
+    ];
+
     public function __construct(private PermissionChecker $permissions, private DepositMetricService $metricService) {}
 
-    /** @return array{filters: list<string>, sorts: list<string>, columns: list<string>, report_types: list<string>, report_columns: array<string, list<string>>} */
+    /** @return array{filters: list<string>, sorts: list<string>, columns: list<string>, report_types: list<string>, report_columns: array<string, list<string>>, summary: array<string, list<array{key: string, label: string, format: string}>>} */
     public function contract(): array
     {
-        return ['filters' => self::FILTERS, 'sorts' => self::SORTS, 'columns' => self::COLUMNS, 'report_types' => array_map(static fn (ReportType $type): string => $type->value, ReportType::cases()), 'report_columns' => self::REPORT_COLUMNS];
+        return ['filters' => self::FILTERS, 'sorts' => self::SORTS, 'columns' => self::COLUMNS, 'report_types' => array_map(static fn (ReportType $type): string => $type->value, ReportType::cases()), 'report_columns' => self::REPORT_COLUMNS, 'summary' => self::SUMMARY_CONTRACT];
+    }
+
+    /** @return list<array{key: string, label: string, format: string}> */
+    public function summaryContract(string|ReportType $reportType): array
+    {
+        return self::SUMMARY_CONTRACT[$this->type($reportType)->value];
     }
 
     /** @return list<string> */
@@ -96,8 +140,11 @@ final readonly class ReportQueryService
     }
 
     /**
+     * Deposit aggregation keeps its established metric keys because reconciliation and existing consumers depend on them.
+     * Other report types use the explicit keys returned by summary().
+     *
      * @param  array<string, mixed>  $filters
-     * @return array{subject_count: int, deposit_count: int, total_weight_kg: string, total_value: int, plastic_weight_kg: string}
+     * @return array<string, int|string>
      */
     public function aggregate(User $actor, array $filters, string|ReportType $reportType = ReportType::Deposits): array
     {
@@ -179,8 +226,10 @@ final readonly class ReportQueryService
     }
 
     /**
+     * Summary metrics cover every record matching the selected scope and filters. The interactive rows remain capped at RECORD_LIMIT separately.
+     *
      * @param  array<string, mixed>  $filters
-     * @return array{subject_count: int, deposit_count: int, total_weight_kg: string, total_value: int, plastic_weight_kg: string}
+     * @return array<string, int|string>
      */
     public function summary(User $actor, string|ReportType $reportType, array $filters): array
     {
@@ -188,12 +237,37 @@ final readonly class ReportQueryService
         if ($type === ReportType::Deposits) {
             return $this->aggregate($actor, $filters);
         }
-        $records = $this->records($actor, $type, $filters);
-        $subjects = $records->map(static fn (Model $record): mixed => $record->getAttribute('customer_id'))->filter()->unique()->count();
-        $weight = $records->sum(static fn (Model $record): float => (float) ($record->getAttribute('total_weight_kg') ?? 0));
-        $value = $records->sum(static fn (Model $record): int => (int) ($record->getAttribute('total_value') ?? $record->getAttribute('amount') ?? $record->getAttribute('value_snapshot') ?? $record->getAttribute('difference') ?? 0));
+        $records = $this->query($actor, $filters, $type)->get();
 
-        return ['subject_count' => $subjects, 'deposit_count' => $records->count(), 'total_weight_kg' => number_format($weight, 3, '.', ''), 'total_value' => $value, 'plastic_weight_kg' => '0.000'];
+        return match ($type) {
+            ReportType::Withdrawals => [
+                'customer_count' => $records->pluck('customer_id')->filter()->unique()->count(),
+                'withdrawal_count' => $records->count(),
+                'total_amount' => (int) $records->sum('amount'),
+            ],
+            ReportType::Groceries => [
+                'customer_count' => $records->pluck('customer_id')->filter()->unique()->count(),
+                'redemption_count' => $records->count(),
+                'total_redeemed_value' => (int) $records->sum('value_snapshot'),
+            ],
+            ReportType::Pickups => [
+                'customer_count' => $records->pluck('customer_id')->filter()->unique()->count(),
+                'pickup_count' => $records->count(),
+                'estimated_weight_kg' => number_format((float) $records->sum('estimated_weight_kg'), 3, '.', ''),
+            ],
+            ReportType::Participation => [
+                'participant_count' => $records->pluck('customer_id')->filter()->unique()->count(),
+                'participation_count' => $records->count(),
+                'collected_weight_kg' => number_format((float) $records->sum('total_weight_kg'), 3, '.', ''),
+                'collected_value' => (int) $records->sum('total_value'),
+            ],
+            ReportType::Reconciliation => [
+                'creator_count' => $records->pluck('created_by')->filter()->unique()->count(),
+                'scope_count' => $records->pluck('scope_key')->filter()->unique()->count(),
+                'reconciliation_count' => $records->count(),
+                'total_difference' => (int) $records->sum('difference'),
+            ],
+        };
     }
 
     /**

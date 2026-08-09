@@ -7,6 +7,7 @@ namespace App\Livewire\Officer;
 use App\Authorization\PermissionChecker;
 use App\Domain\Deposits\Data\DepositItemInput;
 use App\Domain\Deposits\Models\Deposit;
+use App\Domain\Deposits\Models\DepositItem;
 use App\Domain\Deposits\Services\DepositService;
 use App\Domain\MobileServices\Models\MobileService;
 use App\Domain\WasteMaster\Models\WasteCondition;
@@ -15,6 +16,7 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -23,17 +25,22 @@ final class DepositForm extends Component
 {
     use WithFileUploads;
 
+    #[Locked]
     public int $customerId;
 
+    #[Locked]
     public ?int $mobileServiceId = null;
 
+    #[Locked]
     public ?int $assistedServiceId = null;
 
+    #[Locked]
     public ?Deposit $draft = null;
 
     /** @var list<array{waste_type_id: int|string, condition_id: int|string, weight_kg: string}> */
     public array $items = [];
 
+    #[Locked]
     public string $idempotencyKey = '';
 
     public ?UploadedFile $evidence = null;
@@ -43,6 +50,34 @@ final class DepositForm extends Component
         /** @var User|null $actor */
         $actor = auth()->user();
         abort_unless($actor instanceof User && $permissions->allows($actor, 'deposit.create'), 403);
+
+        $draftId = request()->query('draftId');
+        if ($draftId !== null) {
+            $draftIdValue = filter_var($draftId, FILTER_VALIDATE_INT);
+            abort_unless(is_int($draftIdValue) && $draftIdValue > 0, 404);
+            $draft = Deposit::query()
+                ->with('items')
+                ->whereKey($draftIdValue)
+                ->where('staff_id', $actor->id)
+                ->where('customer_id', $customerId)
+                ->where('status', Deposit::STATUS_DRAFT)
+                ->first();
+            abort_unless($draft instanceof Deposit, 404);
+
+            $this->draft = $draft;
+            $this->customerId = $draft->customer_id;
+            $this->mobileServiceId = $draft->mobile_service_id;
+            $this->assistedServiceId = null;
+            $this->items = $draft->items->map(static fn (DepositItem $item): array => [
+                'waste_type_id' => $item->waste_type_id,
+                'condition_id' => $item->waste_condition_id,
+                'weight_kg' => (string) $item->weight_kg,
+            ])->values()->all();
+            $this->idempotencyKey = (string) str()->uuid();
+
+            return;
+        }
+
         $this->customerId = $customerId;
         $this->mobileServiceId = request()->integer('mobileServiceId') ?: null;
         $this->assistedServiceId = request()->integer('assistedServiceId') ?: null;

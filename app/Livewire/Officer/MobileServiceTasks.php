@@ -19,7 +19,7 @@ final class MobileServiceTasks extends Component
     public function open(int $serviceId, MobileServiceService $services): void
     {
         $actor = $this->actor();
-        $service = $this->assignedService($actor, $serviceId);
+        $service = $this->assignedService($actor, $serviceId, true);
         $services->transition($actor, $service, MobileServiceStatus::Open);
         session()->flash('success', 'Layanan keliling dibuka.');
     }
@@ -43,7 +43,7 @@ final class MobileServiceTasks extends Component
     {
         $actor = $this->actor();
 
-        return view('livewire.officer.mobile-service-tasks', ['services' => MobileService::query()->with(['rt', 'staff'])->whereHas('staff', fn ($query) => $query->whereKey($actor->id))->whereIn('status', [MobileServiceStatus::Published, MobileServiceStatus::Open])->orderBy('starts_at')->get()]);
+        return view('livewire.officer.mobile-service-tasks', ['services' => MobileService::query()->with(['rt', 'staff'])->whereHas('staff', fn ($query) => $query->whereKey($actor->id))->whereIn('status', [MobileServiceStatus::Published, MobileServiceStatus::Open])->where('ends_at', '>=', now())->orderBy('starts_at')->get()]);
     }
 
     private function actor(): User
@@ -54,13 +54,18 @@ final class MobileServiceTasks extends Component
         return $actor;
     }
 
-    private function assignedService(User $actor, int $serviceId): MobileService
+    private function assignedService(User $actor, int $serviceId, bool $actionable = false): MobileService
     {
-        $service = MobileService::query()
+        $query = MobileService::query()
             ->whereKey($serviceId)
             ->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))
-            ->whereIn('status', [MobileServiceStatus::Published, MobileServiceStatus::Open])
-            ->first();
+            ->whereIn('status', [MobileServiceStatus::Published, MobileServiceStatus::Open]);
+
+        if ($actionable) {
+            $query->where('ends_at', '>=', now());
+        }
+
+        $service = $query->first();
 
         abort_unless($service instanceof MobileService, 404);
 

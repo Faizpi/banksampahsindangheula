@@ -37,8 +37,11 @@ final class Reports extends Component
     /** @var list<array<string, string>> */
     public array $rows = [];
 
-    /** @var array{subject_count: int, deposit_count: int, total_weight_kg: string, total_value: int, plastic_weight_kg: string} */
-    public array $metrics = ['subject_count' => 0, 'deposit_count' => 0, 'total_weight_kg' => '0.000', 'total_value' => 0, 'plastic_weight_kg' => '0.000'];
+    /** @var list<array{key: string, label: string, format: string}> */
+    public array $metricDefinitions = [];
+
+    /** @var array<string, int|string> */
+    public array $metrics = [];
 
     public function mount(PermissionChecker $permissions): void
     {
@@ -72,6 +75,7 @@ final class Reports extends Component
         if ($this->serviceAreaId !== '') {
             $filters['service_area_id'] = (int) $this->serviceAreaId;
         }
+        $this->metricDefinitions = $reports->summaryContract($this->reportType);
         $this->metrics = $reports->aggregate($actor, $filters, $this->reportType);
         $this->rows = $reports->displayRows($actor, $this->reportType, $filters);
     }

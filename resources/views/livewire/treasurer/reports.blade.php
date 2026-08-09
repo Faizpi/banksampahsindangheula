@@ -1,4 +1,4 @@
-<x-slot:title>Laporan setoran</x-slot:title>
+<x-slot:title>Laporan {{ $reportTypes[$reportType] }}</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
 <x-slot:connectivity>Terhubung</x-slot:connectivity>
 
@@ -7,34 +7,29 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <p class="text-label font-semibold text-forest-600">Pengawasan Bendahara</p>
-            <h1 id="reports-title" class="mt-1 text-h1 font-bold text-deep-green">Laporan Setoran</h1>
-            <p class="mt-2 text-body text-text-secondary">Angka memakai scope transaksi final dan definisi yang sama dengan rekonsiliasi.</p>
+            <h1 id="reports-title" class="mt-1 text-h1 font-bold text-deep-green">Laporan {{ $reportTypes[$reportType] }}</h1>
+            <p class="mt-2 text-body text-text-secondary">Angka mengikuti scope dan filter aktif; metrik memakai definisi jenis laporan.</p>
         </div>
         <x-ui.mascot variant="5" class="hidden h-20 w-auto sm:block" />
     </div>
 
     {{-- Metric Cards --}}
     <div class="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        <div class="rounded-xl border border-border bg-surface p-4 shadow-xs">
-            <p class="text-caption font-medium text-text-secondary">Nasabah</p>
-            <strong class="mt-2 block amount-tabular text-h2 font-bold text-deep-green">{{ $metrics['subject_count'] }}</strong>
-        </div>
-        <div class="rounded-xl border border-border bg-surface p-4 shadow-xs">
-            <p class="text-caption font-medium text-text-secondary">Setoran</p>
-            <strong class="mt-2 block amount-tabular text-h2 font-bold text-deep-green">{{ $metrics['deposit_count'] }}</strong>
-        </div>
-        <div class="rounded-xl border border-border bg-surface p-4 shadow-xs">
-            <p class="text-caption font-medium text-text-secondary">Total Berat</p>
-            <strong class="mt-2 block amount-tabular text-h2 font-bold text-deep-green">{{ $metrics['total_weight_kg'] }} <span class="text-label font-semibold text-text-secondary">kg</span></strong>
-        </div>
-        <div class="rounded-xl border border-forest-600/30 bg-success-bg p-4 shadow-xs">
-            <p class="text-caption font-medium text-forest-700">Total Nilai</p>
-            <strong class="mt-2 block amount-tabular text-h2 font-bold text-forest-700">Rp {{ number_format($metrics['total_value'], 0, ',', '.') }}</strong>
-        </div>
-        <div class="rounded-xl border border-border bg-surface p-4 shadow-xs">
-            <p class="text-caption font-medium text-text-secondary">Plastik</p>
-            <strong class="mt-2 block amount-tabular text-h2 font-bold text-deep-green">{{ $metrics['plastic_weight_kg'] }} <span class="text-label font-semibold text-text-secondary">kg</span></strong>
-        </div>
+        @foreach ($metricDefinitions as $metric)
+            @php($isCurrency = $metric['format'] === 'currency')
+            <div class="rounded-xl border {{ $isCurrency ? 'border-forest-600/30 bg-success-bg' : 'border-border bg-surface' }} p-4 shadow-xs">
+                <p class="text-caption font-medium {{ $isCurrency ? 'text-forest-700' : 'text-text-secondary' }}">{{ $metric['label'] }}</p>
+                <strong class="mt-2 block amount-tabular text-h2 font-bold {{ $isCurrency ? 'text-forest-700' : 'text-deep-green' }}">
+                    @if ($metric['format'] === 'currency')
+                        Rp {{ number_format((int) $metrics[$metric['key']], 0, ',', '.') }}
+                    @elseif ($metric['format'] === 'weight')
+                        {{ $metrics[$metric['key']] }} <span class="text-label font-semibold text-text-secondary">kg</span>
+                    @else
+                        {{ $metrics[$metric['key']] }}
+                    @endif
+                </strong>
+            </div>
+        @endforeach
     </div>
 
     {{-- Filter Form --}}
