@@ -26,7 +26,7 @@ Semua perubahan penting terhadap baseline disimpan pada dokumen ini.
 
 ### Changed
 
-- Database produksi menggunakan MariaDB terkelola yang kompatibel dengan MySQL.
+- Database memakai MySQL 8.0.30; development berjalan melalui Laragon.
 - Deployment sistem menggunakan Hostinger Web Hosting Premium/Business.
 - Frontend menggunakan Blade dan Livewire 4 tanpa React.
 - Alpine.js menggunakan instance bawaan Livewire.
@@ -39,9 +39,11 @@ Semua perubahan penting terhadap baseline disimpan pada dokumen ini.
 
 ### Fixed
 
-- Temuan review code-level W10 pada duplicate execution lifecycle backup dan smoke route sudah diperbaiki. Verifikasi terbaru: `php artisan test tests/Feature/Wave10 --no-ansi` PASS, 75 tests dan 499 assertions; targeted production PHPStan pada file operations/health/smoke yang berubah 0 errors; Pint, PHP syntax checks, dan `npm run build` PASS. Temuan pre-existing pada `ScheduledOperationsService` dan test PHPStan tetap terpisah.
-- Rehearsal MySQL/MariaDB disposable terverifikasi sebagai release-validation: `migrate:fresh` sukses 33 migrasi, 60 tabel, kedua trigger `audit_logs_prevent_update`/`audit_logs_prevent_delete` aktif (`SHOW TRIGGERS`), dan bootstrap admin awal `InitialAdminSeeder` membuat pengguna `admin` aktif/verified dengan role `admin`. Ini adalah bukti engine MySQL, bukan klaim dari SQLite.
-- Gate browser/a11y/responsive, MariaDB, deployment-host, backup/restore nyata, RPO/RTO, UAT, monitoring, dan approval masih terbuka. W10 tetap `in_progress` dan belum merupakan klaim release.
+- Temuan review code-level W10 pada duplicate execution lifecycle backup dan smoke route sudah diperbaiki. Verifikasi terbaru: `php artisan test tests/Feature/Wave10 --no-ansi` PASS (120 tests, 119 passed, 1 skipped, 727 assertions); full suite SQLite PASS (1124 tests, 1123 passed, 1 skipped, 4714 assertions); PHPStan, Pint, PHP syntax, `npm run build`, dan `npm audit` (0 vulnerabilities) PASS.
+- Rehearsal MySQL 8.0.30 disposable terverifikasi sebagai release-validation: `migrate:fresh` sukses 36 migrasi, 61 tabel, 10 trigger append-only aktif, seed admin/role, no-op migration, rollback satu migration, dan remigrate. Backup/restore nyata disposable juga PASS: dump SQL 132.847 bytes, restore sekitar 4,4 detik lokal, source/restore identik, dan media archive-restore PASS. Database/grant/artefak rehearsal dibersihkan dan setting `log_bin_trust_function_creators` dikembalikan setelah uji. Ini adalah bukti engine/backup lokal terisolasi, bukan klaim deployment production atau RPO/RTO production.
+- Browser smoke + axe 12 route/viewport lulus HTTP/HTTPS, console/request error, overflow, keyboard skip-link/focus, dan accessibility (0 violation) setelah token `text-sky-blue` diperbaiki. Service Worker `activated` pada Chromium dan Firefox HTTPS dengan certificate bypass test; auth role smoke enam flow Chromium/Firefox juga PASS. WebKit HTTPS masih terhalang certificate lokal Laragon. Gate browser critical transaction/cross-browser production, HTTPS certificate valid, deployment-host, RPO/RTO production, UAT, monitoring, dan approval masih terbuka. W10 tetap `in_progress` dan belum merupakan klaim release.
+- Technical browser transaction UAT pada database disposable Laragon MySQL 8.0.30 lulus 10/10 flow Chromium tanpa browser error: pickup sampai setoran aktual, setoran sampai receipt/QR publik, pencairan sampai approval/payer/payment, sembako sampai handover, dan koreksi setoran melalui back-office. Bukti langkah dan lembar sign-off stakeholder dicatat di [UAT_EVIDENCE.md](UAT_EVIDENCE.md); hasil ini belum merupakan approval manusia atau klaim release.
+- Formatter status pickup back-office diselaraskan untuk menerima `PickupStatus` enum dari Filament, dan komponen QR kini mengizinkan hanya strict base64 image data URI dari presenter QR lokal sehingga QR receipt benar-benar tampil tanpa membuka skema URL berbahaya.
 
 ### Removed
 
