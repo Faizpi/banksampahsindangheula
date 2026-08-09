@@ -1,0 +1,149 @@
+<x-filament-panels::page>
+    @if (session('operations_notice'))
+        <div class="mb-6 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-800" role="status">
+            {{ session('operations_notice') }}
+        </div>
+    @endif
+
+    <div class="space-y-6">
+        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-950">Kesehatan operasional</h2>
+                    <p class="text-sm text-gray-600">Ringkasan tersanitasi. Path, payload, checksum, dan secret tidak ditampilkan.</p>
+                </div>
+                <a href="{{ route('operations.health') }}" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-800 hover:bg-gray-50">
+                    Buka JSON privat
+                </a>
+            </div>
+            @if ($health === [])
+                <p class="mt-4 text-sm text-gray-600">Permission pemeriksaan sistem tidak tersedia.</p>
+            @else
+                <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                    @foreach ($health as $name => $check)
+                        <div class="rounded-lg border border-gray-200 p-3">
+                            <div class="text-sm font-semibold text-gray-900">{{ str_replace('_', ' ', $name) }}</div>
+                            <div class="mt-1 text-sm text-gray-600">{{ $check['status'] ?? 'tidak diketahui' }}</div>
+                            @if (isset($check['reason']))
+                                <div class="mt-1 text-xs text-gray-500">{{ $check['reason'] }}</div>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+
+        @if ($canManageSettings)
+            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-950">Pengaturan non-secret</h2>
+                <p class="mt-1 text-sm text-gray-600">Hanya ambang operasional yang diizinkan. APP_KEY, password, token, dan credential tetap environment-only.</p>
+                <form wire:submit="saveSettings" class="mt-4 grid gap-4 sm:grid-cols-2">
+                    <label class="block text-sm font-medium text-gray-800">
+                        Ambang backlog queue
+                        <input wire:model="settings.queue_backlog_threshold" type="number" min="1" max="8760" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm">
+                    </label>
+                    <label class="block text-sm font-medium text-gray-800">
+                        Usia maksimum backup terverifikasi (jam)
+                        <input wire:model="settings.backup_max_age_hours" type="number" min="1" max="8760" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm">
+                    </label>
+                    <div class="sm:col-span-2">
+                        <button type="submit" class="min-h-11 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800">Simpan pengaturan</button>
+                    </div>
+                </form>
+            </section>
+        @endif
+
+        @if ($canManageMaintenance)
+            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-950">Maintenance mode</h2>
+                <p class="mt-1 text-sm text-gray-600">Status saat ini: <strong>{{ $maintenanceEnabled ? 'aktif' : 'nonaktif' }}</strong>. Perubahan diaudit dan tidak membuat bypass secret.</p>
+                <form wire:submit="toggleMaintenance" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <label class="block flex-1 text-sm font-medium text-gray-800">
+                        Alasan perubahan
+                        <textarea wire:model="maintenanceReason" required minlength="10" maxlength="1000" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm"></textarea>
+                    </label>
+                    <button type="submit" class="min-h-11 rounded-lg {{ $maintenanceEnabled ? 'bg-red-700 hover:bg-red-800' : 'bg-emerald-700 hover:bg-emerald-800' }} px-4 text-sm font-semibold text-white">
+                        {{ $maintenanceEnabled ? 'Nonaktifkan maintenance' : 'Aktifkan maintenance' }}
+                    </button>
+                </form>
+            </section>
+        @endif
+
+        @if ($canRunBackup)
+            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-950">Catat metadata backup</h2>
+                <p class="mt-1 text-sm text-gray-600">Panel ini hanya mencatat pasangan artifact, checksum, ukuran, status, dan retensi. Dump database dan penyalinan media tetap deployment/SOP concern.</p>
+                <form wire:submit="recordBackupMetadata" class="mt-4 grid gap-4 sm:grid-cols-2">
+                    <input wire:model="backupDatabaseAlias" aria-label="Alias database" placeholder="Alias database" required class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="backupMediaAlias" aria-label="Alias media" placeholder="Alias media" required class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="backupDatabaseSha256" aria-label="SHA-256 database" placeholder="SHA-256 database" required minlength="64" maxlength="64" class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="backupMediaSha256" aria-label="SHA-256 media" placeholder="SHA-256 media" required minlength="64" maxlength="64" class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="backupDatabaseSizeBytes" aria-label="Ukuran database" placeholder="Ukuran database (bytes)" required inputmode="numeric" class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="backupMediaSizeBytes" aria-label="Ukuran media" placeholder="Ukuran media (bytes)" required inputmode="numeric" class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="backupRetentionUntil" type="datetime-local" aria-label="Retensi sampai" required class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="backupOperatorKey" aria-label="Operator key" placeholder="Operator key eksplisit" required minlength="16" maxlength="191" class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <div class="sm:col-span-2">
+                        <button type="submit" class="min-h-11 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800">Catat metadata backup</button>
+                    </div>
+                </form>
+            </section>
+        @endif
+
+        @if ($canRestoreBackup)
+            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-950">Catat verifikasi restore</h2>
+                <p class="mt-1 text-sm text-gray-600">Verifikasi harus dilakukan pada artifact/environment terisolasi. Aksi ini tidak menjalankan restore, dump, filesystem, atau proses eksternal.</p>
+                <form wire:submit="recordRestoreVerification" class="mt-4 grid gap-4 sm:grid-cols-2">
+                    <input wire:model="restoreBackupId" aria-label="ID backup" placeholder="ID backup" required inputmode="numeric" class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="restoreTargetAlias" aria-label="Alias target verifikasi" placeholder="verify-..." required class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <input wire:model="restoreEvidenceReference" aria-label="Referensi bukti verifikasi" placeholder="Referensi bukti opaque 43 karakter" required minlength="43" maxlength="43" class="min-h-11 rounded-lg border-gray-300 text-sm shadow-sm">
+                    <label class="flex min-h-11 items-center gap-2 text-sm font-medium text-gray-800">
+                        <input wire:model="restorePassed" type="checkbox" class="rounded border-gray-300">
+                        Verifikasi lulus
+                    </label>
+                    <div class="sm:col-span-2">
+                        <button type="submit" class="min-h-11 rounded-lg bg-sky-700 px-4 text-sm font-semibold text-white hover:bg-sky-800">Catat hasil verifikasi</button>
+                    </div>
+                </form>
+            </section>
+        @endif
+
+        @if ($canExecuteRetention)
+            <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+                <h2 class="text-lg font-semibold text-gray-950">Retensi audit</h2>
+                <p class="mt-1 text-sm text-gray-600">Gunakan preview sebelum eksekusi. Aksi memakai cutoff yang sudah kedaluwarsa dan mempertahankan evidence operasional yang dilindungi.</p>
+                <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <label class="block flex-1 text-sm font-medium text-gray-800">
+                        Hapus sebelum tanggal
+                        <input wire:model="retentionBefore" type="date" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm">
+                    </label>
+                    <button wire:click="previewRetention" type="button" class="min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-800 hover:bg-gray-50">Preview</button>
+                    <button wire:click="executeRetention" type="button" wire:confirm="Jalankan retensi audit setelah preview?" class="min-h-11 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800">Jalankan retensi</button>
+                </div>
+                @if ($retentionResult !== '')
+                    <p class="mt-3 text-sm text-gray-700" role="status">{{ $retentionResult }}</p>
+                @endif
+            </section>
+        @endif
+
+        <section class="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <h2 class="text-lg font-semibold text-gray-950">Metadata backup terakhir</h2>
+            @if ($backups->isEmpty())
+                <p class="mt-3 text-sm text-gray-600">Belum ada metadata backup yang dapat ditampilkan.</p>
+            @else
+                <div class="mt-4 overflow-x-auto">
+                    <table class="min-w-full text-left text-sm">
+                        <thead class="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                            <tr><th class="px-3 py-2">ID</th><th class="px-3 py-2">Status</th><th class="px-3 py-2">Database</th><th class="px-3 py-2">Media</th><th class="px-3 py-2">Restore</th><th class="px-3 py-2">Retensi</th></tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach ($backups as $backup)
+                                <tr><td class="px-3 py-3 font-medium">{{ $backup->id }}</td><td class="px-3 py-3">{{ $backup->status->value }}</td><td class="px-3 py-3">{{ $backup->database_location_alias }}<br><span class="text-xs text-gray-500">{{ $backup->database_size_bytes }} bytes</span></td><td class="px-3 py-3">{{ $backup->media_location_alias }}<br><span class="text-xs text-gray-500">{{ $backup->media_size_bytes }} bytes</span></td><td class="px-3 py-3">{{ $backup->restore_verification_result?->value ?? 'belum diuji' }}</td><td class="px-3 py-3">{{ $backup->retention_until->setTimezone('Asia/Jakarta')->format('d M Y H:i') }}</td></tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </section>
+    </div>
+</x-filament-panels::page>
