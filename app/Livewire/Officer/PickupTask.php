@@ -25,6 +25,8 @@ final class PickupTask extends Component
 
     public string $idempotencyKey = '';
 
+    public string $failureReason = '';
+
     public function mount(PickupRequest $pickup, PickupService $service): void
     {
         /** @var User $actor */
@@ -39,6 +41,7 @@ final class PickupTask extends Component
     {
         /** @var User $actor */
         $actor = auth()->user();
+        $this->assertAssigned($actor);
         $this->pickup = $service->begin($actor, $this->pickup);
     }
 
@@ -46,13 +49,37 @@ final class PickupTask extends Component
     {
         /** @var User $actor */
         $actor = auth()->user();
+        $this->assertAssigned($actor);
         $this->pickup = $service->markPickedUp($actor, $this->pickup);
+    }
+
+    public function reportFailure(PickupService $service): void
+    {
+        /** @var User $actor */
+        $actor = auth()->user();
+        $this->assertAssigned($actor);
+        $this->validate(['failureReason' => ['required', 'string', 'min:10', 'max:1000']]);
+        $this->pickup = $service->cancel($actor, $this->pickup, $this->failureReason);
+        session()->flash('success', 'Kegagalan tugas tercatat dan penjemputan dihentikan.');
     }
 
     public function complete(PickupService $service): void
     {
         /** @var User $actor */
         $actor = auth()->user();
+        $this->assertAssigned($actor);
+        $this->validate([
+            'actualItems' => ['required', 'array', 'min:1'],
+            'actualItems.*.waste_type_id' => ['required', 'integer', 'min:1', 'exists:waste_types,id'],
+            'actualItems.*.condition_id' => ['required', 'integer', 'min:1', 'exists:waste_conditions,id'],
+            'actualItems.*.weight_kg' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
+        ]);
+        if (! $this->pickup->media()->exists()) {
+            $this->addError('evidence', 'Bukti foto penjemputan wajib tersedia sebelum tugas diselesaikan.');
+
+            return;
+        }
+
         $this->pickup = $service->complete($actor, $this->pickup, array_map(static fn (array $item): DepositItemInput => DepositItemInput::fromArray($item), $this->actualItems), $this->idempotencyKey);
         session()->flash('success', 'Penjemputan selesai dan setoran aktual telah dibuat.');
     }
@@ -64,5 +91,10 @@ final class PickupTask extends Component
             'conditions' => WasteCondition::query()->where('is_active', true)->orderBy('sort_order')->get(),
             'canComplete' => $this->pickup->status === PickupStatus::PickedUp,
         ]);
+    }
+
+    private function assertAssigned(User $actor): void
+    {
+        abort_unless($this->pickup->assigned_staff_id === $actor->id, 404);
     }
 }
