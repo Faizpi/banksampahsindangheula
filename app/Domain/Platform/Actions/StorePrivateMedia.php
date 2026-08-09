@@ -20,6 +20,10 @@ final class StorePrivateMedia
 
     private const MAX_BYTES = 5 * 1024 * 1024;
 
+    private const MAX_PHOTO_BYTES = 1 * 1024 * 1024;
+
+    private const PHOTO_MAX_DIMENSION = 2000;
+
     /** @var array<string, array{extension: string, signature: string}> */
     private const ALLOWED_TYPES = [
         'image/jpeg' => ['extension' => 'jpg', 'signature' => "\xFF\xD8\xFF"],
@@ -35,6 +39,22 @@ final class StorePrivateMedia
         $contents = $file->getContent();
         $mimeType = $this->detectedMimeType($contents);
         $extension = self::ALLOWED_TYPES[$mimeType]['extension'];
+
+        return $this->store($file, $contents, $mimeType, $extension, $uploader);
+    }
+
+    public function handlePhoto(UploadedFile $file, ?User $uploader = null): Media
+    {
+        $this->validate($file, true);
+
+        $contents = $file->getContent();
+        $normalized = $this->normalizePhoto($contents);
+
+        return $this->store($file, $normalized, 'image/jpeg', 'jpg', $uploader);
+    }
+
+    private function store(UploadedFile $file, string $contents, string $mimeType, string $extension, ?User $uploader): Media
+    {
         $path = sprintf('%s.%s', (string) Str::uuid(), $extension);
         $disk = Storage::disk(self::DISK);
 
@@ -49,7 +69,7 @@ final class StorePrivateMedia
                 'path' => $path,
                 'original_name' => $file->getClientOriginalName(),
                 'mime_type' => $mimeType,
-                'size' => $file->getSize(),
+                'size' => strlen($contents),
                 'checksum' => hash('sha256', $contents),
                 'visibility' => MediaVisibility::Private,
                 'uploader_id' => $uploader?->getKey(),
@@ -61,7 +81,7 @@ final class StorePrivateMedia
         }
     }
 
-    private function validate(UploadedFile $file): void
+    private function validate(UploadedFile $file, bool $photoOnly = false): void
     {
         $name = $file->getClientOriginalName();
         $size = $file->getSize();
@@ -76,13 +96,70 @@ final class StorePrivateMedia
         $mimeType = $this->detectedMimeType($contents);
         $extension = strtolower((string) pathinfo($name, PATHINFO_EXTENSION));
 
-        if (! isset(self::ALLOWED_TYPES[$mimeType]) || $extension !== self::ALLOWED_TYPES[$mimeType]['extension'] || ! $this->hasExpectedSignature($contents, $mimeType) || $this->hasProhibitedEmbeddedContent($contents)) {
+        $allowedTypes = $photoOnly
+            ? array_filter(self::ALLOWED_TYPES, static fn (string $type): bool => str_starts_with($type, 'image/') && $type !== 'image/webp', ARRAY_FILTER_USE_KEY)
+            : self::ALLOWED_TYPES;
+
+        if (! isset($allowedTypes[$mimeType]) || $extension !== $allowedTypes[$mimeType]['extension'] || ! $this->hasExpectedSignature($contents, $mimeType) || $this->hasProhibitedEmbeddedContent($contents)) {
             throw ValidationException::withMessages(['file' => 'The uploaded file type is not allowed.']);
         }
 
         if (str_starts_with($mimeType, 'image/') && @getimagesizefromstring($contents) === false) {
             throw ValidationException::withMessages(['file' => 'The uploaded image is invalid.']);
         }
+    }
+
+    private function normalizePhoto(string $contents): string
+    {
+        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+            throw ValidationException::withMessages(['file' => 'Kompresi foto membutuhkan ekstensi GD PHP.']);
+        }
+
+        $source = @imagecreatefromstring($contents);
+        if ($source === false) {
+            throw ValidationException::withMessages(['file' => 'Foto tidak dapat diproses.']);
+        }
+
+        $sourceWidth = imagesx($source);
+        $sourceHeight = imagesy($source);
+        $scale = min(1, self::PHOTO_MAX_DIMENSION / max($sourceWidth, $sourceHeight));
+        $baseWidth = max(1, (int) round($sourceWidth * $scale));
+        $baseHeight = max(1, (int) round($sourceHeight * $scale));
+
+        try {
+            for ($dimensionScale = 1.0; $dimensionScale >= 0.25; $dimensionScale *= 0.85) {
+                $width = max(1, (int) round($baseWidth * $dimensionScale));
+                $height = max(1, (int) round($baseHeight * $dimensionScale));
+                $canvas = imagecreatetruecolor($width, $height);
+
+                if ($canvas === false) {
+                    continue;
+                }
+
+                imagealphablending($canvas, true);
+                imagesavealpha($canvas, false);
+                imagefilledrectangle($canvas, 0, 0, $width, $height, 0xFFFFFF);
+                imagecopyresampled($canvas, $source, 0, 0, 0, 0, $width, $height, $sourceWidth, $sourceHeight);
+
+                foreach ([85, 75, 65, 55, 45, 35] as $quality) {
+                    ob_start();
+                    imagejpeg($canvas, null, $quality);
+                    $encoded = ob_get_clean();
+
+                    if (is_string($encoded) && strlen($encoded) <= self::MAX_PHOTO_BYTES) {
+                        imagedestroy($canvas);
+
+                        return $encoded;
+                    }
+                }
+
+                imagedestroy($canvas);
+            }
+        } finally {
+            imagedestroy($source);
+        }
+
+        throw ValidationException::withMessages(['file' => 'Foto terlalu kompleks untuk dikompres sampai 1 MB.']);
     }
 
     private function detectedMimeType(string $contents): string

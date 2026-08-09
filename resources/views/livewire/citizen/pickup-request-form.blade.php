@@ -59,12 +59,26 @@
     </x-ui.panel>
 
     {{-- Foto --}}
-    <x-ui.panel title="Foto wajib" description="Unggah 1–5 foto JPEG, PNG, atau WebP, maksimal 5 MB per file.">
-        <div class="space-y-3">
-            <label for="pickup-photos" class="sr-only">Foto sampah</label>
+    <x-ui.panel title="Foto wajib" description="Unggah 1–2 foto JPEG atau PNG. Foto akan dikompres otomatis maksimal 1 MB per file.">
+        <div class="space-y-3" data-photo-picker data-photo-picker-max="2" data-photo-picker-limit="1048576">
+            <label for="pickup-photos" class="block text-label font-semibold text-deep-green">Foto sampah</label>
+            <div class="flex flex-col gap-2 sm:flex-row">
+                <button type="button" data-photo-picker-trigger="camera"
+                    class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
+                    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2Z"/><circle cx="12" cy="12.5" r="3.25"/></svg>
+                    Ambil dari kamera
+                </button>
+                <button type="button" data-photo-picker-trigger="gallery"
+                    class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
+                    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L7 20"/></svg>
+                    Pilih dari galeri
+                </button>
+            </div>
             <input id="pickup-photos" wire:model="photos" type="file"
-                accept="image/jpeg,image/png,image/webp" multiple
+                accept="image/jpeg,image/png" multiple data-photo-picker-input
                 class="block min-h-touch w-full rounded-xl border-2 border-dashed border-border bg-warm-canvas p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
+            <p data-photo-picker-status class="text-body-sm text-text-secondary" aria-live="polite">Belum ada foto dipilih.</p>
+            <div data-photo-picker-preview class="grid gap-2 sm:grid-cols-2" aria-live="polite"></div>
             @error('photos')
                 <p class="flex items-center gap-1.5 text-body-sm text-terracotta">
                     <svg viewBox="0 0 24 24" class="size-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>

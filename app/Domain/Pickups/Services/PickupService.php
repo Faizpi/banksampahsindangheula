@@ -123,10 +123,10 @@ final readonly class PickupService
                 }
 
                 foreach ($photos as $photo) {
-                    $media = $this->mediaStore->handle($photo, $actor);
+                    $media = $this->mediaStore->handlePhoto($photo, $actor);
                     $storedMedia[] = $media;
-                    if (! str_starts_with($media->mime_type, 'image/')) {
-                        throw ValidationException::withMessages(['photos' => 'Foto penjemputan harus berupa JPEG, PNG, atau WebP.']);
+                    if ($media->mime_type !== 'image/jpeg' || $media->size > 1 * 1024 * 1024) {
+                        throw ValidationException::withMessages(['photos' => 'Setiap foto penjemputan harus berupa JPEG maksimal 1 MB.']);
                     }
                     $media->forceFill([
                         'attachable_type' => PickupRequest::class,
@@ -537,8 +537,8 @@ final readonly class PickupService
     /** @param list<UploadedFile> $photos */
     private function validatePhotos(array $photos): void
     {
-        if (count($photos) < 1 || count($photos) > 5) {
-            throw ValidationException::withMessages(['photos' => 'Unggah minimal satu dan maksimal lima foto.']);
+        if (count($photos) < 1 || count($photos) > 2) {
+            throw ValidationException::withMessages(['photos' => 'Unggah minimal satu dan maksimal dua foto.']);
         }
     }
 

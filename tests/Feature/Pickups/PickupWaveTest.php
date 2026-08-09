@@ -85,6 +85,27 @@ final class PickupWaveTest extends TestCase
         self::assertDatabaseCount('ledger_entries', 0);
     }
 
+    public function test_lane_a_rejects_more_than_two_pickup_photos(): void
+    {
+        [$customer, $area, $type] = $this->context();
+        $this->grant($customer, ['pickup.request']);
+        $this->capacity($area, 5, '50.000');
+
+        $this->expectException(ValidationException::class);
+
+        app(PickupService::class)->submit(
+            $customer,
+            $this->requestData($customer, $area),
+            [['waste_type_id' => $type->id, 'estimated_quantity' => 1]],
+            [
+                UploadedFile::fake()->image('pickup-one.jpg'),
+                UploadedFile::fake()->image('pickup-two.jpg'),
+                UploadedFile::fake()->image('pickup-three.jpg'),
+            ],
+            'w5-too-many-photos-0001',
+        );
+    }
+
     public function test_lane_a_idor_does_not_allow_customer_to_read_or_download_other_customer_media(): void
     {
         [$customer, $area, $type] = $this->context();

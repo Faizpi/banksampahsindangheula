@@ -54,6 +54,22 @@ final class StorePrivateMediaTest extends TestCase
         Storage::disk('media_private')->assertExists($media->path);
     }
 
+    public function test_it_normalizes_pickup_photos_to_private_jpeg_files_under_one_megabyte(): void
+    {
+        Storage::fake('media_private');
+
+        $media = app(StorePrivateMedia::class)->handlePhoto(UploadedFile::fake()->image('pickup.png', 100, 100));
+        $contents = Storage::disk('media_private')->get($media->path);
+
+        self::assertSame('image/jpeg', $media->mime_type);
+        self::assertSame('pickup.png', $media->original_name);
+        self::assertMatchesRegularExpression('/^[a-f0-9-]{36}\.jpg$/', $media->path);
+        self::assertLessThanOrEqual(1024 * 1024, $media->size);
+        self::assertSame($media->size, strlen($contents));
+        self::assertSame(hash('sha256', $contents), $media->checksum);
+        self::assertStringStartsWith("\xFF\xD8\xFF", $contents);
+    }
+
     public function test_it_rejects_an_extension_mismatch_without_storing_metadata_or_files(): void
     {
         Storage::fake('media_private');
