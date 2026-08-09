@@ -40,12 +40,12 @@ use Throwable;
 
 final readonly class PickupService
 {
-    private const string IDEMPOTENCY_REQUEST_SCOPE = 'pickup.request';
+    private const IDEMPOTENCY_REQUEST_SCOPE = 'pickup.request';
 
-    private const string IDEMPOTENCY_COMPLETE_SCOPE = 'pickup.complete';
+    private const IDEMPOTENCY_COMPLETE_SCOPE = 'pickup.complete';
 
     /** @var list<string> */
-    private const array RESERVING_STATUSES = [
+    private const RESERVING_STATUSES = [
         'menunggu_pemeriksaan',
         'diterima',
         'dijadwalkan',

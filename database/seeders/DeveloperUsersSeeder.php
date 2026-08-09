@@ -42,7 +42,7 @@ use Illuminate\Support\Facades\Hash;
  */
 final class DeveloperUsersSeeder extends Seeder
 {
-    public const string DEV_PASSWORD = 'Dev#Sindangheula2026';
+    public const DEV_PASSWORD = 'Dev#Sindangheula2026';
 
     /** @var array<string, array{phone: string, email: string, staff: bool, customer: bool}> */
     private const ACCOUNTS = [

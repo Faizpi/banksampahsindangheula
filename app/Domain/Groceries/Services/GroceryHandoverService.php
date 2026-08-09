@@ -28,7 +28,7 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class GroceryHandoverService
 {
-    private const string SCOPE = 'grocery.handover';
+    private const SCOPE = 'grocery.handover';
 
     public function __construct(
         private PermissionChecker $permissions,

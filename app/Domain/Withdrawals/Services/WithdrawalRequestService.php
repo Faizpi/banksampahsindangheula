@@ -25,7 +25,7 @@ use Illuminate\Validation\ValidationException;
 
 final readonly class WithdrawalRequestService
 {
-    private const string SCOPE = 'withdrawal.request';
+    private const SCOPE = 'withdrawal.request';
 
     public function __construct(
         private PermissionChecker $permissions,

@@ -58,7 +58,7 @@ use Illuminate\Support\Facades\Hash;
  */
 final class DemoDataSeeder extends Seeder
 {
-    private const string DEMO_PASSWORD = 'Demo#Sindangheula2026';
+    private const DEMO_PASSWORD = 'Demo#Sindangheula2026';
 
     /** @var list<string> */
     private const CUSTOMER_NAMES = [

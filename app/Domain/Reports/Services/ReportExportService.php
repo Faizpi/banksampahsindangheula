@@ -33,9 +33,9 @@ final readonly class ReportExportService
 {
     private const DISK = 'media_private';
 
-    private const int EXPORT_ROW_LIMIT = 10_000;
+    private const EXPORT_ROW_LIMIT = 10_000;
 
-    private const int PDF_DATA_ROWS_PER_PAGE = 44;
+    private const PDF_DATA_ROWS_PER_PAGE = 44;
 
     public function __construct(private PermissionChecker $permissions, private ReportQueryService $reports, private AuditLogger $auditLogger) {}
 

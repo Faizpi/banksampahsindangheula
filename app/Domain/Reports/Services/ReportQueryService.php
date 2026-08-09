@@ -36,10 +36,10 @@ use Illuminate\Validation\ValidationException;
 final readonly class ReportQueryService
 {
     /** Interactive report records are intentionally capped to keep display requests bounded. */
-    private const int RECORD_LIMIT = 100;
+    private const RECORD_LIMIT = 100;
 
     /** Export streams fetch this many models per database round trip without materializing the full report. */
-    private const int STREAM_CHUNK_SIZE = 100;
+    private const STREAM_CHUNK_SIZE = 100;
 
     /** @var list<string> */
     private const FILTERS = ['start', 'end', 'rt_id', 'service_area_id', 'status', 'waste_type_id', 'search'];
