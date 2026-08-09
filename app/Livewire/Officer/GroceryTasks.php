@@ -38,8 +38,11 @@ final class GroceryTasks extends Component
 
     public string $freeAidIdempotencyKey = '';
 
-    public function mount(): void
+    public function mount(PermissionChecker $permissions): void
     {
+        /** @var User|null $actor */
+        $actor = auth()->user();
+        abort_unless($actor instanceof User && ($permissions->allows($actor, 'grocery.prepare') || $permissions->allows($actor, 'grocery.handover')), 403);
         $this->idempotencyKey = (string) str()->uuid();
         $this->freeAidIdempotencyKey = (string) str()->uuid();
     }
@@ -118,11 +121,24 @@ final class GroceryTasks extends Component
             ->orderBy('name')
             ->get(['users.id', 'users.name']);
 
+        $canPrepare = $permissions->allows($actor, 'grocery.prepare');
+        $canHandover = $permissions->allows($actor, 'grocery.handover');
+        $canCreateFreeAid = $permissions->allows($actor, 'grocery.request')
+            && $permissions->allows($actor, 'grocery.package.view');
+        $redemptions = $permissions->allows($actor, 'grocery.view')
+            ? $service->visibleFor($actor)->whereIn('status', [GroceryStatus::Approved, GroceryStatus::Preparing, GroceryStatus::ReadyForPickup])->latest()->get()
+            : ($canHandover ? $service->readyForHandover($actor)->latest()->get() : collect());
+        $packageOptions = $canCreateFreeAid
+            ? $service->activePackages($actor)->get()->pluck('name', 'id')->all()
+            : [];
+
         return view('livewire.officer.grocery-tasks', [
-            'redemptions' => $service->visibleFor($actor)->whereIn('status', [GroceryStatus::Approved, GroceryStatus::Preparing, GroceryStatus::ReadyForPickup])->latest()->get(),
+            'redemptions' => $redemptions,
             'customerOptions' => $customers->pluck('name', 'id')->all(),
-            'packageOptions' => $service->activePackages($actor)->get()->pluck('name', 'id')->all(),
-            'canCreateFreeAid' => $permissions->allows($actor, 'grocery.request'),
+            'packageOptions' => $packageOptions,
+            'canCreateFreeAid' => $canCreateFreeAid,
+            'canPrepare' => $canPrepare,
+            'canHandover' => $canHandover,
         ]);
     }
 

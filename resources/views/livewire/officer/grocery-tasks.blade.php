@@ -9,7 +9,7 @@
             <p class="text-label font-semibold text-forest-600">Petugas</p>
             <h1 id="grocery-tasks-title" class="mt-2 text-h1 font-bold text-deep-green">Tugas Sembako</h1>
             <p class="mt-3 text-body text-text-secondary">
-                Ikuti urutan persiapan. Handover memerlukan verifikasi penerima dan bukti privat.
+                Ikuti urutan persiapan. Handover hanya tersedia bagi petugas dengan permission penyerahan, dan memerlukan verifikasi penerima serta bukti privat.
             </p>
         </div>
         <x-ui.mascot variant="4" bubble="Siapkan paket sembako!" bubblePosition="top" class="h-28 w-auto shrink-0" />
@@ -59,24 +59,28 @@
 
                 {{-- Actions --}}
                 <div class="flex flex-col gap-3 sm:flex-row">
-                    @if ($redemption->status->value === 'disetujui')
+                    @if ($redemption->status->value === 'disetujui' && $canPrepare)
                         <button type="button" wire:click="prepare({{ $redemption->id }})" wire:loading.attr="disabled"
                             class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700 disabled:cursor-wait disabled:opacity-60">
                             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg>
                             Mulai Siapkan
                         </button>
-                    @elseif ($redemption->status->value === 'sedang_disiapkan')
+                    @elseif ($redemption->status->value === 'sedang_disiapkan' && $canPrepare)
                         <button type="button" wire:click="ready({{ $redemption->id }})" wire:loading.attr="disabled"
                             class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-sky-blue px-5 text-label font-bold text-white transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60">
                             <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"/><path d="m9 12 2 2 4-4"/></svg>
                             Tandai Siap Diambil
                         </button>
-                    @elseif ($redemption->status->value === 'siap_diambil')
+                    @elseif ($redemption->status->value === 'disetujui' || $redemption->status->value === 'sedang_disiapkan')
+                        <p class="text-body-sm text-text-secondary">Menunggu petugas dengan permission persiapan untuk melanjutkan paket.</p>
+                    @elseif ($redemption->status->value === 'siap_diambil' && $canHandover)
                         <button type="button" wire:click="select({{ $redemption->id }})"
                             class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-harvest-gold px-5 text-label font-bold text-deep-green transition hover:opacity-90">
-                            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7-7"/></svg>
                             Proses Handover
                         </button>
+                    @elseif ($redemption->status->value === 'siap_diambil')
+                        <p class="text-body-sm text-text-secondary">Menunggu petugas dengan permission handover untuk menyerahkan paket.</p>
                     @endif
                 </div>
             </div>
@@ -90,8 +94,8 @@
     @endforelse
 
     {{-- Handover Verification --}}
-    @if ($selectedRedemptionId !== null)
-        <x-ui.panel title="Verifikasi penerima dan bukti" description="Nomor nasabah wajib cocok dengan warga pada record. Bukti disimpan privat." state="success">
+    @if ($selectedRedemptionId !== null && $canHandover)
+        <x-ui.panel title="Verifikasi penerima dan bukti" description="Nomor nasabah wajib cocok dengan warga pada record. Bukti disimpan privat dan hanya dapat diakses melalui route terotorisasi." state="success">
             <div class="grid gap-4">
                 <x-ui.select wire:model="recipientVerification" label="Metode verifikasi penerima" name="recipientVerification"
                     :options="['kartu_nasabah' => 'Kartu nasabah', 'nomor_nasabah' => 'Nomor nasabah']" />
