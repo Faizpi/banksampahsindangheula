@@ -30,6 +30,8 @@ final class WasteConditionResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?int $navigationSort = 80;
+
     protected static ?string $navigationLabel = 'Kondisi Sampah';
 
     protected static ?string $modelLabel = 'kondisi sampah';

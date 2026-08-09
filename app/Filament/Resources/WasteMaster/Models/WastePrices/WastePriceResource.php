@@ -29,6 +29,8 @@ final class WastePriceResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?int $navigationSort = 90;
+
     protected static ?string $navigationLabel = 'Harga Sampah';
 
     protected static ?string $modelLabel = 'harga sampah';
