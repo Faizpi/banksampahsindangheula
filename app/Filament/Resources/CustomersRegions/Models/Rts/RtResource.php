@@ -30,6 +30,8 @@ final class RtResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?int $navigationSort = 40;
+
     protected static ?string $navigationLabel = 'RT';
 
     protected static ?string $recordTitleAttribute = 'name';

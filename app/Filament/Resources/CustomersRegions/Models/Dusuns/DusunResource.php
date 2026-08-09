@@ -28,6 +28,8 @@ final class DusunResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?int $navigationSort = 20;
+
     protected static ?string $navigationLabel = 'Dusun';
 
     protected static ?string $recordTitleAttribute = 'name';

@@ -30,6 +30,8 @@ final class ServiceAreaResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?int $navigationSort = 10;
+
     protected static ?string $navigationLabel = 'Area Pelayanan';
 
     protected static ?string $recordTitleAttribute = 'name';
