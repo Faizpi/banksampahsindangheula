@@ -132,3 +132,11 @@ IMP-019 menetapkan fondasi teknis back-office Filament 5 sesuai ADR ini: instala
 - **Keputusan:** IMP-049 tetap ditunda sampai kebijakan attachable media menetapkan pemetaan setiap `attachable_type` ke policy dan scope bisnis, serta kontrak signed URL. Permission download media tidak ditambahkan sebelum kebijakan tersebut ada. Editor checkbox assignment permission ditunda sampai IMP-019 dan IMP-107 selesai, dengan audit nilai lama/baru, alasan, pelaku, dan scope. CMS landing terstruktur juga ditunda sampai model konten, workflow publikasi, authorization, validasi, dan auditnya disetujui melalui change request.
 - **Konsekuensi:** Tidak ada bypass berdasarkan uploader, role, atau media attachment. Tidak ada UI checkbox permission atau CMS landing yang diimplementasikan atau diberi ID tracker baru hanya dari keputusan ini.
 - **Referensi:** [SECURITY.md](SECURITY.md), [PERMISSIONS.md](PERMISSIONS.md), IMP-049, IMP-019, IMP-107.
+
+## ADR-015 — Audit-gap settings dan batas artefak backup/restore
+
+- **Status:** Accepted
+- **Konteks:** Audit-gap implementation memerlukan pengaturan teknis yang aman untuk operator, sementara secret dan eksekusi artefak backup/restore tetap berada di boundary deployment/SOP.
+- **Keputusan:** UI terotorisasi untuk konfigurasi teknis non-secret termasuk scope implementasi, menggunakan `system.settings.manage`, validasi server, dan audit. Secret tetap environment-only. UI aplikasi hanya mengelola metadata, status, dan verifikasi backup/restore; dump, penyalinan, dan pemulihan artefak aktual dilakukan melalui deployment/SOP.
+- **Konsekuensi:** `backup.run`, `backup.view`, dan `backup.restore` tidak menjadi klaim eksekusi artefak aktual dari aplikasi. Status tracker dan bukti implementasi harus memisahkan metadata/verification dari backup/restore nyata. Perubahan tetap tunduk pada permission, scope, audit, dan gate rilis.
+- **Referensi:** [PERMISSIONS.md](PERMISSIONS.md), [SECURITY.md](SECURITY.md), [OPERATIONS.md](OPERATIONS.md), [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md).

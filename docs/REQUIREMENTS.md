@@ -29,8 +29,8 @@ Setiap kebutuhan memakai format `KELOMPOK-NNN`. Kata **harus** berarti wajib. Se
 - **Jejak:** FL-06; BR-AUTH-004; TC-AUTH-002.
 
 #### AUTH-003 — Perubahan kata sandi
-- **Aktor:** pengguna terautentikasi untuk perubahan mandiri, atau admin berizin, sistem, dan pengguna target untuk perubahan berbantuan langsung.
-- **Jalur A, perubahan berbantuan langsung oleh admin:** hanya untuk pengguna yang benar-benar lupa kata sandi dan tidak dapat login. Admin memiliki `user.reset-password` dan `session.revoke`; target adalah pengguna lain dalam scope yang diizinkan; admin memverifikasi target secara `tatap_muka` atau `callback_nomor_terdaftar`, serta mengisi alasan 10–1000 karakter. Admin memilih target yang bukan dirinya sendiri, memasukkan kata sandi baru dan konfirmasi; server memvalidasi konfirmasi, panjang minimum, dan kebijakan password umum. Dalam satu transaksi atomik, sistem menyimpan hash kata sandi, mencabut seluruh sesi aktif target, dan mencatat aktor, metode verifikasi, alasan, serta hasil tanpa mencatat kata sandi.
+- **Aktor:** pengguna terautentikasi untuk perubahan mandiri, atau admin atau superadmin berizin, sistem, dan pengguna target untuk perubahan berbantuan langsung.
+- **Jalur A, perubahan berbantuan langsung oleh admin atau superadmin:** hanya untuk pengguna yang benar-benar lupa kata sandi dan tidak dapat login. Admin atau superadmin memiliki `user.reset-password` dan `session.revoke`; target adalah pengguna lain dalam scope yang diizinkan; alur PasswordAssistance memvalidasi target, metode verifikasi `tatap_muka` atau `callback_nomor_terdaftar`, serta alasan 10–1000 karakter. Aktor berizin memilih target yang bukan dirinya sendiri, memasukkan kata sandi baru dan konfirmasi; server memvalidasi konfirmasi, panjang minimum, dan kebijakan password umum. Dalam satu transaksi atomik, sistem menyimpan hash kata sandi, mencabut seluruh sesi aktif target, dan mencatat aktor, metode verifikasi, alasan, serta hasil tanpa mencatat kata sandi.
 - **Jalur B, perubahan mandiri dari profil:** hanya pengguna yang telah terautentikasi pada profilnya sendiri. Pengguna memasukkan kata sandi saat ini, kata sandi baru, dan konfirmasi; server memverifikasi kata sandi saat ini serta memvalidasi konfirmasi, panjang minimum, dan kebijakan password umum. Setelah sukses, sistem menyimpan hash kata sandi dan mencabut sesi aktif lain milik pengguna sambil mempertahankan sesi saat ini bila secara teknis memungkinkan; bila tidak memungkinkan, sistem mencabut seluruh sesi dan meminta autentikasi ulang. Audit mencatat aktor, metode `mandiri_profil`, dan hasil tanpa kata sandi atau secret.
 - **Hasil:** kata sandi baru aktif; Jalur A mencabut seluruh sesi target, sedangkan Jalur B mencabut sesi lain atau meminta autentikasi ulang bila sesi saat ini tidak dapat dipertahankan.
 - **Kegagalan:** self-target, kondisi lupa/tidak dapat login, permission/scope, metode verifikasi, alasan, kata sandi saat ini, konfirmasi, atau kebijakan kata sandi yang tidak valid berhenti tanpa perubahan kata sandi, sesi, atau audit sukses.
@@ -315,7 +315,7 @@ Setiap kebutuhan memakai format `KELOMPOK-NNN`. Kata **harus** berarti wajib. Se
 - **Aktor:** sistem, admin pembaca, superadmin teknis untuk retensi resmi.
 - **Prasyarat:** kejadian audit terjadi atau pembaca berizin.
 - **Alur:** sistem mencatat pelaku, waktu, IP/perangkat relevan, aksi, objek, nilai lama/baru yang aman, dan korelasi; admin menelusuri; retensi hanya dijalankan melalui kebijakan teknis.
-- **Hasil:** perubahan akun, akses, harga, transaksi, saldo, status, persetujuan, pembayaran, penyerahan, ekspor, dan konfigurasi dapat ditelusuri.
+- **Hasil:** perubahan akun, akses, harga, transaksi, saldo, status, persetujuan, pembayaran, penyerahan, ekspor, dan konfigurasi teknis non-secret melalui UI berizin dapat ditelusuri.
 - **Kegagalan:** pengguna operasional tidak dapat mengubah/menghapus log; secret tidak dicatat.
 - **Kriteria penerimaan:** log append-oriented; pencarian berizin; kegagalan audit pada aksi keuangan memblokir commit atau dicakup transaksi yang sama.
 - **Jejak:** FL-27; BR-AUD-001–006; TC-AUD-001.
@@ -353,7 +353,7 @@ Setiap kebutuhan memakai format `KELOMPOK-NNN`. Kata **harus** berarti wajib. Se
 | NFR-PERF-001 | Query terindeks, pagination, gambar terkompresi, dan pekerjaan ekspor besar dibatasi sesuai shared hosting. | Halaman utama responsif pada volume uji yang disepakati tanpa timeout normal. |
 | NFR-COMP-001 | Mendukung Chrome Android/desktop, Edge, Safari mobile, dan Firefox versi yang masih didukung vendor. | Skenario kritis lulus pada matriks browser. |
 | NFR-TIME-001 | Zona waktu aplikasi `Asia/Jakarta`; waktu database disimpan konsisten dan ditampilkan dalam zona aplikasi. | Pengujian batas hari dan cron menghasilkan tanggal bisnis yang benar. |
-| NFR-OPS-001 | Backup database harian dan media berkala, salinan terpisah, verifikasi, serta uji restore. | Sasaran awal RPO ≤24 jam dan RTO ≤8 jam terbukti dalam latihan. |
+| NFR-OPS-001 | Backup database harian dan media berkala, salinan terpisah, verifikasi, serta uji restore melalui deployment/SOP. | Sasaran awal RPO ≤24 jam dan RTO ≤8 jam terbukti dalam latihan; aplikasi tidak mengklaim menjalankan dump atau restore artefak aktual melalui UI. |
 | NFR-HOST-001 | Deployment sesuai batas Hostinger shared hosting pada [DEPLOYMENT.md](DEPLOYMENT.md). | Tidak memerlukan root, Redis, Horizon, Supervisor, WebSocket, atau worker permanen. |
 | NFR-SCOPE-001 | Data plastik hanya mendukung tujuan pemanfaatan lanjutan paving block; produksi tidak dikelola. | Tidak ada modul formula, batch, suhu, uji tekan, stok produk jadi, distribusi, atau biaya produksi. |
 
