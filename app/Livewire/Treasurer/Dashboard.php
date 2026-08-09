@@ -23,6 +23,9 @@ final class Dashboard extends Component
 
     public function render(): View
     {
-        return view('livewire.treasurer.dashboard');
+        /** @var User $actor */
+        $actor = auth()->user();
+
+        return view('livewire.treasurer.dashboard', ['canViewStatistics' => app(PermissionChecker::class)->allows($actor, 'statistics.internal.view')]);
     }
 }

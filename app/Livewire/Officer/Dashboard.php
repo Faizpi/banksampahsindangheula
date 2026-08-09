@@ -68,6 +68,7 @@ final class Dashboard extends Component
             ->with('rt')
             ->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))
             ->whereIn('status', [MobileServiceStatus::Published, MobileServiceStatus::Open])
+            ->where('ends_at', '>=', now())
             ->orderBy('starts_at')
             ->limit(8)
             ->get() : collect();
@@ -76,6 +77,8 @@ final class Dashboard extends Component
 
         return view('livewire.officer.dashboard', [
             'identificationHref' => route('officer.customer-identification'),
+            'statisticsHref' => route('statistics.internal'),
+            'canViewStatistics' => $permissions->allows($actor, 'statistics.internal.view'),
             'groceryTasksHref' => route('officer.grocery.tasks'),
             'todayPickups' => $todayPickups,
             'latePickups' => $latePickups,

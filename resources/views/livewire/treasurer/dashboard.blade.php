@@ -71,6 +71,19 @@
                 <p class="mt-0.5 text-body-sm text-text-secondary">Kata sandi &amp; keamanan</p>
             </div>
         </a>
+
+        @if ($canViewStatistics)
+            <a href="{{ route('statistics.internal') }}"
+                class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-sky-blue hover:shadow-sm">
+                <div class="flex size-11 items-center justify-center rounded-xl bg-info-bg text-sky-blue transition-colors group-hover:bg-sky-blue group-hover:text-white">
+                    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/></svg>
+                </div>
+                <div>
+                    <p class="text-caption font-semibold text-deep-green">Statistik Internal</p>
+                    <p class="mt-0.5 text-body-sm text-text-secondary">Metrik dalam scope</p>
+                </div>
+            </a>
+        @endif
     </div>
 </section>
 
