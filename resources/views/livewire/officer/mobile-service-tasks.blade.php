@@ -49,7 +49,11 @@
                                 <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m10 8 6 4-6 4V8z"/></svg>
                                 Buka Layanan
                             </button>
-                        @elseif ($service->status === \App\Domain\MobileServices\Enums\MobileServiceStatus::Open)
+                            @elseif ($service->status === \App\Domain\MobileServices\Enums\MobileServiceStatus::Open)
+                            <button wire:click="recap({{ $service->id }})" wire:loading.attr="disabled"
+                                class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border-2 border-forest-600 px-5 text-label font-bold text-forest-700 transition hover:bg-success-bg disabled:cursor-wait">
+                                Rekap Layanan
+                            </button>
                             <button wire:click="close({{ $service->id }})"
                                 wire:loading.attr="disabled"
                                 class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border-2 border-terracotta px-5 text-label font-bold text-terracotta transition hover:bg-danger-bg disabled:cursor-wait">
@@ -58,6 +62,14 @@
                             </button>
                         @endif
                     </div>
+                    @if (session('mobile-recap-'.$service->id))
+                        @php($recap = session('mobile-recap-'.$service->id))
+                        <dl class="mt-4 grid gap-2 rounded-xl bg-warm-canvas p-4 text-body-sm sm:grid-cols-3">
+                            <div><dt class="text-text-secondary">Transaksi</dt><dd class="font-bold text-deep-green">{{ $recap['transaction_count'] }}</dd></div>
+                            <div><dt class="text-text-secondary">Berat</dt><dd class="font-bold text-deep-green">{{ $recap['total_weight_kg'] }} kg</dd></div>
+                            <div><dt class="text-text-secondary">Nilai</dt><dd class="font-bold text-deep-green">Rp {{ number_format($recap['total_value'], 0, ',', '.') }}</dd></div>
+                        </dl>
+                    @endif
                 </article>
             @endforeach
         </div>

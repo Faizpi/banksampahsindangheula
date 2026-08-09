@@ -9,6 +9,7 @@ use App\Domain\MobileServices\Models\MobileService;
 use App\Domain\MobileServices\Services\MobileServiceService;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -18,15 +19,24 @@ final class MobileServiceTasks extends Component
     public function open(int $serviceId, MobileServiceService $services): void
     {
         $actor = $this->actor();
-        $service = MobileService::query()->findOrFail($serviceId);
+        $service = $this->assignedService($actor, $serviceId);
         $services->transition($actor, $service, MobileServiceStatus::Open);
+        session()->flash('success', 'Layanan keliling dibuka.');
     }
 
     public function close(int $serviceId, MobileServiceService $services): void
     {
         $actor = $this->actor();
-        $service = MobileService::query()->findOrFail($serviceId);
+        $service = $this->assignedService($actor, $serviceId);
         $services->transition($actor, $service, MobileServiceStatus::Closed);
+        session()->flash('success', 'Layanan keliling ditutup.');
+    }
+
+    public function recap(int $serviceId, MobileServiceService $services): void
+    {
+        $actor = $this->actor();
+        $service = $this->assignedService($actor, $serviceId);
+        session()->flash('mobile-recap-'.$serviceId, $services->recap($actor, $service));
     }
 
     public function render(): View
@@ -42,5 +52,18 @@ final class MobileServiceTasks extends Component
         abort_unless($actor instanceof User, 403);
 
         return $actor;
+    }
+
+    private function assignedService(User $actor, int $serviceId): MobileService
+    {
+        $service = MobileService::query()
+            ->whereKey($serviceId)
+            ->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))
+            ->whereIn('status', [MobileServiceStatus::Published, MobileServiceStatus::Open])
+            ->first();
+
+        abort_unless($service instanceof MobileService, 404);
+
+        return $service;
     }
 }
