@@ -10,13 +10,13 @@ This document records an automated technical run only. It does not replace stake
 
 | Field | Value |
 |---|---|
-| Date | 9 August 2026 |
-| Environment | Disposable Laragon MySQL 8.0.30 database `bank_sampah_e2e_2026080922` |
-| App server | Laravel `artisan serve`, `127.0.0.1:8001`, `APP_ENV=local` |
+| Date | 10 August 2026 |
+| Environment | Laragon MySQL database utama `bank_sampah`; test writes retained by request |
+| App server | Laragon virtual host `http://bank-sampah.test`, `APP_ENV=local` |
 | Browser | Playwright Chromium, headless |
-| Command | `node tests/browser/transaction-uat.mjs` |
+| Command | `E2E_BASE_URL=http://bank-sampah.test DB_DATABASE=bank_sampah node tests/browser/transaction-uat.mjs` |
 | Result | 10/10 PASS; 0 browser errors |
-| Cleanup | Disposable database and test server are not production data; remove the database/server after the run |
+| Cleanup | Tidak dilakukan; transaksi UAT dan fixture area/capacity/permissions disimpan di database utama sesuai persetujuan |
 
 ## Transaction scenarios
 
@@ -43,9 +43,9 @@ This document records an automated technical run only. It does not replace stake
 | PHPStan | PASS | 0 errors |
 | Pint | PASS | Code style check passed |
 | Production asset build | PASS | `npm run build` completed successfully |
-| Browser harness rerun | BLOCKED | Local MySQL on `127.0.0.1:3306` refused the disposable E2E database connection before browser launch; no production database was touched |
+| Browser harness rerun | PASS | 10/10 PASS pada `http://bank-sampah.test` dengan database utama `bank_sampah`; 0 browser errors |
 
-The existing 9 August 2026 browser transaction run above remains the latest completed browser evidence. The UX/UI changes were validated through the full feature suite and shell-specific regression tests; rerun the browser harness after the disposable MySQL service is available.
+The 10 August 2026 run is the latest completed browser evidence. It asserted pickup dengan foto, finalisasi setoran dan saldo, bukti/QR publik, penjadwalan serta penyelesaian pickup, withdrawal sampai pembayaran bendahara, penukaran sembako sampai handover, dan koreksi setoran melalui browser. Transaksi uji tidak dibersihkan karena menggunakan database utama sesuai persetujuan pengguna.
 
 ## Findings fixed during execution
 

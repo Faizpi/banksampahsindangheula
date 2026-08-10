@@ -104,9 +104,9 @@ async function loginCitizen(page, role) {
     ]);
 }
 
-async function loginBackoffice(page) {
+async function loginBackoffice(page, email = 'admin@sindangheula.dev') {
     await page.goto(`${baseUrl}/backoffice/login`, { waitUntil: 'networkidle' });
-    await page.locator('input[type="email"]').fill('admin@sindangheula.dev');
+    await page.locator('input[type="email"]').fill(email);
     await page.locator('input[type="password"]').fill(devPassword);
     await Promise.all([
         page.waitForURL((url) => url.pathname.startsWith('/backoffice') && url.pathname !== '/backoffice/login', { timeout: 15000 }),
@@ -154,8 +154,7 @@ let depositData = null;
 await run('Warga mengajukan pickup dengan foto', async () => {
     await loginCitizen(page, 'warga');
     await page.goto(`${baseUrl}/warga/penjemputan/ajukan`, { waitUntil: 'networkidle' });
-    const serviceArea = page.locator('select[name="serviceAreaId"]');
-    await serviceArea.selectOption({ label: 'Wilayah Pengembangan Dev' });
+    await chooseFirst(page, 'serviceAreaId');
     await settle(page);
     await page.locator('input[name="selectedDate"]').fill(new Date(Date.now() + 86400000).toISOString().slice(0, 10));
     await settle(page);
@@ -298,7 +297,7 @@ await run('Warga mengajukan penukaran sembako', async () => {
 await run('Admin menyetujui koreksi setoran melalui browser', async () => {
     const adminContext = await browser.newContext();
     const admin = await adminContext.newPage();
-    await loginBackoffice(admin);
+    await loginBackoffice(admin, 'superadmin@sindangheula.dev');
     await admin.goto(`${baseUrl}/backoffice/deposits/models/deposits`, { waitUntil: 'networkidle' });
     await searchTable(admin, depositData.number);
     const row = admin.locator('tr').filter({ hasText: depositData.number }).first();
@@ -366,15 +365,19 @@ await run('Admin menyetujui sembako dan petugas mencatat handover', async () => 
 await run('Admin menyetujui dan bendahara membayar pencairan', async () => {
     const adminContext = await browser.newContext();
     const admin = await adminContext.newPage();
-    await loginBackoffice(admin);
+    await loginBackoffice(admin, 'superadmin@sindangheula.dev');
     await admin.goto(`${baseUrl}/backoffice/withdrawals/models/withdrawal-requests`, { waitUntil: 'networkidle' });
     await searchTable(admin, withdrawalNumber);
     const row = admin.locator('tr').filter({ hasText: withdrawalNumber }).first();
     await row.waitFor({ state: 'visible' });
+    admin.once('dialog', (dialog) => dialog.accept());
     await row.getByRole('button', { name: 'Setujui' }).click();
+    await admin.getByRole('button', { name: /Konfirmasi|Confirm/i }).last().click();
     await waitForLivewire(admin);
     const approvedRow = admin.locator('tr').filter({ hasText: withdrawalNumber }).first();
-    await approvedRow.getByRole('button', { name: 'Tetapkan payer' }).click();
+    const assignPayerButton = approvedRow.getByRole('button', { name: 'Tetapkan payer' });
+    await assignPayerButton.waitFor({ state: 'visible', timeout: 10000 });
+    await assignPayerButton.click();
     const dialog = admin.locator('[role="dialog"]');
     await dialog.locator('select').first().selectOption({ label: 'Bendahara Development' });
     await settle(admin);
@@ -385,8 +388,10 @@ await run('Admin menyetujui dan bendahara membayar pencairan', async () => {
     await loginCitizen(page, 'bendahara');
     await page.goto(`${baseUrl}/bendahara/pencairan`, { waitUntil: 'networkidle' });
     const paymentButtons = page.getByRole('button', { name: 'Proses Pembayaran' });
-    const paymentIndex = await paymentButtons.evaluateAll((buttons, id) => buttons.findIndex((button) => button.getAttribute('wire:click') === `select(${id})`), withdrawalId);
-    if (paymentIndex < 0) throw new Error('Tombol pembayaran untuk withdrawal UAT tidak ditemukan.');
+    const paymentIndex = await paymentButtons.evaluateAll((buttons, id) => buttons.findIndex((button) => (button.getAttribute('wire:click') ?? '').includes(`select(${id})`)), withdrawalId);
+    if (paymentIndex < 0) {
+        throw new Error(`Tombol pembayaran untuk withdrawal UAT tidak ditemukan.\n${(await page.locator('body').innerText()).slice(-2500)}`);
+    }
     await paymentButtons.nth(paymentIndex).click();
     await page.locator('select[name="recipientVerification"]').selectOption('nomor_nasabah');
     await settle(page);
@@ -394,7 +399,9 @@ await run('Admin menyetujui dan bendahara membayar pencairan', async () => {
     await settle(page);
     await page.locator('#payment-proof').setInputFiles(fixture);
     await settle(page);
-    await page.getByRole('button', { name: 'Konfirmasi Pembayaran' }).click();
+    await page.getByRole('button', { name: 'Tinjau sebelum bayar' }).click();
+    await waitForLivewire(page);
+    await page.getByRole('button', { name: 'Bayar dan catat bukti' }).click();
     await waitForLivewire(page);
     const state = tinker(`$w=\\App\\Domain\\Withdrawals\\Models\\WithdrawalRequest::where('request_number','${withdrawalNumber}')->firstOrFail(); echo $w->status->value;`);
     if (state !== 'sudah_dibayar') throw new Error(`Status pencairan setelah pembayaran: ${state}`);
