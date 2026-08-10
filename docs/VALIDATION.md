@@ -250,3 +250,15 @@ Pesan tidak boleh menampilkan stack trace, SQL, path server, secret, token, atau
 | Sembako | GRC-001 | BR-GRC-*, BR-EXP-* | TC-GRC-* |
 | Publik/QR | QRV-001, PUB-001–002 | BR-QRV-*, BR-PUB-* | TC-QRV-*, TC-PUB-* |
 | File/laporan | RPT-001 | BR-FIL-*, BR-RPT-* | TC-RPT-*, TC-SEC-* |
+
+## 17. UI/UX regression checklist
+
+- Primary role flows are usable at 360px, 390px, 768px, and desktop widths without horizontal scrolling.
+- Every multi-step flow exposes the current step, preserves safe input, and presents a review before an irreversible submit.
+- Validation failures render a visible summary, move focus to it, and keep the user on the relevant step.
+- Destructive or irreversible actions require an explicit confirmation that states the affected record and consequence.
+- Statuses and operational metrics use human-readable labels; raw enum values and internal IDs are not presented as the primary UI.
+- Upload controls state accepted formats, file-size limits, and count limits before submission.
+- Offline/online status is visible where field work depends on connectivity and uses an accessible live region.
+- Tables provide a mobile-readable alternative, human labels for filters, and a clear empty state.
+- Browser UAT must still be run against disposable MySQL before release; SQLite/PHPUnit results do not replace production-engine evidence.

@@ -1,6 +1,6 @@
 <x-slot:title>Tugas penjemputan</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
-<x-slot:connectivity>Terhubung</x-slot:connectivity>
+<x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
 <section aria-labelledby="pickup-task-title" class="grid gap-6">
     {{-- Page header --}}
@@ -16,12 +16,21 @@
         <x-ui.mascot variant="8" bubble="Menuju lokasi!" bubblePosition="top" class="h-28 w-auto shrink-0" />
     </div>
 
+    @if ($errors->any())
+        <div id="pickup-task-errors" tabindex="-1" role="alert" class="rounded-lg border border-terracotta bg-danger-bg p-4">
+            <p class="text-title font-bold text-deep-green">Periksa data tugas</p>
+            <ul class="mt-2 list-disc space-y-1 pl-5 text-body-sm text-text-primary">
+                @foreach ($errors->all() as $message)<li>{{ $message }}</li>@endforeach
+            </ul>
+        </div>
+    @endif
+
     {{-- Status Panel --}}
     <x-ui.panel title="Status tugas" description="Urutan status harus diikuti. Estimasi tidak digunakan untuk saldo.">
         <div class="flex items-center gap-3">
             <span class="inline-flex items-center gap-1.5 rounded-full border border-info-bg bg-info-bg px-4 py-1.5 text-label font-bold text-sky-blue">
                 <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                {{ ucwords(str_replace('_', ' ', $pickup->status->value)) }}
+                {{ \App\Support\StatusLabel::for($pickup->status) }}
             </span>
         </div>
 
@@ -38,6 +47,13 @@
                     class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700 disabled:cursor-wait disabled:opacity-60">
                     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
                     Tandai Dijemput
+                </button>
+            @endif
+            @if (in_array($pickup->status->value, ['dijadwalkan', 'menuju_lokasi', 'dijemput'], true))
+                <button type="button" wire:click="openFailureReport"
+                    class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border-2 border-terracotta px-5 text-label font-bold text-terracotta transition hover:bg-danger-bg">
+                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+                    Laporkan Kendala
                 </button>
             @endif
         </div>
@@ -61,6 +77,30 @@
                     </div>
                 @endforeach
 
+                <div class="rounded-md border border-border bg-surface p-4" aria-live="polite">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                        <div>
+                            <h3 class="text-label font-bold text-deep-green">Review nilai setoran</h3>
+                            <p class="text-body-sm text-text-secondary">Harga aktif dan subtotal akan dihitung ulang server saat finalisasi.</p>
+                        </div>
+                        @if ($pricePreview['complete'])
+                            <strong class="amount-tabular text-title text-forest-700">Rp {{ number_format($pricePreview['total'], 0, ',', '.') }}</strong>
+                        @else
+                            <span class="text-body-sm font-semibold text-harvest-gold">Lengkapi item untuk melihat nilai</span>
+                        @endif
+                    </div>
+                    @if ($pricePreview['lines'] !== [])
+                        <dl class="mt-3 divide-y divide-border border-t border-border text-body-sm">
+                            @foreach ($pricePreview['lines'] as $line)
+                                <div class="flex items-center justify-between gap-3 py-2">
+                                    <dt class="min-w-0"><span class="block font-semibold text-deep-green">{{ $line['name'] }}</span><span class="text-text-secondary">{{ $line['condition'] }} · {{ $line['weight'] }} kg</span></dt>
+                                    <dd class="shrink-0 amount-tabular font-semibold text-deep-green">Rp {{ number_format($line['subtotal'], 0, ',', '.') }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
+                    @endif
+                </div>
+
                 <div class="flex flex-col gap-3 sm:flex-row">
                     <button type="button"
                         wire:click="$set('actualItems', [...$actualItems, ['waste_type_id' => '', 'condition_id' => '', 'weight_kg' => '']])"
@@ -80,7 +120,7 @@
     {{-- Status History --}}
     <x-ui.panel title="Riwayat status" description="Perubahan status tercatat untuk penelusuran.">
         <x-ui.timeline :steps="$pickup->statusHistory->map(fn ($history): array => [
-            'title'  => ucwords(str_replace('_', ' ', $history->new_status)),
+            'title'  => \App\Support\StatusLabel::for($history->new_status),
             'note'   => $history->reason ?? '',
             'time'   => $history->occurred_at->translatedFormat('d M Y, H:i'),
             'status' => match($history->new_status) {
@@ -90,5 +130,30 @@
             },
         ])->all()" />
     </x-ui.panel>
-</section>
 
+    @if ($failureDialogOpen)
+        <div class="fixed inset-0 z-overlay flex items-end justify-center bg-overlay p-4 sm:items-center" role="presentation">
+            <div class="w-full max-w-form rounded-lg border border-border bg-surface p-5 shadow-dialog sm:p-6" role="dialog" aria-modal="true" aria-labelledby="failure-dialog-title">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 id="failure-dialog-title" class="text-h2 font-bold text-deep-green">Laporkan kendala pickup</h2>
+                        <p class="mt-1 text-body-sm text-text-secondary">Pengajuan akan dibatalkan dan alasan ini tercatat pada riwayat tugas.</p>
+                    </div>
+                    <button type="button" wire:click="closeFailureReport" aria-label="Tutup dialog" class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-md text-text-secondary hover:bg-warm-canvas">
+                        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+                    </button>
+                </div>
+                <form wire:submit="reportFailure" class="mt-5 grid gap-4">
+                    <x-ui.textarea name="failureReason" label="Jelaskan kendala" wire:model="failureReason" rows="4" hint="Minimal 10 karakter. Contoh: alamat tidak dapat diakses setelah dua kali percobaan." :error="$errors->first('failureReason')" />
+                    <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                        <x-ui.button type="button" variant="secondary" wire:click="closeFailureReport">Kembali</x-ui.button>
+                        <x-ui.button type="submit" variant="danger" wire:loading.attr="disabled" wire:target="reportFailure">
+                            <span wire:loading.remove wire:target="reportFailure">Catat dan hentikan pickup</span>
+                            <span wire:loading wire:target="reportFailure">Menyimpan...</span>
+                        </x-ui.button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    @endif
+</section>

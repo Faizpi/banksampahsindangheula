@@ -1,6 +1,6 @@
 <x-slot:title>Laporan {{ $reportTypes[$reportType] }}</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
-<x-slot:connectivity>Terhubung</x-slot:connectivity>
+<x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
 <section class="space-y-6" aria-labelledby="reports-title">
     {{-- Page Header --}}
@@ -34,13 +34,19 @@
 
     {{-- Filter Form --}}
     <x-ui.panel title="Filter periode" description="Terapkan rentang tanggal untuk menyesuaikan laporan.">
+        <div class="mb-4 flex flex-wrap gap-2" aria-label="Preset periode">
+            <span class="self-center pr-1 text-body-sm font-semibold text-text-secondary">Periode cepat:</span>
+            <button type="button" wire:click="setPeriod('today')" class="min-h-10 rounded-md border border-border bg-surface px-3 text-body-sm font-semibold text-deep-green hover:border-forest-600 hover:bg-success-bg">Hari ini</button>
+            <button type="button" wire:click="setPeriod('week')" class="min-h-10 rounded-md border border-border bg-surface px-3 text-body-sm font-semibold text-deep-green hover:border-forest-600 hover:bg-success-bg">Minggu ini</button>
+            <button type="button" wire:click="setPeriod('month')" class="min-h-10 rounded-md border border-border bg-surface px-3 text-body-sm font-semibold text-deep-green hover:border-forest-600 hover:bg-success-bg">Bulan ini</button>
+        </div>
         <form wire:submit="refreshReport" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Filter laporan">
             <x-ui.select wire:model="reportType" name="reportType" label="Jenis laporan" :options="$reportTypes" />
             <x-ui.input wire:model="start" name="start" label="Mulai" type="date" />
             <x-ui.input wire:model="end" name="end" label="Sampai (eksklusif)" type="date" />
-            <x-ui.input wire:model="serviceAreaId" name="serviceAreaId" label="ID area (opsional)" type="number" min="1" />
-            <x-ui.input wire:model="status" name="status" label="Status (opsional)" />
-            <x-ui.input wire:model="search" name="search" label="Cari nomor/scope" />
+            <x-ui.select wire:model="serviceAreaId" name="serviceAreaId" label="Area pelayanan (opsional)" :options="$serviceAreas->all()"><option value="">Semua area</option></x-ui.select>
+            <x-ui.select wire:model="status" name="status" label="Status (opsional)" :options="$statusOptions"><option value="">Semua status</option></x-ui.select>
+            <x-ui.input wire:model="search" name="search" label="Cari nomor atau scope" hint="Nomor transaksi atau scope laporan." />
             <x-ui.button type="submit" wire:loading.attr="disabled" class="lg:self-end">
                 <span wire:loading.remove>Terapkan</span>
                 <span wire:loading>Memuat...</span>
@@ -63,7 +69,17 @@
     </x-ui.panel>
 
     <x-ui.panel title="Hasil laporan" description="Read-only. Data mengikuti scope dan filter yang diterapkan.">
-        <div class="overflow-x-auto">
+        <div class="grid gap-3 md:hidden">
+            @forelse ($rows as $row)
+                <article class="rounded-md border border-border bg-warm-canvas p-4">
+                    <div class="flex items-start justify-between gap-3"><h3 class="text-label font-bold text-deep-green">{{ $row['reference'] }}</h3><span class="text-caption font-semibold text-text-secondary">{{ \App\Support\StatusLabel::for($row['status']) }}</span></div>
+                    <dl class="mt-3 grid gap-2 text-body-sm"><div><dt class="text-text-secondary">Waktu</dt><dd class="font-semibold text-deep-green">{{ $row['date'] }}</dd></div><div><dt class="text-text-secondary">Subjek</dt><dd class="font-semibold text-deep-green">{{ $row['subject_id'] }}</dd></div><div><dt class="text-text-secondary">Nilai</dt><dd class="amount-tabular font-semibold text-deep-green">{{ $row['amount'] === '' ? '—' : 'Rp '.number_format((int) $row['amount'], 0, ',', '.') }}</dd></div></dl>
+                </article>
+            @empty
+                <x-ui.empty-state title="Belum ada data" description="Tidak ada data untuk filter ini." />
+            @endforelse
+        </div>
+        <div class="hidden overflow-x-auto md:block">
             <table class="min-w-full text-left text-sm" aria-label="Hasil laporan">
                 <thead class="border-b border-border text-caption text-text-secondary">
                     <tr>
@@ -80,7 +96,7 @@
                             <td class="whitespace-nowrap px-3 py-2 font-medium text-deep-green">{{ $row['reference'] }}</td>
                             <td class="whitespace-nowrap px-3 py-2 text-text-secondary">{{ $row['date'] }}</td>
                             <td class="px-3 py-2 text-text-secondary">{{ $row['subject_id'] }}</td>
-                            <td class="px-3 py-2 text-text-secondary">{{ $row['status'] }}</td>
+                            <td class="px-3 py-2 text-text-secondary">{{ \App\Support\StatusLabel::for($row['status']) }}</td>
                             <td class="px-3 py-2 text-right amount-tabular">{{ $row['amount'] === '' ? '—' : 'Rp '.number_format((int) $row['amount'], 0, ',', '.') }}</td>
                         </tr>
                     @empty

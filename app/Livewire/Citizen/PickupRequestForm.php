@@ -10,6 +10,7 @@ use App\Domain\WasteMaster\Models\WasteType;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -35,6 +36,8 @@ final class PickupRequestForm extends Component
 
     public string $idempotencyKey = '';
 
+    public int $step = 1;
+
     public function mount(): void
     {
         $this->selectedDate = today()->addDay()->toDateString();
@@ -53,16 +56,56 @@ final class PickupRequestForm extends Component
         $this->items = array_values($this->items);
     }
 
+    public function nextStep(): void
+    {
+        $valid = match ($this->step) {
+            1 => $this->validateStep($this->locationRules()),
+            2 => $this->validateStep($this->itemRules()),
+            default => true,
+        };
+
+        if ($valid) {
+            $this->step = min(3, $this->step + 1);
+        }
+    }
+
+    public function previousStep(): void
+    {
+        $this->step = max(1, $this->step - 1);
+    }
+
+    public function goToStep(int $step): void
+    {
+        if ($step >= 1 && $step < $this->step) {
+            $this->step = $step;
+        }
+    }
+
     public function submit(PickupService $service): void
     {
+        if ($this->step !== 3) {
+            return;
+        }
+
+        if (! $this->validateStep([...$this->locationRules(), ...$this->itemRules()])) {
+            return;
+        }
+
         /** @var User $actor */
         $actor = auth()->user();
-        $pickup = $service->submit($actor, [
-            'service_area_id' => $this->serviceAreaId,
-            'address' => $this->address,
-            'selected_date' => $this->selectedDate,
-            'notes' => $this->notes,
-        ], $this->items, $this->photos, $this->idempotencyKey);
+        try {
+            $pickup = $service->submit($actor, [
+                'service_area_id' => $this->serviceAreaId,
+                'address' => $this->address,
+                'selected_date' => $this->selectedDate,
+                'notes' => $this->notes,
+            ], $this->items, $this->photos, $this->idempotencyKey);
+        } catch (ValidationException $exception) {
+            $this->setErrorBag($exception->validator->errors());
+            $this->dispatch('focus-pickup-errors');
+
+            return;
+        }
         session()->flash('success', 'Pengajuan penjemputan berhasil dikirim.');
         $this->redirectRoute('citizen.pickup.show', ['pickup' => $pickup], navigate: true);
     }
@@ -73,5 +116,44 @@ final class PickupRequestForm extends Component
             'areas' => ServiceArea::query()->where('is_active', true)->whereHas('rts', fn ($query) => $query->where('is_active', true))->orderBy('name')->get(),
             'types' => WasteType::query()->with('category')->where('is_active', true)->whereHas('category', fn ($query) => $query->where('is_active', true))->orderBy('name')->get(),
         ]);
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function locationRules(): array
+    {
+        return [
+            'serviceAreaId' => ['required', 'integer', 'min:1'],
+            'selectedDate' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'address' => ['required', 'string', 'min:5', 'max:500'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ];
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function itemRules(): array
+    {
+        return [
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.waste_type_id' => ['required', 'integer', 'min:1'],
+            'items.*.estimated_weight_kg' => ['nullable', 'numeric', 'gt:0', 'regex:/^\d+(?:\.\d{1,3})?$/'],
+            'items.*.estimated_quantity' => ['nullable', 'integer', 'min:1'],
+            'photos' => ['required', 'array', 'min:1', 'max:2'],
+            'photos.*' => ['file', 'mimes:jpg,jpeg,png', 'max:1024'],
+        ];
+    }
+
+    /** @param array<string, array<int, string>> $rules */
+    private function validateStep(array $rules): bool
+    {
+        try {
+            $this->validate($rules);
+
+            return true;
+        } catch (ValidationException $exception) {
+            $this->setErrorBag($exception->validator->errors());
+            $this->dispatch('focus-pickup-errors');
+
+            return false;
+        }
     }
 }

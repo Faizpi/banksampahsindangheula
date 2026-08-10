@@ -41,6 +41,8 @@ final class CustomerIdentification extends Component
     #[Locked]
     public bool $confirmed = false;
 
+    public string $selectedService = '';
+
     public bool $scannerOpen = false;
 
     public bool $assistedConsent = false;
@@ -131,6 +133,15 @@ final class CustomerIdentification extends Component
         $this->confirmed = true;
     }
 
+    public function chooseService(string $service): void
+    {
+        if (! $this->confirmed || ! in_array($service, ['deposit', 'assisted', 'withdrawal'], true)) {
+            throw ValidationException::withMessages(['search' => 'Konfirmasi nama warga sebelum memilih layanan.']);
+        }
+
+        $this->selectedService = $service;
+    }
+
     public function recordAssistedService(
         AssistedCustomerServiceAction $service,
         StorePrivateMedia $mediaStore,
@@ -178,6 +189,7 @@ final class CustomerIdentification extends Component
         }
 
         $this->assistedRecorded = true;
+        $this->selectedService = 'assisted';
         session()->flash('success', 'Layanan berbantuan tercatat dengan persetujuan dan bukti privat.');
     }
 
@@ -256,6 +268,7 @@ final class CustomerIdentification extends Component
             'assisted_service_id' => $this->assistedWithdrawalServiceId,
         ], $this->assistedWithdrawalIdempotencyKey);
         $this->assistedWithdrawalId = $withdrawal->id;
+        $this->selectedService = 'withdrawal';
         $this->withdrawalEvidence = null;
         session()->flash('success', 'Pencairan berbantuan berhasil diajukan dengan consent dan bukti privat.');
     }
@@ -274,7 +287,7 @@ final class CustomerIdentification extends Component
 
     private function resetCandidate(): void
     {
-        $this->reset(['candidate', 'confirmed', 'assistedRecorded', 'assistedServiceId', 'assistedConsent', 'assistedEvidence', 'mobileServiceId', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'assistedWithdrawalServiceId', 'assistedWithdrawalId']);
+        $this->reset(['candidate', 'confirmed', 'selectedService', 'assistedRecorded', 'assistedServiceId', 'assistedConsent', 'assistedEvidence', 'mobileServiceId', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'assistedWithdrawalServiceId', 'assistedWithdrawalId']);
         $this->withdrawalDate = today('Asia/Jakarta')->addDay()->toDateString();
         $this->assistedWithdrawalIdempotencyKey = (string) str()->uuid();
         $this->resetErrorBag(['search', 'token', 'assistedConsent', 'assistedEvidence', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'withdrawalDate']);

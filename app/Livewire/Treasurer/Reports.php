@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Treasurer;
 
 use App\Authorization\PermissionChecker;
+use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Reports\Enums\ReportType;
 use App\Domain\Reports\Services\ReportExportService;
 use App\Domain\Reports\Services\ReportQueryService;
@@ -43,6 +44,22 @@ final class Reports extends Component
     /** @var array<string, int|string> */
     public array $metrics = [];
 
+    /** @var array<string, string> */
+    public array $statusOptions = [
+        'menunggu_verifikasi' => 'Menunggu verifikasi',
+        'menunggu_pemeriksaan' => 'Menunggu pemeriksaan',
+        'diterima' => 'Diterima',
+        'dijadwalkan' => 'Dijadwalkan',
+        'menuju_lokasi' => 'Menuju lokasi',
+        'dijemput' => 'Sudah dijemput',
+        'selesai' => 'Selesai',
+        'siap_diambil' => 'Siap diambil',
+        'sudah_dibayar' => 'Sudah dibayar',
+        'ditolak' => 'Ditolak',
+        'dibatalkan' => 'Dibatalkan',
+        'kedaluwarsa' => 'Kedaluwarsa',
+    ];
+
     public function mount(PermissionChecker $permissions): void
     {
         /** @var User|null $actor */
@@ -80,6 +97,18 @@ final class Reports extends Component
         $this->rows = $reports->displayRows($actor, $this->reportType, $filters);
     }
 
+    public function setPeriod(string $preset, ReportQueryService $reports): void
+    {
+        $today = today('Asia/Jakarta');
+        [$this->start, $this->end] = match ($preset) {
+            'today' => [$today->toDateString(), $today->addDay()->toDateString()],
+            'week' => [$today->subDays(6)->toDateString(), $today->addDay()->toDateString()],
+            'month' => [$today->startOfMonth()->toDateString(), $today->addDay()->toDateString()],
+            default => [$this->start, $this->end],
+        };
+        $this->refreshReport($reports);
+    }
+
     public function export(ReportExportService $exports): void
     {
         /** @var User $actor */
@@ -105,6 +134,8 @@ final class Reports extends Component
 
     public function render(): View
     {
-        return view('livewire.treasurer.reports');
+        return view('livewire.treasurer.reports', [
+            'serviceAreas' => ServiceArea::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+        ]);
     }
 }

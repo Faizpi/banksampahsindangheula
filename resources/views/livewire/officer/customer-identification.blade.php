@@ -1,6 +1,6 @@
 <x-slot:title>Identifikasi warga</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
-<x-slot:connectivity>Terhubung</x-slot:connectivity>
+<x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
 <section aria-labelledby="customer-identification-title" class="space-y-6">
     {{-- Page header --}}
@@ -131,7 +131,44 @@
                     </div>
                     <p class="text-h2 font-bold text-deep-green">{{ $candidate->name }}</p>
                     <p class="text-body-sm text-text-secondary">Nomor referensi: {{ $candidate->maskedNumber() }}</p>
-                            <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+
+                    <ol class="mt-5 grid gap-2 border-t border-border pt-4 text-body-sm sm:grid-cols-5">
+                        <li class="font-semibold text-forest-700">1. Identifikasi</li>
+                        <li class="font-semibold text-forest-700">2. Konfirmasi</li>
+                        <li class="font-semibold {{ $selectedService === '' ? 'text-deep-green' : 'text-forest-700' }}">3. Pilih layanan</li>
+                        <li class="text-text-secondary">4. Selesaikan</li>
+                        <li class="text-text-secondary">5. Ringkasan</li>
+                    </ol>
+
+                    @if ($selectedService === '')
+                        <div class="mt-5">
+                            <h3 class="text-title font-bold text-deep-green">Pilih layanan warga</h3>
+                            <p class="mt-1 text-body-sm text-text-secondary">Pisahkan jalur agar tindakan yang dipilih tetap jelas dan tidak tercampur.</p>
+                            <div class="mt-4 grid gap-3 sm:grid-cols-3">
+                                <button type="button" wire:click="chooseService('deposit')" class="min-h-28 rounded-md border-2 border-forest-600 bg-success-bg p-4 text-left transition hover:bg-surface">
+                                    <span class="block text-label font-bold text-deep-green">Setoran</span>
+                                    <span class="mt-1 block text-body-sm text-text-secondary">Catat setoran langsung atau keliling.</span>
+                                </button>
+                                @if ($canCreateAssisted)
+                                    <button type="button" wire:click="chooseService('assisted')" class="min-h-28 rounded-md border border-border bg-warm-canvas p-4 text-left transition hover:border-forest-600 hover:bg-success-bg">
+                                        <span class="block text-label font-bold text-deep-green">Layanan berbantuan</span>
+                                        <span class="mt-1 block text-body-sm text-text-secondary">Catat persetujuan dan bukti privat.</span>
+                                    </button>
+                                @endif
+                                @if ($canCreateAssistedWithdrawal)
+                                    <button type="button" wire:click="chooseService('withdrawal')" class="min-h-28 rounded-md border border-border bg-warning-bg p-4 text-left transition hover:border-harvest-gold">
+                                        <span class="block text-label font-bold text-deep-green">Pencairan berbantuan</span>
+                                        <span class="mt-1 block text-body-sm text-text-secondary">Ajukan pencairan dengan consent warga.</span>
+                                    </button>
+                                @endif
+                            </div>
+                            <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId, 'assistedServiceId' => $assistedServiceId]) }}" class="mt-4 inline-flex min-h-touch items-center gap-2 text-label font-bold text-forest-700 underline underline-offset-4">Mulai Setoran</a>
+                        </div>
+                    @endif
+
+                    @if ($selectedService === 'deposit')
+                        <div class="mt-5 border-t border-border pt-4">
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                                 <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId, 'assistedServiceId' => $assistedServiceId]) }}"
 
                             class="inline-flex min-h-touch items-center gap-2 rounded-xl bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700">
@@ -150,8 +187,10 @@
                                     <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId]) }}?{{ http_build_query(array_filter(['mobileServiceId' => $mobileServiceId, 'assistedServiceId' => $assistedServiceId])) }}" class="mt-3 inline-flex min-h-touch items-center justify-center rounded-xl border-2 border-forest-600 px-5 text-label font-bold text-forest-700 transition hover:bg-success-bg">Mulai Setoran Keliling</a>
                                 </div>
                             @endif
+                        </div>
+                    @endif
 
-                            @if ($canCreateAssisted)
+                            @if ($selectedService === 'assisted' && $canCreateAssisted)
                         <div class="mt-5 rounded-xl border border-border bg-warm-canvas p-4">
                             <p class="text-label font-bold text-deep-green">Layanan berbantuan</p>
                             <p class="mt-1 text-body-sm text-text-secondary">Catat layanan atas nama warga setelah persetujuan terpisah. Kata sandi tidak pernah diminta.</p>
@@ -193,7 +232,7 @@
                         </div>
                     @endif
 
-                    @if ($canCreateAssistedWithdrawal)
+                    @if ($selectedService === 'withdrawal' && $canCreateAssistedWithdrawal)
                         <div class="mt-5 rounded-xl border border-warning-bg bg-warning-bg p-4">
                             <p class="text-label font-bold text-deep-green">Pencairan berbantuan</p>
                             <p class="mt-1 text-body-sm text-text-secondary">Ajukan pencairan atas nama warga setelah persetujuan dan bukti privat tercatat. Nominal akan mengikuti proses approval dan hold saldo yang sama.</p>

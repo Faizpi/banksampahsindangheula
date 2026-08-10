@@ -1,6 +1,6 @@
 <x-slot:title>Tugas sembako</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
-<x-slot:connectivity>Terhubung</x-slot:connectivity>
+<x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
 <section aria-labelledby="grocery-tasks-title" class="grid gap-6">
     {{-- Page header --}}
@@ -118,4 +118,3 @@
         </x-ui.panel>
     @endif
 </section>
-

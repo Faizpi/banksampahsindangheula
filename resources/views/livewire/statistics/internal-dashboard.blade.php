@@ -1,6 +1,6 @@
 <x-slot:title>Statistik internal</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
-<x-slot:connectivity>Terhubung</x-slot:connectivity>
+<x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
 <section class="space-y-6" aria-labelledby="internal-statistics-title">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

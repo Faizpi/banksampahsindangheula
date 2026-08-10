@@ -161,6 +161,8 @@ await run('Warga mengajukan pickup dengan foto', async () => {
     await settle(page);
     await page.locator('textarea[name="address"]').fill('Jl. UAT E2E No. 1, Sindangheula');
     await settle(page);
+    await page.getByRole('button', { name: 'Lanjut ke Jenis & foto' }).click();
+    await settle(page);
     await chooseFirst(page, 'items.0.waste_type_id');
     await page.locator('input[name="items.0.estimated_weight_kg"]').fill('2.500');
     await settle(page);
@@ -168,7 +170,9 @@ await run('Warga mengajukan pickup dengan foto', async () => {
     await settle(page);
     await page.locator('#pickup-photos').setInputFiles(fixture);
     await settle(page);
-    await page.getByRole('button', { name: 'Kirim Pengajuan' }).click();
+    await page.getByRole('button', { name: 'Lanjut ke Tinjau' }).click();
+    await settle(page);
+    await page.getByRole('button', { name: /Kirim pengajuan/i }).click();
     await page.waitForURL(/\/warga\/penjemputan\/\d+/, { timeout: 20000 });
     await waitForLivewire(page);
     const text = await page.locator('body').innerText();

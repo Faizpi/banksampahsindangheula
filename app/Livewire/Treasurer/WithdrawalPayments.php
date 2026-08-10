@@ -28,6 +28,8 @@ final class WithdrawalPayments extends Component
 
     public ?int $selectedWithdrawalId = null;
 
+    public bool $showPaymentReview = false;
+
     public function mount(): void
     {
         $this->idempotencyKey = (string) str()->uuid();
@@ -36,6 +38,20 @@ final class WithdrawalPayments extends Component
     public function select(int $withdrawalId): void
     {
         $this->selectedWithdrawalId = $withdrawalId;
+        $this->showPaymentReview = false;
+        $this->reset(['recipientReference', 'proof']);
+        $this->idempotencyKey = (string) str()->uuid();
+    }
+
+    public function reviewPayment(): void
+    {
+        $this->validatePaymentFields();
+        $this->showPaymentReview = true;
+    }
+
+    public function cancelPaymentReview(): void
+    {
+        $this->showPaymentReview = false;
     }
 
     public function pay(WithdrawalService $service): void
@@ -43,15 +59,10 @@ final class WithdrawalPayments extends Component
         /** @var User $actor */
         $actor = auth()->user();
         $withdrawal = WithdrawalRequest::query()->findOrFail($this->selectedWithdrawalId);
-        $this->validate(['recipientVerification' => ['required', 'in:kartu_nasabah,nomor_nasabah'], 'recipientReference' => ['required', 'string', 'min:3', 'max:120'], 'proof' => ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf']]);
-        if (! isset($this->proof)) {
-            $this->addError('proof', 'Bukti pembayaran wajib diunggah.');
-
-            return;
-        }
+        $this->validatePaymentFields();
         $service->pay($actor, $withdrawal, $this->recipientVerification, $this->recipientReference, $this->proof, $this->idempotencyKey);
         session()->flash('success', 'Pembayaran tercatat dan saldo keluar dibuat.');
-        $this->reset(['selectedWithdrawalId', 'recipientReference']);
+        $this->reset(['selectedWithdrawalId', 'recipientReference', 'proof', 'showPaymentReview']);
         $this->idempotencyKey = (string) str()->uuid();
     }
 
@@ -60,8 +71,24 @@ final class WithdrawalPayments extends Component
         /** @var User $actor */
         $actor = auth()->user();
 
-        return view('livewire.treasurer.withdrawal-payments', [
-            'withdrawals' => app(WithdrawalService::class)->payableFor($actor)->latest()->get(),
-        ]);
+        $withdrawals = app(WithdrawalService::class)->payableFor($actor)->latest()->get();
+        $selectedWithdrawal = $withdrawals->firstWhere('id', $this->selectedWithdrawalId);
+        $availableBalance = null;
+        if ($selectedWithdrawal !== null) {
+            $selectedWithdrawal->customer?->loadMissing('ledgerAccount');
+            $availableBalance = $selectedWithdrawal->customer?->ledgerAccount?->availableBalance();
+        }
+
+        return view('livewire.treasurer.withdrawal-payments', compact('withdrawals', 'selectedWithdrawal', 'availableBalance'));
+    }
+
+    private function validatePaymentFields(): void
+    {
+        $this->validate([
+            'selectedWithdrawalId' => ['required', 'integer', 'min:1'],
+            'recipientVerification' => ['required', 'in:kartu_nasabah,nomor_nasabah'],
+            'recipientReference' => ['required', 'string', 'min:3', 'max:120'],
+            'proof' => ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
+        ], ['proof.required' => 'Bukti pembayaran wajib diunggah.']);
     }
 }

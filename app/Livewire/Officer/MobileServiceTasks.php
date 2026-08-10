@@ -16,6 +16,8 @@ use Livewire\Component;
 #[Layout('layouts.officer')]
 final class MobileServiceTasks extends Component
 {
+    public ?int $pendingCloseServiceId = null;
+
     public function open(int $serviceId, MobileServiceService $services): void
     {
         $actor = $this->actor();
@@ -30,6 +32,17 @@ final class MobileServiceTasks extends Component
         $service = $this->assignedService($actor, $serviceId);
         $services->transition($actor, $service, MobileServiceStatus::Closed);
         session()->flash('success', 'Layanan keliling ditutup.');
+        $this->pendingCloseServiceId = null;
+    }
+
+    public function requestClose(int $serviceId): void
+    {
+        $this->pendingCloseServiceId = $serviceId;
+    }
+
+    public function cancelClose(): void
+    {
+        $this->pendingCloseServiceId = null;
     }
 
     public function recap(int $serviceId, MobileServiceService $services): void

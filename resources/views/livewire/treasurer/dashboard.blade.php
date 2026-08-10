@@ -1,12 +1,26 @@
 <x-slot:title>Tugas hari ini</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
-<x-slot:connectivity>Terhubung</x-slot:connectivity>
+<x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
 <x-slot:todayTasks>
     <x-ui.panel title="Pencairan siap dibayar" description="Hanya pencairan dalam scope Anda yang tampil.">
-        <x-ui.empty-state
-            title="Belum ada pencairan siap dibayar"
-            description="Pencairan yang disetujui dan siap dibayar akan muncul di sini." />
+        @if ($readyPayments->isEmpty())
+            <x-ui.empty-state title="Belum ada pencairan siap dibayar" description="Pencairan yang disetujui dan siap dibayar akan muncul di sini." />
+        @else
+            <div class="mb-4 flex flex-col gap-1 border-b border-border pb-4 sm:flex-row sm:items-baseline sm:justify-between">
+                <p class="text-body-sm text-text-secondary"><strong class="text-deep-green">{{ $readyPayments->count() }}</strong> antrean aktif</p>
+                <p class="amount-tabular text-title font-bold text-harvest-gold">Rp {{ number_format($readyPaymentTotal, 0, ',', '.') }}</p>
+            </div>
+            <div class="grid gap-3">
+                @foreach ($readyPayments as $withdrawal)
+                    <a href="{{ route('treasurer.withdrawal.payments') }}" class="flex min-h-[72px] items-center justify-between gap-3 rounded-md border border-warning-bg bg-warning-bg p-4 transition hover:border-harvest-gold">
+                        <span class="min-w-0"><span class="block text-label font-bold text-deep-green">{{ $withdrawal->request_number }}</span><span class="mt-1 block truncate text-body-sm text-text-secondary">{{ $withdrawal->customer?->name ?? 'Nasabah' }} · {{ $withdrawal->pickup_date?->translatedFormat('d M Y') ?? 'Tanggal belum tersedia' }}</span></span>
+                        <span class="shrink-0 amount-tabular text-label font-bold text-deep-green">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</span>
+                    </a>
+                @endforeach
+            </div>
+            <a href="{{ route('treasurer.withdrawal.payments') }}" class="mt-4 inline-flex min-h-touch items-center gap-2 text-label font-bold text-forest-700 underline underline-offset-4">Buka seluruh antrean pembayaran</a>
+        @endif
     </x-ui.panel>
 </x-slot:todayTasks>
 

@@ -12,13 +12,16 @@ use App\Domain\Deposits\Services\DepositService;
 use App\Domain\MobileServices\Models\MobileService;
 use App\Domain\WasteMaster\Models\WasteCondition;
 use App\Domain\WasteMaster\Models\WasteType;
+use App\Domain\WasteMaster\Services\ResolveWastePrice;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Throwable;
 
 #[Layout('layouts.officer')]
 final class DepositForm extends Component
@@ -145,9 +148,56 @@ final class DepositForm extends Component
 
     public function render(): View
     {
+        $types = WasteType::query()->with('conditions')->where('is_active', true)->whereHas('category', static fn ($query) => $query->where('is_active', true))->orderBy('name')->get();
+        $conditions = WasteCondition::query()->where('is_active', true)->orderBy('sort_order')->get();
+
         return view('livewire.officer.deposit-form', [
-            'types' => WasteType::query()->with('conditions')->where('is_active', true)->whereHas('category', static fn ($query) => $query->where('is_active', true))->orderBy('name')->get(),
-            'conditions' => WasteCondition::query()->where('is_active', true)->orderBy('sort_order')->get(),
+            'types' => $types,
+            'conditions' => $conditions,
+            'pricePreview' => $this->pricePreview($types, $conditions),
         ]);
+    }
+
+    /**
+     * @param  Collection<int, WasteType>  $types
+     * @param  Collection<int, WasteCondition>  $conditions
+     * @return array{lines: list<array{name: string, condition: string, weight: string, subtotal: int}>, total: int, complete: bool}
+     */
+    private function pricePreview(Collection $types, Collection $conditions): array
+    {
+        $lines = [];
+        $total = 0;
+        $complete = $this->items !== [];
+
+        foreach ($this->items as $item) {
+            $type = $types->firstWhere('id', (int) $item['waste_type_id']);
+            $condition = $conditions->firstWhere('id', (int) $item['condition_id']);
+            $weight = $item['weight_kg'];
+            if ($type === null || $condition === null || $weight === '') {
+                $complete = false;
+
+                continue;
+            }
+
+            try {
+                $price = app(ResolveWastePrice::class)->resolve($type, (int) $condition->id, now('Asia/Jakarta'));
+                $snapshot = $price->snapshot()->withWeight($weight);
+            } catch (Throwable) {
+                $complete = false;
+
+                continue;
+            }
+
+            $subtotal = (int) $snapshot->subtotal;
+            $total += $subtotal;
+            $lines[] = [
+                'name' => $type->name,
+                'condition' => $condition->name,
+                'weight' => (string) $snapshot->weightKg,
+                'subtotal' => $subtotal,
+            ];
+        }
+
+        return ['lines' => $lines, 'total' => $total, 'complete' => $complete && $lines !== []];
     }
 }

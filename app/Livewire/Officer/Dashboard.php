@@ -80,6 +80,20 @@ final class Dashboard extends Component
             ->get() : collect();
         $activeMobileServices = $mobileServices->where('status', MobileServiceStatus::Open)->count();
         $assignedCustomers = $todayPickups->concat($latePickups)->pluck('customer')->filter()->unique('id')->values();
+        $priorityPickup = $latePickups->first() ?? $todayPickups->first();
+        $priorityTask = $priorityPickup instanceof PickupRequest
+            ? [
+                'label' => $latePickups->isNotEmpty() ? 'Pickup terlambat' : 'Pickup berikutnya',
+                'description' => $priorityPickup->customer->name.' · '.$priorityPickup->address,
+                'href' => $canOperatePickups ? route('officer.pickup.task', $priorityPickup) : null,
+                'status' => $priorityPickup->status,
+            ]
+            : ($draftDeposits->first() !== null ? [
+                'label' => 'Lanjutkan draf setoran',
+                'description' => $draftDeposits->first()->customer->name.' · draf belum difinalisasi',
+                'href' => $canResumeDeposits ? route('officer.deposit-form', ['customerId' => $draftDeposits->first()->customer_id, 'draftId' => $draftDeposits->first()->id]) : null,
+                'status' => null,
+            ] : null);
         $canShowGroceryTasks = $canViewGroceries || $canHandoverGroceries;
         $metrics = [];
         if ($canViewPickups) {
@@ -119,6 +133,7 @@ final class Dashboard extends Component
             'mobileServices' => $mobileServices,
             'assignedCustomers' => $assignedCustomers,
             'metrics' => $metrics,
+            'priorityTask' => $priorityTask,
         ]);
     }
 }

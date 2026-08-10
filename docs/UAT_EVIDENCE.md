@@ -34,6 +34,19 @@ This document records an automated technical run only. It does not replace stake
 | Admin approves; petugas prepares, readies, and hands over | PASS | Approval, preparation, recipient verification, private proof, terminal status |
 | Admin records deposit correction | PASS | Corrected status, correction record, adjustment ledger, evidence |
 
+## UX/UI follow-up validation — 10 August 2026
+
+| Check | Result | Evidence |
+|---|---:|---|
+| Full application regression suite | PASS | 1,125 passed, 1 skipped, 4,723 assertions |
+| Officer shell and caller-owned header slots | PASS | `OfficerShellTest`: 329 passed |
+| PHPStan | PASS | 0 errors |
+| Pint | PASS | Code style check passed |
+| Production asset build | PASS | `npm run build` completed successfully |
+| Browser harness rerun | BLOCKED | Local MySQL on `127.0.0.1:3306` refused the disposable E2E database connection before browser launch; no production database was touched |
+
+The existing 9 August 2026 browser transaction run above remains the latest completed browser evidence. The UX/UI changes were validated through the full feature suite and shell-specific regression tests; rerun the browser harness after the disposable MySQL service is available.
+
 ## Findings fixed during execution
 
 - Pickup back-office status formatter accepted `PickupStatus` enum values instead of requiring `string`.

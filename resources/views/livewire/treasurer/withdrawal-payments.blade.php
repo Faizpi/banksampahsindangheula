@@ -1,6 +1,6 @@
 <x-slot:title>Pembayaran pencairan</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
-<x-slot:connectivity>Terhubung</x-slot:connectivity>
+<x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
 <section aria-labelledby="withdrawal-payments-title" class="grid gap-6">
     {{-- Page header --}}
@@ -33,6 +33,7 @@
                             · {{ $withdrawal->pickup_location }}
                         @endif
                     </p>
+                    <p class="text-body-sm text-text-secondary">Hold saldo: <strong class="text-deep-green">Rp {{ number_format($withdrawal->balanceHold?->amount ?? $withdrawal->amount, 0, ',', '.') }}</strong></p>
                 </div>
                 <button type="button" wire:click="select({{ $withdrawal->id }})"
                     class="inline-flex min-h-touch shrink-0 items-center justify-center gap-2 rounded-xl bg-harvest-gold px-5 text-label font-bold text-deep-green shadow-xs transition hover:opacity-90">
@@ -52,9 +53,17 @@
     @endforelse
 
     {{-- Verification Form --}}
-    @if ($selectedWithdrawalId !== null)
+    @if ($selectedWithdrawal !== null)
         <x-ui.panel title="Verifikasi dan bukti pembayaran" description="Pastikan nama penerima dan nominal sesuai sebelum mengirim." state="success">
             <div class="grid gap-4">
+                <dl class="grid gap-3 rounded-md bg-warm-canvas p-4 text-body-sm sm:grid-cols-2">
+                    <div><dt class="text-text-secondary">Penerima</dt><dd class="mt-1 text-label font-bold text-deep-green">{{ $selectedWithdrawal->customer?->name ?? 'Nasabah' }}</dd></div>
+                    <div><dt class="text-text-secondary">Nominal</dt><dd class="mt-1 amount-tabular text-title font-bold text-deep-green">Rp {{ number_format($selectedWithdrawal->amount, 0, ',', '.') }}</dd></div>
+                    <div><dt class="text-text-secondary">Saldo tersedia sebelum bayar</dt><dd class="mt-1 amount-tabular font-bold text-forest-700">{{ $availableBalance === null ? 'Akan dicek saat pembayaran' : 'Rp '.number_format($availableBalance, 0, ',', '.') }}</dd></div>
+                    <div><dt class="text-text-secondary">Saldo ditahan</dt><dd class="mt-1 amount-tabular font-bold text-harvest-gold">Rp {{ number_format($selectedWithdrawal->balanceHold?->amount ?? $selectedWithdrawal->amount, 0, ',', '.') }}</dd></div>
+                    <div><dt class="text-text-secondary">Tanggal pengambilan</dt><dd class="mt-1 font-semibold text-deep-green">{{ $selectedWithdrawal->pickup_date?->translatedFormat('d F Y') ?? 'Belum tersedia' }}</dd></div>
+                    <div><dt class="text-text-secondary">Batas pengambilan</dt><dd class="mt-1 font-semibold text-deep-green">{{ $selectedWithdrawal->expires_at?->translatedFormat('d F Y, H:i') ?? 'Belum tersedia' }}</dd></div>
+                </dl>
                 <x-ui.select wire:model="recipientVerification" label="Metode verifikasi penerima" name="recipientVerification"
                     :options="['kartu_nasabah' => 'Kartu nasabah', 'nomor_nasabah' => 'Nomor nasabah']" />
                 <x-ui.input wire:model="recipientReference" label="Referensi verifikasi" name="recipientReference"
@@ -68,10 +77,24 @@
                         <p class="text-body-sm text-terracotta">{{ $message }}</p>
                     @enderror
                 </div>
-                <x-ui.button type="button" wire:click="pay" wire:loading.attr="disabled">
-                    <span wire:loading.remove>Konfirmasi Pembayaran</span>
-                    <span wire:loading>Memproses...</span>
+                <x-ui.button type="button" wire:click="reviewPayment" wire:loading.attr="disabled" wire:target="reviewPayment">
+                    <span wire:loading.remove wire:target="reviewPayment">Tinjau sebelum bayar</span>
+                    <span wire:loading wire:target="reviewPayment">Memeriksa...</span>
                 </x-ui.button>
+
+                @if ($showPaymentReview)
+                    <div class="rounded-md border-2 border-harvest-gold bg-warning-bg p-4" role="alert">
+                        <h3 class="text-title font-bold text-deep-green">Konfirmasi pembayaran final</h3>
+                        <p class="mt-1 text-body-sm text-text-primary">Pembayaran akan mengubah hold menjadi saldo keluar dan tidak dapat diulang. Pastikan penerima, nominal, dan bukti sudah benar.</p>
+                        <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                            <x-ui.button type="button" variant="secondary" wire:click="cancelPaymentReview">Ubah data</x-ui.button>
+                            <x-ui.button type="button" wire:click="pay" wire:loading.attr="disabled" wire:target="pay">
+                                <span wire:loading.remove wire:target="pay">Bayar dan catat bukti</span>
+                                <span wire:loading wire:target="pay">Memproses...</span>
+                            </x-ui.button>
+                        </div>
+                    </div>
+                @endif
             </div>
         </x-ui.panel>
     @endif
