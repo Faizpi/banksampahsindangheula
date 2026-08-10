@@ -71,11 +71,11 @@
     }
 
     $icons = [
-        'Tugas' => 'clipboard-list',
+        'Tugas' => 'home',
         'Setoran' => 'wallet-cards',
         'Layanan' => 'grid-2x2',
         'Pembayaran' => 'wallet-cards',
-        'Rekonsiliasi' => 'grid-2x2',
+        'Rekonsiliasi' => 'clipboard-list',
         'Akun' => 'user-round',
     ];
 

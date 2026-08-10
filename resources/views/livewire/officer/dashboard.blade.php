@@ -178,8 +178,8 @@
 
 {{-- Quick Actions --}}
 <section aria-labelledby="officer-actions-title">
-    <h2 id="officer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Aksi Utama</h2>
-    <div class="grid grid-cols-2 gap-3">
+    <h2 id="officer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Aksi Cepat</h2>
+    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         @if ($canIdentifyCustomers)
         <a href="{{ $identificationHref }}"
             class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-sm">
@@ -188,10 +188,7 @@
                     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
                 </svg>
             </div>
-            <div>
-                <p class="text-caption font-semibold text-deep-green">Identifikasi Warga</p>
-                <p class="mt-0.5 text-body-sm text-text-secondary">Cari atau pindai nasabah</p>
-            </div>
+            <span class="text-caption font-semibold text-deep-green">Identifikasi Warga</span>
         </a>
         @endif
 
@@ -203,10 +200,7 @@
                     <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>
                 </svg>
             </div>
-            <div>
-                <p class="text-caption font-semibold text-deep-green">Jadwal Keliling</p>
-                <p class="mt-0.5 text-body-sm text-text-secondary">Titik layanan hari ini</p>
-            </div>
+            <span class="text-caption font-semibold text-deep-green">Jadwal Keliling</span>
         </a>
         @endif
 
@@ -218,10 +212,7 @@
                     <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>
                 </svg>
             </div>
-            <div>
-                <p class="text-caption font-semibold text-deep-green">Tugas Sembako</p>
-                <p class="mt-0.5 text-body-sm text-text-secondary">Persiapan &amp; serah terima</p>
-            </div>
+            <span class="text-caption font-semibold text-deep-green">Tugas Sembako</span>
         </a>
         @endif
 
@@ -231,10 +222,7 @@
                 <div class="flex size-11 items-center justify-center rounded-xl bg-info-bg text-sky-blue transition-colors group-hover:bg-sky-blue group-hover:text-white">
                     <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/></svg>
                 </div>
-                <div>
-                    <p class="text-caption font-semibold text-deep-green">Statistik Internal</p>
-                    <p class="mt-0.5 text-body-sm text-text-secondary">Pantau metrik dalam scope</p>
-                </div>
+                <span class="text-caption font-semibold text-deep-green">Statistik Internal</span>
             </a>
         @endif
 
@@ -246,10 +234,7 @@
                     <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
                 </svg>
             </div>
-            <div>
-                <p class="text-caption font-semibold text-deep-green">Profil Akun</p>
-                <p class="mt-0.5 text-body-sm text-text-secondary">Kata sandi &amp; keamanan</p>
-            </div>
+            <span class="text-caption font-semibold text-deep-green">Profil Akun</span>
         </a>
         @endif
     </div>
