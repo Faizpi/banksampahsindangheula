@@ -14,7 +14,6 @@ use App\Domain\CustomersRegions\Models\Rt;
 use App\Domain\CustomersRegions\Models\Rw;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Deposits\Models\Deposit;
-use App\Domain\Groceries\Enums\GrocerySource;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryPackage;
 use App\Domain\Groceries\Models\GroceryRedemption;
@@ -51,19 +50,19 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Builds a realistic local/staging dataset for manual end-to-end testing.
+ * Builds a coherent local dataset for manual end-to-end testing.
  *
  * This is deliberately not called in production. All business identifiers use
- * a DEMO prefix and every lookup is idempotent, so re-running db:seed is safe.
+ * a Sindangheula prefix and every lookup is idempotent, so re-running db:seed is safe.
  */
-final class DemoDataSeeder extends Seeder
+final class LocalDataSeeder extends Seeder
 {
-    private const DEMO_PASSWORD = 'Demo#Sindangheula2026';
+    private const LOCAL_PASSWORD = 'Lokal#Sindangheula2026';
 
     /** @var list<string> */
     private const CUSTOMER_NAMES = [
-        'Asep Saepuloh', 'Dewi Lestari', 'Rina Marlina', 'Dadan Hidayat', 'Siti Aminah', 'Ujang Suherman',
-        'Nia Kurniasih', 'Fajar Nugraha', 'Yani Mulyani', 'Agus Setiawan', 'Lilis Suryani', 'Rudi Hartono',
+        'Asep Saepuloh', 'Ujang Suherman',
+        'Nia Kurniasih', 'Fajar Nugraha', 'Yani Mulyani', 'Lilis Suryani', 'Rudi Hartono',
         'Euis Komariah', 'Budi Santoso', 'Tati Rosdiana', 'Hendra Gunawan', 'Wulan Sari', 'Deni Permana',
         'Yayah Rohayah', 'Iwan Kurniawan', 'Maman Suparman', 'Novi Andriani', 'Cecep Saefulloh', 'Fitri Handayani',
         'Taufik Hidayat', 'Mira Puspitasari', 'Dede Suhendar', 'Salsa Nuraini', 'Rian Firmansyah', 'Endah Wulandari',
@@ -75,7 +74,7 @@ final class DemoDataSeeder extends Seeder
     public function run(): void
     {
         if (app()->environment('production')) {
-            $this->command?->warn('DemoDataSeeder dilewati pada production.');
+            $this->command?->warn('LocalDataSeeder dilewati pada production.');
 
             return;
         }
@@ -97,15 +96,14 @@ final class DemoDataSeeder extends Seeder
             }
 
             $this->seedDeposits($customers, $staff, $master['types'], $master['conditions'], $prices, $mobileServices, $pickups, $ledger, $now);
-            $this->seedWithdrawals($customers, $staff, $ledger, $now);
-            $this->seedGroceries($customers, $staff, $ledger, $now);
+            $this->seedWithdrawals($admin, $customers, $staff, $ledger, $now);
+            $this->seedGroceries($admin, $customers, $staff, $ledger, $now);
             $this->seedPrograms($admin, $regions['rts'], $master, $now);
             $this->seedAnnouncements($admin, $regions['rts'], $now);
             $this->seedStatisticPublication($admin);
         });
 
-        $this->command?->info('Demo data siap: '.count($customers).' warga, '.count($regions['rts']).' RT, '.count($master['types']).' jenis sampah, dan histori transaksi 7 hari.');
-        $this->command?->info('Password akun demo tambahan: '.self::DEMO_PASSWORD);
+        $this->command?->info('Data lokal siap: '.count($customers).' warga, '.count($regions['rts']).' RT, '.count($master['types']).' jenis sampah, dan histori transaksi 7 hari.');
     }
 
     /** @return array{dusuns: list<Dusun>, rws: list<Rw>, rts: list<Rt>, areas: list<ServiceArea>} */
@@ -117,9 +115,9 @@ final class DemoDataSeeder extends Seeder
         $rts = [];
 
         foreach ([
-            ['code' => 'DSN-DEMO-UTARA', 'name' => 'Dusun Sindangheula Utara'],
-            ['code' => 'DSN-DEMO-TENGAH', 'name' => 'Dusun Sindangheula Tengah'],
-            ['code' => 'DSN-DEMO-SELATAN', 'name' => 'Dusun Sindangheula Selatan'],
+            ['code' => 'DSN-SH-UTARA', 'name' => 'Dusun Sindangheula Utara'],
+            ['code' => 'DSN-SH-TENGAH', 'name' => 'Dusun Sindangheula Tengah'],
+            ['code' => 'DSN-SH-SELATAN', 'name' => 'Dusun Sindangheula Selatan'],
         ] as $dusunData) {
             $dusun = Dusun::query()->where('code', $dusunData['code'])->first();
             $dusun ??= $manager->createDusun($admin, $dusunData['code'], $dusunData['name']);
@@ -140,9 +138,10 @@ final class DemoDataSeeder extends Seeder
             }
         }
 
+        $areaNames = ['Layanan Sindangheula Utara', 'Layanan Sindangheula Tengah', 'Layanan Sindangheula Selatan'];
         $areas = [];
         foreach (array_chunk($rts, 6) as $index => $areaRts) {
-            $name = 'Area Layanan Demo '.($index + 1);
+            $name = $areaNames[$index];
             $area = ServiceArea::query()->where('name', $name)->first();
             if ($area === null) {
                 $area = $manager->createServiceArea($admin, $name, $areaRts);
@@ -161,34 +160,41 @@ final class DemoDataSeeder extends Seeder
     private function seedStaff(array $areas): array
     {
         $role = Role::query()->where('name', 'petugas')->firstOrFail();
-        $staff = [];
-        foreach (range(1, 4) as $number) {
-            $phone = '628130000'.str_pad((string) $number, 4, '0', STR_PAD_LEFT);
+        $created = [];
+        foreach ([
+            ['key' => 'utara', 'name' => 'Rangga Pratama', 'phone' => '6281312345001', 'email' => 'rangga.pratama@sindangheula.test', 'staff_number' => 'STF-SH-101', 'area_index' => 0],
+            ['key' => 'selatan', 'name' => 'Nina Kusumawati', 'phone' => '6281312345002', 'email' => 'nina.kusumawati@sindangheula.test', 'staff_number' => 'STF-SH-102', 'area_index' => 2],
+            ['key' => 'tengah', 'name' => 'Yusuf Maulana', 'phone' => '6281312345003', 'email' => 'yusuf.maulana@sindangheula.test', 'staff_number' => 'STF-SH-103', 'area_index' => 1],
+        ] as $definition) {
             $user = User::query()->updateOrCreate(
-                ['phone' => $phone],
+                ['phone' => $definition['phone']],
                 [
-                    'name' => 'Petugas Demo '.$number,
-                    'email' => 'petugas.demo.'.str_pad((string) $number, 2, '0', STR_PAD_LEFT).'@sindangheula.test',
+                    'name' => $definition['name'],
+                    'email' => $definition['email'],
                     'email_verified_at' => now(),
-                    'password' => Hash::make(self::DEMO_PASSWORD),
+                    'password' => Hash::make(self::LOCAL_PASSWORD),
                     'status' => UserStatus::Active,
                     'verified_at' => now(),
                     'terms_version' => (string) config('app.terms_version'),
                     'terms_accepted_at' => now(),
                 ],
             );
-            $user->roles()->syncWithoutDetaching([$role->id => ['assigned_by' => $user->id, 'reason' => 'Demo dataset']]);
+            $user->roles()->syncWithoutDetaching([$role->id => ['assigned_by' => $user->id, 'reason' => 'Data awal Sindangheula']]);
             StaffProfile::query()->updateOrCreate(
                 ['user_id' => $user->id],
-                ['staff_number' => 'STF-DEMO-'.str_pad((string) $number, 3, '0', STR_PAD_LEFT), 'service_area_id' => $areas[($number - 1) % count($areas)]->id, 'active_from' => today()->subDays(30), 'active_to' => null],
+                ['staff_number' => $definition['staff_number'], 'service_area_id' => $areas[$definition['area_index']]->id, 'active_from' => today()->subDays(30), 'active_to' => null],
             );
-            $staff[] = $user;
+            $created[$definition['key']] = $user;
         }
 
+        $petugas = User::query()->where('email', DeveloperUsersSeeder::email('petugas'))->firstOrFail();
+        StaffProfile::query()->updateOrCreate(
+            ['user_id' => $petugas->id],
+            ['staff_number' => 'STF-SH-001', 'service_area_id' => $areas[1]->id, 'active_from' => today()->subYear(), 'active_to' => null],
+        );
         $treasurer = User::query()->where('email', DeveloperUsersSeeder::email('bendahara'))->firstOrFail();
-        $staff[] = $treasurer;
 
-        return $staff;
+        return [$created['utara'], $petugas, $created['selatan'], $created['tengah'], $treasurer];
     }
 
     /** @param list<Rt> $rts
@@ -197,29 +203,30 @@ final class DemoDataSeeder extends Seeder
     private function seedCustomers(array $rts): array
     {
         $role = Role::query()->where('name', 'warga')->firstOrFail();
-        $customers = [];
+        $customers = [User::query()->where('email', DeveloperUsersSeeder::email('warga'))->firstOrFail()];
+        $addresses = ['Kampung Cikadu', 'Kampung Babakan', 'Kampung Pasirhuni', 'Kampung Sukamaju', 'Kampung Cibogo', 'Kampung Kiarapyaung'];
         foreach (self::CUSTOMER_NAMES as $index => $name) {
-            $number = $index + 1;
+            $number = $index + 2;
             $user = User::query()->updateOrCreate(
                 ['phone' => '628140000'.str_pad((string) $number, 4, '0', STR_PAD_LEFT)],
                 [
                     'name' => $name,
-                    'email' => 'warga.demo.'.str_pad((string) $number, 3, '0', STR_PAD_LEFT).'@sindangheula.test',
+                    'email' => 'warga.'.str_pad((string) $number, 3, '0', STR_PAD_LEFT).'@sindangheula.test',
                     'email_verified_at' => now(),
-                    'password' => Hash::make(self::DEMO_PASSWORD),
+                    'password' => Hash::make(self::LOCAL_PASSWORD),
                     'status' => UserStatus::Active,
                     'verified_at' => now(),
                     'terms_version' => (string) config('app.terms_version'),
                     'terms_accepted_at' => now(),
                 ],
             );
-            $user->roles()->syncWithoutDetaching([$role->id => ['assigned_by' => $user->id, 'reason' => 'Demo dataset']]);
+            $user->roles()->syncWithoutDetaching([$role->id => ['assigned_by' => $user->id, 'reason' => 'Data awal Sindangheula']]);
             $profile = CustomerProfile::query()->firstOrNew(['user_id' => $user->id]);
             $token = $profile->qr_token_hash === null ? QrToken::generate() : null;
             $profile->forceFill([
-                'customer_number' => $profile->customer_number ?? 'CST-DEMO-'.str_pad((string) $number, 4, '0', STR_PAD_LEFT),
+                'customer_number' => $profile->customer_number ?? 'CST-SH-'.str_pad((string) $number, 4, '0', STR_PAD_LEFT),
                 'rt_id' => $rts[$index % count($rts)]->id,
-                'address' => 'Kampung Demo '.(($index % 8) + 1).', Sindangheula',
+                'address' => $addresses[$index % count($addresses)].', '.$rts[$index % count($rts)]->name.', Desa Sindangheula',
                 'joined_at' => today()->subDays(7 - ($index % 7)),
                 'qr_token_hash' => $profile->qr_token_hash ?? $token?->hash(),
                 'qr_token_encrypted' => $profile->qr_token_encrypted ?? $token?->value(),
@@ -253,7 +260,7 @@ final class DemoDataSeeder extends Seeder
         $conditions = [];
         foreach ([['code' => 'BERSIH', 'name' => 'Bersih'], ['code' => 'CAMPUR', 'name' => 'Campur']] as $definition) {
             $condition = WasteCondition::query()->where('code', $definition['code'])->first();
-            $condition ??= $manager->createCondition($admin, $definition['code'], $definition['name'], 'Kondisi material demo.');
+            $condition ??= $manager->createCondition($admin, $definition['code'], $definition['name'], 'Kondisi material untuk pencatatan setoran.');
             $conditions[$definition['code']] = $condition;
         }
 
@@ -271,7 +278,7 @@ final class DemoDataSeeder extends Seeder
         foreach ($typeDefinitions as $index => $definition) {
             $type = WasteType::query()->where('code', $definition['code'])->first();
             if ($type === null) {
-                $type = $manager->createType($admin, $categories[$definition['category']], $unit, $definition['code'], $definition['name'], 'Material demo untuk pengujian alur setoran.', $index + 1, $definition['plastic'], true, array_values(array_map(static fn (WasteCondition $condition): int => $condition->id, $conditions)));
+                $type = $manager->createType($admin, $categories[$definition['category']], $unit, $definition['code'], $definition['name'], 'Material terpilah yang diterima Bank Sampah Sindangheula.', $index + 1, $definition['plastic'], true, array_values(array_map(static fn (WasteCondition $condition): int => $condition->id, $conditions)));
             }
             $types[] = $type;
         }
@@ -323,10 +330,10 @@ final class DemoDataSeeder extends Seeder
     {
         $services = [];
         $definitions = [
-            ['number' => 'MOB-DEMO-001', 'start' => $now->subDays(6)->setTime(8, 0), 'end' => $now->subDays(6)->setTime(12, 0), 'status' => MobileServiceStatus::Closed, 'point' => 'Balai Dusun Utara'],
-            ['number' => 'MOB-DEMO-002', 'start' => $now->subDays(3)->setTime(8, 0), 'end' => $now->subDays(3)->setTime(13, 0), 'status' => MobileServiceStatus::Closed, 'point' => 'Lapangan Dusun Tengah'],
-            ['number' => 'MOB-DEMO-003', 'start' => $now->subHour(), 'end' => $now->addHours(4), 'status' => MobileServiceStatus::Open, 'point' => 'Halaman Kantor Desa'],
-            ['number' => 'MOB-DEMO-004', 'start' => $now->addDay()->setTime(8, 0), 'end' => $now->addDay()->setTime(13, 0), 'status' => MobileServiceStatus::Published, 'point' => 'Balai Dusun Selatan'],
+            ['number' => 'MOB-SH-001', 'start' => $now->subDays(6)->setTime(8, 0), 'end' => $now->subDays(6)->setTime(12, 0), 'status' => MobileServiceStatus::Closed, 'point' => 'Balai Dusun Sindangheula Utara'],
+            ['number' => 'MOB-SH-002', 'start' => $now->subDays(3)->setTime(8, 0), 'end' => $now->subDays(3)->setTime(13, 0), 'status' => MobileServiceStatus::Closed, 'point' => 'Lapangan Dusun Sindangheula Tengah'],
+            ['number' => 'MOB-SH-003', 'start' => $now->subHour(), 'end' => $now->addHours(4), 'status' => MobileServiceStatus::Open, 'point' => 'Halaman Kantor Desa Sindangheula'],
+            ['number' => 'MOB-SH-004', 'start' => $now->addDay()->setTime(8, 0), 'end' => $now->addDay()->setTime(13, 0), 'status' => MobileServiceStatus::Published, 'point' => 'Balai Dusun Sindangheula Selatan'],
         ];
         foreach ($definitions as $index => $definition) {
             $service = MobileService::query()->firstOrCreate(
@@ -340,7 +347,7 @@ final class DemoDataSeeder extends Seeder
                     'status' => $definition['status'],
                     'capacity' => 30,
                     'served_count' => $definition['status'] === MobileServiceStatus::Closed ? 12 + $index : 0,
-                    'notes' => 'Jadwal demo untuk pengujian layanan keliling.',
+                    'notes' => 'Jadwal layanan keliling Bank Sampah Sindangheula.',
                     'created_by' => $staff[0]->id,
                 ],
             );
@@ -373,16 +380,16 @@ final class DemoDataSeeder extends Seeder
                 default => PickupStatus::PendingReview,
             };
             $pickup = PickupRequest::query()->firstOrCreate(
-                ['request_number' => 'PUP-DEMO-'.str_pad((string) $number, 3, '0', STR_PAD_LEFT)],
+                ['request_number' => 'PUP-SH-'.str_pad((string) $number, 3, '0', STR_PAD_LEFT)],
                 [
                     'customer_id' => $customer->id,
                     'rt_id' => $rt->id,
                     'service_area_id' => $regions['areas'][$areaIndex]->id,
-                    'address' => 'Kampung Demo '.(($number % 8) + 1).', Sindangheula',
+                    'address' => (string) $customer->customerProfile()->firstOrFail()->address,
                     'selected_date' => $date,
                     'scheduled_date' => in_array($status, [PickupStatus::Scheduled, PickupStatus::Completed], true) ? $date : null,
                     'estimated_weight_kg' => number_format(4.5 + ($number * 0.8), 3, '.', ''),
-                    'notes' => 'Warga meminta penjemputan melalui dataset demo.',
+                    'notes' => 'Warga mengajukan penjemputan sampah terpilah.',
                     'status' => $status,
                     'assigned_staff_id' => $staff[$areaIndex % 4]->id,
                     'accepted_at' => $status !== PickupStatus::PendingReview ? $now->subDays(7 - $number)->setTime(9, 0) : null,
@@ -399,7 +406,7 @@ final class DemoDataSeeder extends Seeder
                 );
             }
             if (! StatusHistory::query()->where('subject_type', PickupRequest::class)->where('subject_id', $pickup->id)->exists()) {
-                StatusHistory::query()->create(['subject_type' => PickupRequest::class, 'subject_id' => $pickup->id, 'old_status' => null, 'new_status' => $status->value, 'actor_id' => $staff[$areaIndex % 4]->id, 'reason' => 'Status awal dataset demo.', 'occurred_at' => $pickup->completed_at ?? $pickup->created_at ?? $now]);
+                StatusHistory::query()->create(['subject_type' => PickupRequest::class, 'subject_id' => $pickup->id, 'old_status' => null, 'new_status' => $status->value, 'actor_id' => $staff[$areaIndex % 4]->id, 'reason' => 'Status awal layanan penjemputan.', 'occurred_at' => $pickup->completed_at ?? $pickup->created_at ?? $now]);
             }
             $pickups[] = $pickup;
         }
@@ -408,7 +415,7 @@ final class DemoDataSeeder extends Seeder
             foreach (range(0, 6) as $dayOffset) {
                 PickupCapacity::query()->firstOrCreate(
                     ['service_area_id' => $area->id, 'service_date' => $now->subDays($dayOffset)->toDateString()],
-                    ['max_addresses' => 12, 'max_weight_kg' => '80.000', 'vehicle_label' => 'Motor Bak Demo '.($area->id), 'is_active' => true],
+                    ['max_addresses' => 12, 'max_weight_kg' => '80.000', 'vehicle_label' => 'Kendaraan Layanan '.($area->id), 'is_active' => true],
                 );
             }
         }
@@ -428,13 +435,13 @@ final class DemoDataSeeder extends Seeder
     {
         foreach (range(0, 6) as $dayOffset) {
             foreach (range(1, 8) as $sequence) {
-                $demoNumber = ($dayOffset * 8) + $sequence;
-                $number = 'DEP-DEMO-'.str_pad((string) $demoNumber, 3, '0', STR_PAD_LEFT);
+                $seedNumber = ($dayOffset * 8) + $sequence;
+                $number = 'DEP-SH-'.str_pad((string) $seedNumber, 3, '0', STR_PAD_LEFT);
                 if (Deposit::query()->where('deposit_number', $number)->exists()) {
                     continue;
                 }
-                $customer = $customers[($demoNumber * 5) % count($customers)];
-                $staffMember = $staff[($demoNumber - 1) % 4];
+                $customer = $customers[($seedNumber * 5) % count($customers)];
+                $staffMember = $staff[($seedNumber - 1) % 4];
                 $occurredAt = $now->subDays($dayOffset)->setTime(8 + ($sequence % 8), ($sequence * 7) % 60);
                 $mobile = $dayOffset === 3 && $sequence <= 2 ? $mobileServices[1] : ($dayOffset === 0 && $sequence === 1 ? $mobileServices[2] : null);
                 $pickup = $sequence === 2 && $dayOffset < 4 ? $pickups[$dayOffset] : null;
@@ -454,9 +461,9 @@ final class DemoDataSeeder extends Seeder
 
                 $totalGrams = 0;
                 $totalValue = 0;
-                foreach ([$types[($demoNumber + 1) % count($types)], $types[($demoNumber + 3) % count($types)]] as $itemIndex => $type) {
-                    $condition = $conditions[($demoNumber + $itemIndex) % count($conditions)];
-                    $weight = number_format(1.2 + (($demoNumber + $itemIndex) % 7) * 0.65, 3, '.', '');
+                foreach ([$types[($seedNumber + 1) % count($types)], $types[($seedNumber + 3) % count($types)]] as $itemIndex => $type) {
+                    $condition = $conditions[($seedNumber + $itemIndex) % count($conditions)];
+                    $weight = number_format(1.2 + (($seedNumber + $itemIndex) % 7) * 0.65, 3, '.', '');
                     $snapshot = $prices[$type->id][$condition->id]->snapshot()->withWeight($weight);
                     $deposit->items()->create([
                         'waste_type_id' => $type->id,
@@ -482,7 +489,7 @@ final class DemoDataSeeder extends Seeder
                     'total_weight_kg' => Weight::fromGrams($totalGrams)->decimal(),
                     'total_value' => $totalValue,
                     'finalized_at' => $occurredAt->addMinutes(20),
-                    'idempotency_key' => 'demo-deposit-'.$demoNumber,
+                    'idempotency_key' => 'local-deposit-'.$seedNumber,
                     'verification_token_hash' => $token->hash(),
                     'verification_token_encrypted' => $token->value(),
                 ])->save();
@@ -497,7 +504,7 @@ final class DemoDataSeeder extends Seeder
     /** @param list<User> $customers
      * @param  list<User>  $staff
      */
-    private function seedWithdrawals(array $customers, array $staff, LedgerService $ledger, CarbonImmutable $now): void
+    private function seedWithdrawals(User $admin, array $customers, array $staff, LedgerService $ledger, CarbonImmutable $now): void
     {
         foreach (range(1, 6) as $number) {
             $eligibleCustomers = array_values(array_filter($customers, static function (User $candidate): bool {
@@ -512,7 +519,7 @@ final class DemoDataSeeder extends Seeder
             if ($amount < 10_000) {
                 continue;
             }
-            $requestNumber = 'WDR-DEMO-'.str_pad((string) $number, 3, '0', STR_PAD_LEFT);
+            $requestNumber = 'WDR-SH-'.str_pad((string) $number, 3, '0', STR_PAD_LEFT);
             $withdrawal = WithdrawalRequest::query()->firstOrCreate(
                 ['request_number' => $requestNumber],
                 [
@@ -529,15 +536,15 @@ final class DemoDataSeeder extends Seeder
                 $withdrawal->forceFill(['balance_hold_id' => $hold->id])->save();
             }
             if (! StatusHistory::query()->where('subject_type', WithdrawalRequest::class)->where('subject_id', $withdrawal->id)->exists()) {
-                StatusHistory::query()->create(['subject_type' => WithdrawalRequest::class, 'subject_id' => $withdrawal->id, 'old_status' => null, 'new_status' => WithdrawalStatus::PendingVerification->value, 'actor_id' => $customer->id, 'reason' => 'Pengajuan demo warga.', 'occurred_at' => $now->subDays(5 - min($number, 5))]);
+                StatusHistory::query()->create(['subject_type' => WithdrawalRequest::class, 'subject_id' => $withdrawal->id, 'old_status' => null, 'new_status' => WithdrawalStatus::PendingVerification->value, 'actor_id' => $customer->id, 'reason' => 'Pengajuan pencairan warga.', 'occurred_at' => $now->subDays(5 - min($number, 5))]);
             }
             if ($number >= 3 && $withdrawal->status === WithdrawalStatus::PendingVerification) {
-                $withdrawal->forceFill(['status' => WithdrawalStatus::Approved, 'approver_id' => $staff[4]->id, 'approved_at' => $now->subDays(1)])->save();
-                StatusHistory::query()->create(['subject_type' => WithdrawalRequest::class, 'subject_id' => $withdrawal->id, 'old_status' => WithdrawalStatus::PendingVerification->value, 'new_status' => WithdrawalStatus::Approved->value, 'actor_id' => $staff[4]->id, 'reason' => 'Disetujui untuk testing demo.', 'occurred_at' => $now->subHours(18)]);
+                $withdrawal->forceFill(['status' => WithdrawalStatus::Approved, 'approver_id' => $admin->id, 'approved_at' => $now->subDays(1)])->save();
+                StatusHistory::query()->create(['subject_type' => WithdrawalRequest::class, 'subject_id' => $withdrawal->id, 'old_status' => WithdrawalStatus::PendingVerification->value, 'new_status' => WithdrawalStatus::Approved->value, 'actor_id' => $admin->id, 'reason' => 'Pencairan telah diverifikasi.', 'occurred_at' => $now->subHours(18)]);
             }
             if ($number >= 5 && $withdrawal->status === WithdrawalStatus::Approved) {
-                $withdrawal->forceFill(['status' => WithdrawalStatus::ReadyForPickup, 'payer_id' => $staff[($number - 1) % 4]->id])->save();
-                StatusHistory::query()->create(['subject_type' => WithdrawalRequest::class, 'subject_id' => $withdrawal->id, 'old_status' => WithdrawalStatus::Approved->value, 'new_status' => WithdrawalStatus::ReadyForPickup->value, 'actor_id' => $staff[($number - 1) % 4]->id, 'reason' => 'Payer demo ditetapkan.', 'occurred_at' => $now->subHours(12)]);
+                $withdrawal->forceFill(['status' => WithdrawalStatus::ReadyForPickup, 'payer_id' => $staff[4]->id])->save();
+                StatusHistory::query()->create(['subject_type' => WithdrawalRequest::class, 'subject_id' => $withdrawal->id, 'old_status' => WithdrawalStatus::Approved->value, 'new_status' => WithdrawalStatus::ReadyForPickup->value, 'actor_id' => $staff[4]->id, 'reason' => 'Bendahara ditetapkan sebagai petugas pembayar.', 'occurred_at' => $now->subHours(12)]);
             }
         }
     }
@@ -545,11 +552,12 @@ final class DemoDataSeeder extends Seeder
     /** @param list<User> $customers
      * @param  list<User>  $staff
      */
-    private function seedGroceries(array $customers, array $staff, LedgerService $ledger, CarbonImmutable $now): void
+    private function seedGroceries(User $admin, array $customers, array $staff, LedgerService $ledger, CarbonImmutable $now): void
     {
         $packages = [
-            ['code' => 'PKT-DEMO-HEMAT', 'name' => 'Paket Hemat Keluarga', 'contents' => 'Beras 5 kg, minyak 1 L, gula 1 kg', 'value' => 75_000],
-            ['code' => 'PKT-DEMO-SEHAT', 'name' => 'Paket Sehat Warga', 'contents' => 'Beras 5 kg, telur 1 kg, kacang hijau 500 g', 'value' => 90_000],
+            ['code' => 'PKT-SH-HEMAT', 'name' => 'Paket Hemat Harian', 'contents' => "Beras 2 kg\nMinyak goreng 1 liter\nGula pasir 500 gram", 'value' => 8_000],
+            ['code' => 'PKT-SH-KELUARGA', 'name' => 'Paket Keluarga', 'contents' => "Beras 3 kg\nMinyak goreng 1 liter\nGula pasir 1 kg\nMi instan 5 bungkus", 'value' => 15_000],
+            ['code' => 'PKT-SH-LENGKAP', 'name' => 'Paket Lengkap', 'contents' => "Beras 5 kg\nMinyak goreng 2 liter\nGula pasir 1 kg\nTelur ayam 10 butir\nSarden 2 kaleng", 'value' => 22_000],
         ];
         $packageModels = [];
         foreach ($packages as $packageData) {
@@ -558,32 +566,62 @@ final class DemoDataSeeder extends Seeder
                 $packageData + ['active_from' => $now->subDays(30)->toDateString(), 'active_until' => null, 'status' => 'aktif'],
             );
         }
-        foreach (range(1, 5) as $number) {
-            $customer = $customers[($number * 9) % count($customers)];
-            $package = $packageModels[($number - 1) % count($packageModels)];
+
+        $usedCustomerIds = [];
+        foreach ([GroceryStatus::PendingVerification, GroceryStatus::Approved, GroceryStatus::Preparing, GroceryStatus::ReadyForPickup] as $index => $targetStatus) {
+            $package = $packageModels[$index % count($packageModels)];
+            $eligibleCustomers = array_values(array_filter($customers, static fn (User $candidate): bool => ($candidate->ledgerAccount()->first()?->availableBalance() ?? 0) >= $package->value));
+            if ($eligibleCustomers === []) {
+                continue;
+            }
+            $customer = collect($eligibleCustomers)->first(fn (User $candidate): bool => ! in_array($candidate->id, $usedCustomerIds, true)) ?? $eligibleCustomers[0];
+            $usedCustomerIds[] = $customer->id;
+            $number = $index + 1;
             $redemption = GroceryRedemption::query()->firstOrCreate(
-                ['request_number' => 'GRC-DEMO-'.str_pad((string) $number, 3, '0', STR_PAD_LEFT)],
+                ['request_number' => 'GRC-SH-'.str_pad((string) $number, 3, '0', STR_PAD_LEFT)],
                 [
                     'customer_id' => $customer->id,
                     'requested_by_id' => $customer->id,
                     'grocery_package_id' => $package->id,
                     'value_snapshot' => $package->value,
                     'package_snapshot' => ['code' => $package->code, 'name' => $package->name, 'contents' => $package->contents, 'value' => $package->value],
-                    'source_type' => GrocerySource::FreeAid,
                     'status' => GroceryStatus::PendingVerification,
                 ],
             );
-            if ($redemption->source_type === GrocerySource::Balance && $redemption->balance_hold_id === null) {
+            if ($redemption->balance_hold_id === null) {
                 $hold = $ledger->createHold($customer, $redemption, (int) $redemption->value_snapshot, 'grocery:'.$redemption->id.':hold');
                 $redemption->forceFill(['balance_hold_id' => $hold->id])->save();
             }
             if (! StatusHistory::query()->where('subject_type', GroceryRedemption::class)->where('subject_id', $redemption->id)->exists()) {
-                StatusHistory::query()->create(['subject_type' => GroceryRedemption::class, 'subject_id' => $redemption->id, 'old_status' => null, 'new_status' => GroceryStatus::PendingVerification->value, 'actor_id' => $customer->id, 'reason' => 'Penukaran demo warga.', 'occurred_at' => $now->subDays(4 - min($number, 4))]);
+                StatusHistory::query()->create(['subject_type' => GroceryRedemption::class, 'subject_id' => $redemption->id, 'old_status' => null, 'new_status' => GroceryStatus::PendingVerification->value, 'actor_id' => $customer->id, 'reason' => 'Warga mengajukan penukaran dari saldo.', 'occurred_at' => $now->subDays(4 - $index)]);
             }
-            if ($number >= 3 && $redemption->status === GroceryStatus::PendingVerification) {
-                $redemption->forceFill(['status' => GroceryStatus::Approved, 'approver_id' => $staff[4]->id, 'approved_at' => $now->subDay(), 'availability_note' => 'Stok tersedia untuk demo.', 'expires_at' => $now->addDays(7)])->save();
-                StatusHistory::query()->create(['subject_type' => GroceryRedemption::class, 'subject_id' => $redemption->id, 'old_status' => GroceryStatus::PendingVerification->value, 'new_status' => GroceryStatus::Approved->value, 'actor_id' => $staff[4]->id, 'reason' => 'Disetujui untuk testing demo.', 'occurred_at' => $now->subHours(20)]);
+            if ($targetStatus === GroceryStatus::PendingVerification || $redemption->status !== GroceryStatus::PendingVerification) {
+                continue;
             }
+
+            $redemption->forceFill([
+                'status' => GroceryStatus::Approved,
+                'approver_id' => $admin->id,
+                'approved_at' => $now->subDay(),
+                'availability_note' => 'Isi paket tersedia untuk disiapkan.',
+                'expires_at' => $now->addDays(7),
+            ])->save();
+            $redemption->statusHistory()->create(['old_status' => GroceryStatus::PendingVerification->value, 'new_status' => GroceryStatus::Approved->value, 'actor_id' => $admin->id, 'reason' => 'Ketersediaan paket dikonfirmasi.', 'occurred_at' => $now->subHours(20)]);
+
+            if ($targetStatus === GroceryStatus::Approved) {
+                continue;
+            }
+
+            $staffMember = $staff[$index % 4];
+            $redemption->forceFill(['status' => GroceryStatus::Preparing, 'prepared_by_id' => $staffMember->id, 'prepared_at' => $now->subHours(12)])->save();
+            $redemption->statusHistory()->create(['old_status' => GroceryStatus::Approved->value, 'new_status' => GroceryStatus::Preparing->value, 'actor_id' => $staffMember->id, 'reason' => 'Petugas mulai menyiapkan paket.', 'occurred_at' => $now->subHours(12)]);
+
+            if ($targetStatus === GroceryStatus::Preparing) {
+                continue;
+            }
+
+            $redemption->forceFill(['status' => GroceryStatus::ReadyForPickup, 'ready_at' => $now->subHours(2)])->save();
+            $redemption->statusHistory()->create(['old_status' => GroceryStatus::Preparing->value, 'new_status' => GroceryStatus::ReadyForPickup->value, 'actor_id' => $staffMember->id, 'reason' => 'Paket siap diserahkan kepada warga.', 'occurred_at' => $now->subHours(2)]);
         }
     }
 
@@ -593,10 +631,10 @@ final class DemoDataSeeder extends Seeder
     private function seedPrograms(User $admin, array $rts, array $master, CarbonImmutable $now): void
     {
         $target = CollectionTarget::query()->firstOrCreate(
-            ['target_number' => 'TGT-DEMO-MINGGU-01'],
+            ['target_number' => 'TGT-SH-MINGGU-01'],
             [
                 'name' => 'Target pengumpulan minggu ini',
-                'purpose' => 'Mendorong partisipasi warga selama minggu pertama operasional demo.',
+                'purpose' => 'Mendorong partisipasi warga dalam pemilahan dan setoran sampah minggu ini.',
                 'period_start' => $now->subDays(6)->toDateString(),
                 'period_end' => $now->addDays(8)->toDateString(),
                 'target_weight_kg' => '250.000',
@@ -612,10 +650,10 @@ final class DemoDataSeeder extends Seeder
             TargetScope::query()->create(['collection_target_id' => $target->id, 'waste_category_id' => $master['categories'][1]->id]);
         }
         $internal = CollectionTarget::query()->firstOrCreate(
-            ['target_number' => 'TGT-DEMO-RT-01'],
+            ['target_number' => 'TGT-SH-RT-01'],
             [
-                'name' => 'Target RT demo',
-                'purpose' => 'Target internal untuk menguji filter wilayah.',
+                'name' => 'Target pengumpulan RT 01',
+                'purpose' => 'Target internal pengumpulan material terpilah di wilayah layanan.',
                 'period_start' => $now->subDays(6)->toDateString(),
                 'period_end' => $now->addDays(8)->toDateString(),
                 'target_weight_kg' => '80.000',
@@ -635,7 +673,7 @@ final class DemoDataSeeder extends Seeder
     private function seedAnnouncements(User $admin, array $rts, CarbonImmutable $now): void
     {
         $announcement = Announcement::query()->firstOrCreate(
-            ['announcement_number' => 'ANN-DEMO-MINGGU-01'],
+            ['announcement_number' => 'ANN-SH-MINGGU-01'],
             [
                 'title' => 'Jadwal layanan bank sampah minggu ini',
                 'body' => '<p>Layanan keliling hadir di beberapa titik selama minggu ini. Siapkan sampah yang sudah dipilah dan bawa kartu nasabah saat transaksi.</p>',
@@ -652,9 +690,9 @@ final class DemoDataSeeder extends Seeder
         $announcement->rts()->syncWithoutDetaching(array_map(static fn (Rt $rt): int => $rt->id, array_slice($rts, 0, 6)));
 
         Announcement::query()->firstOrCreate(
-            ['announcement_number' => 'ANN-DEMO-INTERNAL-01'],
+            ['announcement_number' => 'ANN-SH-INTERNAL-01'],
             [
-                'title' => 'Briefing petugas demo',
+                'title' => 'Briefing petugas layanan',
                 'body' => '<p>Pastikan bukti transaksi dan persetujuan warga tercatat sebelum proses diselesaikan.</p>',
                 'audience' => AnnouncementAudience::Internal,
                 'publish_start' => $now->subDays(2),

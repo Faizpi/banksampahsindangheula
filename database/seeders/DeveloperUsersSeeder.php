@@ -17,7 +17,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 /**
- * Development-only credential seeder.
+ * Local/staging credential seeder.
  *
  * Creates one back-office/phone-capable account per baseline role so a local
  * or staging instance can be exercised end-to-end. NEVER wired into production:
@@ -53,6 +53,15 @@ final class DeveloperUsersSeeder extends Seeder
         'superadmin' => ['phone' => '6281234567805', 'email' => 'superadmin@sindangheula.dev', 'staff' => false, 'customer' => false],
     ];
 
+    /** @var array<string, string> */
+    private const DISPLAY_NAMES = [
+        'warga' => 'Siti Aminah',
+        'petugas' => 'Dadan Hidayat',
+        'bendahara' => 'Dewi Lestari',
+        'admin' => 'Rina Marlina',
+        'superadmin' => 'Agus Setiawan',
+    ];
+
     /** @return array<string, string> role name => phone */
     public static function telephones(): array
     {
@@ -83,7 +92,7 @@ final class DeveloperUsersSeeder extends Seeder
             $user = User::query()->updateOrCreate(
                 ['phone' => $account['phone']],
                 [
-                    'name' => ucfirst($roleName).' Development',
+                    'name' => self::DISPLAY_NAMES[$roleName],
                     'email' => $account['email'],
                     'email_verified_at' => now(),
                     'password' => Hash::make(self::DEV_PASSWORD),
@@ -97,21 +106,21 @@ final class DeveloperUsersSeeder extends Seeder
             $role = Role::query()->where('name', $roleName)->firstOrFail();
             $user->roles()->syncWithoutDetaching([$role->id => ['assigned_by' => $user->id, 'reason' => 'Dev credential bootstrap']]);
 
-            $this->ensureProfiles($user, $account['customer'], $account['staff']);
+            $this->ensureProfiles($user, $roleName, $account['customer'], $account['staff']);
 
             $this->command?->info("Created dev account for role [{$roleName}]: {$account['email']} / phone {$account['phone']}");
         }
     }
 
-    private function ensureProfiles(User $user, bool $customer, bool $staff): void
+    private function ensureProfiles(User $user, string $roleName, bool $customer, bool $staff): void
     {
         if ($customer) {
             CustomerProfile::query()->updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'customer_number' => 'CST-DEV-'.$user->id,
-                    'rt_id' => $this->devRt()->id,
-                    'address' => 'Alamat pengembangan Sindangheula',
+                    'customer_number' => 'CST-SH-0001',
+                    'rt_id' => $this->localRt()->id,
+                    'address' => 'Kampung Sukamaju RT 01/RW 02, Sindangheula',
                     'joined_at' => now()->toDateString(),
                 ],
             );
@@ -121,8 +130,8 @@ final class DeveloperUsersSeeder extends Seeder
             StaffProfile::query()->updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'staff_number' => 'STF-DEV-'.$user->id,
-                    'service_area_id' => $this->devServiceArea()->id,
+                    'staff_number' => $roleName === 'bendahara' ? 'STF-SH-002' : 'STF-SH-001',
+                    'service_area_id' => $this->localServiceArea()->id,
                     'active_from' => now()->subYear()->toDateString(),
                     'active_to' => null,
                 ],
@@ -130,28 +139,28 @@ final class DeveloperUsersSeeder extends Seeder
         }
     }
 
-    private function devServiceArea(): ServiceArea
+    private function localServiceArea(): ServiceArea
     {
         return ServiceArea::query()->firstOrCreate(
-            ['name' => 'Wilayah Pengembangan Dev'],
+            ['name' => 'Layanan Sindangheula Tengah'],
             ['is_active' => true],
         );
     }
 
-    private function devRt(): Rt
+    private function localRt(): Rt
     {
         $dusun = Dusun::query()->firstOrCreate(
-            ['code' => 'DEV-DS'],
-            ['name' => 'Pengembangan', 'is_active' => true],
+            ['code' => 'DSN-SH-TENGAH'],
+            ['name' => 'Dusun Sindangheula Tengah', 'is_active' => true],
         );
         $rw = Rw::query()->firstOrCreate(
-            ['dusun_id' => $dusun->id, 'code' => 'DEV-RW'],
-            ['name' => 'Pengembangan', 'is_active' => true],
+            ['dusun_id' => $dusun->id, 'code' => 'DSN-SH-TENGAH-RW-02'],
+            ['name' => 'RW 02 Sindangheula Tengah', 'is_active' => true],
         );
 
         return Rt::query()->firstOrCreate(
-            ['rw_id' => $rw->id, 'code' => 'DEV-RT'],
-            ['name' => 'Pengembangan', 'is_active' => true],
+            ['rw_id' => $rw->id, 'code' => 'DSN-SH-TENGAH-RW-02-RT-01'],
+            ['name' => 'RT 01 RW 02', 'is_active' => true],
         );
     }
 }
