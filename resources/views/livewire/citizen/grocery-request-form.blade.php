@@ -8,7 +8,7 @@
             <p class="text-label font-semibold text-forest-600">Penukaran Saldo</p>
             <h1 id="grocery-request-title" class="mt-2 text-h1 font-bold text-deep-green">Pilih Paket Sembako</h1>
             <p class="mt-3 text-body text-text-secondary">
-                Nilai paket akan di-snapshot. Saldo ditahan sementara dan baru menjadi saldo keluar setelah paket diserahkan secara sah.
+                Nilai paket dicatat sebagai rekaman pengajuan. Dana ditahan sementara dan baru menjadi saldo keluar setelah paket diserahkan secara sah.
             </p>
         </div>
         <x-ui.mascot variant="3" bubble="Tukar saldo dengan sembako!" bubblePosition="top" class="h-28 w-auto shrink-0" />

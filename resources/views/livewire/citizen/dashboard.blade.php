@@ -48,7 +48,7 @@
 
 <x-slot:quickActions>
     <div>
-        <h2 class="text-label font-bold text-text-secondary mb-3">Aksi Cepat</h2>
+        <h2 class="text-label font-bold text-text-secondary mb-3">Tindakan cepat</h2>
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <a href="{{ route('citizen.pickup.create') }}"
                 class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-sm">

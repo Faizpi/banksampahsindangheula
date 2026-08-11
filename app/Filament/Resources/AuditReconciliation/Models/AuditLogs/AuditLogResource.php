@@ -47,7 +47,7 @@ final class AuditLogResource extends Resource
     {
         return $table->recordTitleAttribute('action')->columns([
             TextColumn::make('occurred_at')->label('Waktu')->dateTime('d M Y H:i')->sortable(),
-            TextColumn::make('action')->label('Aksi')->searchable(),
+            TextColumn::make('action')->label('Tindakan')->searchable(),
             TextColumn::make('actor_type')->label('Pelaku'),
             TextColumn::make('auditable_type')->label('Objek'),
             TextColumn::make('correlation_id')->label('Korelasi')->copyable(),
@@ -55,7 +55,7 @@ final class AuditLogResource extends Resource
             Filter::make('audit_filters')->label('Filter audit')->form([
                 DatePicker::make('start')->label('Mulai tanggal'),
                 DatePicker::make('end')->label('Sampai tanggal'),
-                Select::make('action')->label('Aksi')->options(fn (): array => AuditLog::query()->select('action')->distinct()->orderBy('action')->pluck('action', 'action')->all())->searchable(),
+                Select::make('action')->label('Tindakan')->options(fn (): array => AuditLog::query()->select('action')->distinct()->orderBy('action')->pluck('action', 'action')->all())->searchable(),
                 Select::make('actor_id')->label('Pelaku')->options(fn (): array => User::query()->orderBy('name')->pluck('name', 'id')->all())->searchable(),
                 TextInput::make('correlation_id')->label('ID korelasi')->placeholder('UUID korelasi'),
             ])->query(static function (Builder $query, array $data): Builder {

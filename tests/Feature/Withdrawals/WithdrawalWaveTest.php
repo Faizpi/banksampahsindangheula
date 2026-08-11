@@ -373,13 +373,13 @@ final class WithdrawalWaveTest extends TestCase
 
         Livewire::actingAs($customer)
             ->test(WithdrawalShow::class, ['withdrawal' => $approved])
-            ->assertDontSee('Batalkan Pengajuan');
+            ->assertDontSee('Batalkan pengajuan');
 
         $secondPending = $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-cancel-button-second-0001');
 
         Livewire::actingAs($customer)
             ->test(WithdrawalShow::class, ['withdrawal' => $secondPending])
-            ->assertSee('Batalkan Pengajuan');
+            ->assertSee('Batalkan pengajuan');
     }
 
     public function test_lane_d_cancel_and_expiry_release_hold_once_and_never_create_balance_out(): void

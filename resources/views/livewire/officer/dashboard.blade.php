@@ -116,7 +116,7 @@
     @endif
 
     @if ($canShowGroceryTasks)
-    <x-ui.panel title="Tugas sembako" description="Persiapan dan penyerahan sesuai assignment.">
+    <x-ui.panel title="Tugas sembako" description="Persiapan dan penyerahan sesuai penugasan.">
         @if ($groceryTasks->isEmpty())
             <x-ui.empty-state title="Tidak ada tugas sembako" description="Tugas sembako yang siap diproses akan muncul di sini." />
         @else
@@ -169,7 +169,7 @@
             </div>
             <h1 id="officer-dashboard-title" class="mt-2 text-h2 font-bold text-deep-green">Selamat bertugas!</h1>
             <p class="mt-1.5 text-body-sm text-text-secondary">
-                {{ now()->translatedFormat('l, d F Y') }} — Hanya data dalam scope Anda yang tampil.
+                {{ now()->translatedFormat('l, d F Y') }} — Hanya data dalam cakupan Anda yang tampil.
             </p>
         </div>
         <x-ui.mascot variant="11" bubble="Siap membantu warga!" bubblePosition="top" class="h-24 w-auto shrink-0 sm:h-28" animate />
@@ -178,7 +178,7 @@
 
 {{-- Quick Actions --}}
 <section aria-labelledby="officer-actions-title">
-    <h2 id="officer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Aksi Cepat</h2>
+    <h2 id="officer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Tindakan cepat</h2>
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         @if ($canIdentifyCustomers)
         <a href="{{ $identificationHref }}"
@@ -212,7 +212,7 @@
                     <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>
                 </svg>
             </div>
-            <span class="text-caption font-semibold text-deep-green">Tugas Sembako</span>
+            <span class="text-caption font-semibold text-deep-green">Tugas sembako</span>
         </a>
         @endif
 

@@ -4,7 +4,7 @@
 @php
     $withdrawalStages = [
         ['title' => 'Diajukan', 'description' => 'Pengajuan tercatat dan menunggu pemeriksaan.', 'icon' => 'file-check', 'statuses' => ['menunggu_verifikasi']],
-        ['title' => 'Disetujui', 'description' => 'Nominal disetujui dan hold saldo tetap tercatat.', 'icon' => 'clipboard-check', 'statuses' => ['disetujui']],
+        ['title' => 'Disetujui', 'description' => 'Nominal disetujui dan dana yang ditahan tetap tercatat.', 'icon' => 'clipboard-check', 'statuses' => ['disetujui']],
         ['title' => 'Siap diambil', 'description' => 'Pembayaran sudah siap diproses bendahara.', 'icon' => 'calendar-days', 'statuses' => ['siap_diambil']],
         ['title' => 'Sudah dibayar', 'description' => 'Penerimaan diverifikasi dan bukti pembayaran tersimpan.', 'icon' => 'banknote', 'statuses' => ['sudah_dibayar']],
     ];
@@ -17,7 +17,7 @@
                 'dibatalkan' => 'Pengajuan dibatalkan',
                 default => 'Pengajuan kedaluwarsa',
             },
-            'description' => 'Tahap berikutnya tidak dilanjutkan dan hold saldo mengikuti aturan status ini.',
+            'description' => 'Tahap berikutnya tidak dilanjutkan dan dana yang ditahan mengikuti aturan status ini.',
         ]
         : null;
 @endphp
@@ -27,7 +27,7 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
             <p class="text-label font-semibold text-forest-600">Pencairan {{ $withdrawal->request_number }}</p>
-            <h1 id="withdrawal-detail-title" class="mt-2 text-h1 font-bold text-deep-green">Status Pencairan</h1>
+            <h1 id="withdrawal-detail-title" class="mt-2 text-h1 font-bold text-deep-green">Status pencairan</h1>
         </div>
         <x-ui.mascot variant="5" bubble="Status saldo terpantau!" bubblePosition="top" class="h-24 w-auto shrink-0" />
     </div>
@@ -36,7 +36,7 @@
         <x-ui.success-state title="Berhasil" :description="session('success')" />
     @endif
 
-    <x-ui.panel title="Ringkasan pencairan" description="Nominal tersnapshot dan tidak dapat diubah.">
+    <x-ui.panel title="Ringkasan pencairan" description="Nominal dicatat saat pengajuan dan tidak dapat diubah.">
         <dl class="grid gap-3 text-body md:grid-cols-2">
             <div class="rounded-lg bg-success-bg px-3 py-2">
                 <dt class="text-caption font-medium text-forest-700">Nominal</dt>
@@ -74,9 +74,9 @@
 
     @if ($withdrawal->status->value === 'menunggu_verifikasi')
         <button type="button" wire:click="cancel"
-            wire:confirm="Batalkan pengajuan pencairan ini? Hold akan dilepas."
+            wire:confirm="Batalkan pengajuan pencairan ini? Dana yang ditahan akan dilepas."
             class="inline-flex min-h-touch items-center justify-center rounded-xl border-2 border-terracotta px-5 text-label font-bold text-terracotta transition hover:bg-danger-bg">
-            Batalkan Pengajuan
+            Batalkan pengajuan
         </button>
     @endif
 </section>

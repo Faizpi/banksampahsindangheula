@@ -109,7 +109,7 @@
                 :error="$errors->first('search')"
             />
             <p id="identification-help" class="text-body-sm text-text-secondary">
-                Data warga hanya tampil bila berada dalam scope tugas Anda.
+                Data warga hanya tampil dalam cakupan tugas Anda.
             </p>
             <x-ui.button type="submit" wire:loading.attr="disabled">
                 <span wire:loading.remove>Cari Nasabah</span>
@@ -241,7 +241,7 @@
                         @endphp
                         <div class="mt-5 rounded-xl border border-warning-bg bg-warning-bg p-4">
                             <p class="text-label font-bold text-deep-green">Pencairan berbantuan</p>
-                            <p class="mt-1 text-body-sm text-text-secondary">Ajukan pencairan atas nama warga setelah persetujuan dan bukti privat tercatat. Nominal akan mengikuti proses approval dan hold saldo yang sama.</p>
+                            <p class="mt-1 text-body-sm text-text-secondary">Ajukan pencairan atas nama warga setelah persetujuan dan bukti privat tercatat. Nominal akan mengikuti proses persetujuan dan dana ditahan yang sama.</p>
                             @if ($candidateAvailableBalance !== null)
                                 <div role="status" aria-live="polite" class="mt-3 flex items-center gap-3 rounded-xl border border-forest-600 bg-success-bg px-3 py-2.5">
                                     <svg viewBox="0 0 24 24" class="size-5 shrink-0 text-forest-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>

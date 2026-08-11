@@ -45,7 +45,7 @@
 
 {{-- Quick Links --}}
 <section aria-labelledby="treasurer-actions-title">
-    <h2 id="treasurer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Aksi Cepat</h2>
+    <h2 id="treasurer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Tindakan cepat</h2>
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <a href="{{ route('treasurer.withdrawal.payments') }}"
             class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-harvest-gold hover:shadow-sm">

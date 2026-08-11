@@ -156,7 +156,7 @@ final class OperationsDashboard extends Page
         $backup = app(BackupLifecycleService::class)->request(new BackupRequest(
             actor: $this->actor(),
             artifacts: new BackupArtifactPair(
-                database: new BackupArtifact($this->backupDatabaseAlias, $this->backupDatabaseSha256, $this->positiveInteger($this->backupDatabaseSizeBytes, 'Ukuran database')),
+                database: new BackupArtifact($this->backupDatabaseAlias, $this->backupDatabaseSha256, $this->positiveInteger($this->backupDatabaseSizeBytes, 'Ukuran basis data')),
                 media: new BackupArtifact($this->backupMediaAlias, $this->backupMediaSha256, $this->positiveInteger($this->backupMediaSizeBytes, 'Ukuran media')),
             ),
             retentionUntil: $this->parseRetentionUntil(),
@@ -164,7 +164,7 @@ final class OperationsDashboard extends Page
             correlationId: $this->correlationId(),
         ));
 
-        session()->flash('operations_notice', 'Metadata cadangan tercatat. Penyalinan database dan media tetap dijalankan melalui prosedur penerapan. ID: '.$backup->getKey());
+        session()->flash('operations_notice', 'Metadata cadangan tercatat. Penyalinan basis data dan media tetap dijalankan melalui prosedur penerapan. ID: '.$backup->getKey());
         $this->resetBackupFields();
     }
 
@@ -175,7 +175,7 @@ final class OperationsDashboard extends Page
         }
 
         if (! ctype_digit($this->restoreBackupId) || (int) $this->restoreBackupId < 1) {
-            throw ValidationException::withMessages(['restoreBackupId' => 'ID backup tidak valid.']);
+            throw ValidationException::withMessages(['restoreBackupId' => 'ID cadangan tidak valid.']);
         }
 
         $backup = BackupLog::query()->findOrFail((int) $this->restoreBackupId);
@@ -226,11 +226,11 @@ final class OperationsDashboard extends Page
         try {
             $value = CarbonImmutable::parse($this->backupRetentionUntil);
         } catch (\Throwable) {
-            throw ValidationException::withMessages(['backupRetentionUntil' => 'Retensi backup tidak valid.']);
+            throw ValidationException::withMessages(['backupRetentionUntil' => 'Retensi cadangan tidak valid.']);
         }
 
         if ($value->isPast()) {
-            throw ValidationException::withMessages(['backupRetentionUntil' => 'Retensi backup harus berada di masa depan.']);
+            throw ValidationException::withMessages(['backupRetentionUntil' => 'Retensi cadangan harus berada di masa depan.']);
         }
 
         return $value;

@@ -132,8 +132,8 @@ final class GroceryWaveTest extends TestCase
 
         Livewire::actingAs($handoverOfficer)
             ->test(GroceryTasks::class)
-            ->assertSee('Tugas Sembako')
-            ->assertSee('Handover hanya tersedia bagi petugas dengan permission penyerahan, dan memerlukan verifikasi penerima serta bukti privat.')
+            ->assertSee('Tugas sembako')
+            ->assertSee('Serah-terima hanya tersedia bagi petugas dengan izin penyerahan dan memerlukan verifikasi penerima serta bukti privat.')
             ->assertDontSee('Catat bantuan gratis');
 
         $unauthorized = User::factory()->create(['status' => UserStatus::Active]);
@@ -173,10 +173,10 @@ final class GroceryWaveTest extends TestCase
         Livewire::actingAs($officer)
             ->test(GroceryTasks::class)
             ->assertSee($redemption->request_number)
-            ->assertSee('Proses Handover')
+            ->assertSee('Proses serah-terima')
             ->call('select', $redemption->id)
             ->assertSee('Verifikasi penerima dan bukti')
-            ->assertSee('Bukti handover')
+            ->assertSee('Bukti serah-terima')
             ->assertSee('Bukti disimpan privat');
     }
 
