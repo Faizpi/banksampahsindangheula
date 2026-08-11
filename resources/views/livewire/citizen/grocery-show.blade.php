@@ -1,6 +1,28 @@
 <x-slot:title>Detail sembako</x-slot:title>
 <x-slot:context>Layanan warga</x-slot:context>
 
+@php
+    $groceryStages = [
+        ['title' => 'Diajukan', 'description' => 'Permintaan tercatat dan menunggu verifikasi.', 'icon' => 'file-check', 'statuses' => ['menunggu_verifikasi']],
+        ['title' => 'Disetujui', 'description' => 'Permintaan disetujui dan paket masuk tahap persiapan.', 'icon' => 'clipboard-check', 'statuses' => ['disetujui']],
+        ['title' => 'Sedang disiapkan', 'description' => 'Paket sedang disiapkan sesuai snapshot pengajuan.', 'icon' => 'package-open', 'statuses' => ['sedang_disiapkan']],
+        ['title' => 'Siap diambil', 'description' => 'Paket tersedia untuk diserahkan kepada penerima.', 'icon' => 'calendar-days', 'statuses' => ['siap_diambil']],
+        ['title' => 'Selesai diserahkan', 'description' => 'Paket diserahkan dan bukti penyerahan tersimpan.', 'icon' => 'package-check', 'statuses' => ['selesai']],
+    ];
+    $groceryStatus = $redemption->status->value;
+    $groceryTerminalStep = in_array($groceryStatus, ['ditolak', 'dibatalkan', 'kedaluwarsa'], true)
+        ? [
+            'status' => $groceryStatus,
+            'title' => match ($groceryStatus) {
+                'ditolak' => 'Permintaan ditolak',
+                'dibatalkan' => 'Permintaan dibatalkan',
+                default => 'Permintaan kedaluwarsa',
+            },
+            'description' => 'Tahap persiapan dan penyerahan tidak dilanjutkan.',
+        ]
+        : null;
+@endphp
+
 <section aria-labelledby="grocery-detail-title" class="grid gap-6">
     {{-- Page header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -36,17 +58,15 @@
         </dl>
     </x-ui.panel>
 
-    <x-ui.panel title="Perjalanan status" description="Approval terpisah dari handover. Hold dilepas pada terminal tanpa saldo keluar.">
-        <x-ui.timeline :steps="$redemption->statusHistory->map(fn ($history): array => [
-            'title'  => ucwords(str_replace('_', ' ', $history->new_status)),
-            'note'   => $history->reason ?? '',
-            'time'   => $history->occurred_at->translatedFormat('d F Y, H:i'),
-            'status' => match(true) {
-                $history->new_status === 'selesai'                                              => 'success',
-                in_array($history->new_status, ['ditolak', 'dibatalkan', 'kedaluwarsa'], true) => 'error',
-                default                                                                        => 'in_progress',
-            },
-        ])->all()" />
+    <x-ui.panel title="Tahapan penukaran" description="Approval terpisah dari handover. Hold dilepas pada terminal tanpa saldo keluar.">
+        <x-ui.status-stepper
+            :steps="$groceryStages"
+            :current-status="$groceryStatus"
+            :history="$redemption->statusHistory"
+            :terminal-step="$groceryTerminalStep"
+            :completed-statuses="['selesai']"
+            label="Tahapan penukaran sembako"
+        />
     </x-ui.panel>
 
     @if ($redemption->status->value === 'selesai')

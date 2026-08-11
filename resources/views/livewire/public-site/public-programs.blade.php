@@ -45,7 +45,7 @@
                         <article class="rounded-lg border border-border bg-surface p-5 md:p-6">
                             <div class="flex items-start gap-3">
                                 <span class="grid size-10 shrink-0 place-items-center rounded-md bg-success-bg text-forest-700" aria-hidden="true">
-                                    <x-public.icon name="recycle" size="size-5" />
+                                    <x-public.icon name="target" size="size-5" />
                                 </span>
                                 <div class="min-w-0">
                                     <p class="text-body-sm font-semibold text-forest-600">{{ $target['period'] }}</p>
@@ -90,7 +90,7 @@
                             <article class="rounded-lg border border-border bg-surface p-5">
                                 <div class="flex items-start justify-between gap-3">
                                     <p class="text-body-sm text-text-secondary">{{ str_replace('_', ' ', ucfirst($metric)) }}</p>
-                                    <x-public.icon name="scale" size="size-5" class="text-forest-600" />
+                                    <x-public.icon name="bar-chart-3" size="size-5" class="text-forest-600" />
                                 </div>
                                 <p class="mt-3 text-amount tabular-nums text-deep-green">{{ is_scalar($value) ? $value : '—' }}</p>
                             </article>

@@ -2,6 +2,25 @@
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
 <x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
+@php
+    $pickupStages = [
+        ['title' => 'Diajukan', 'description' => 'Permintaan tercatat dan menunggu pemeriksaan petugas.', 'icon' => 'file-check', 'statuses' => ['menunggu_pemeriksaan']],
+        ['title' => 'Diterima', 'description' => 'Permintaan diterima untuk dijadwalkan.', 'icon' => 'clipboard-check', 'statuses' => ['diterima']],
+        ['title' => 'Dijadwalkan', 'description' => 'Tanggal layanan sudah ditetapkan.', 'icon' => 'calendar-days', 'statuses' => ['dijadwalkan']],
+        ['title' => 'Menuju lokasi', 'description' => 'Petugas sedang menuju alamat penjemputan.', 'icon' => 'truck', 'statuses' => ['menuju_lokasi']],
+        ['title' => 'Dijemput', 'description' => 'Sampah sedang diperiksa dan ditimbang di lokasi.', 'icon' => 'map-pin', 'statuses' => ['dijemput']],
+        ['title' => 'Selesai', 'description' => 'Penjemputan selesai dan setoran aktual dicatat.', 'icon' => 'circle-check', 'statuses' => ['selesai']],
+    ];
+    $pickupStatus = $pickup->status->value;
+    $pickupTerminalStep = in_array($pickupStatus, ['ditolak', 'dibatalkan'], true)
+        ? [
+            'status' => $pickupStatus,
+            'title' => $pickupStatus === 'ditolak' ? 'Permintaan ditolak' : 'Permintaan dibatalkan',
+            'description' => 'Tahap penjemputan berikutnya tidak dilanjutkan.',
+        ]
+        : null;
+@endphp
+
 <section aria-labelledby="pickup-task-title" class="grid gap-6">
     {{-- Page header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -143,17 +162,15 @@
     @endif
 
     {{-- Status History --}}
-    <x-ui.panel title="Riwayat status" description="Perubahan status tercatat untuk penelusuran.">
-        <x-ui.timeline :steps="$pickup->statusHistory->map(fn ($history): array => [
-            'title'  => \App\Support\StatusLabel::for($history->new_status),
-            'note'   => $history->reason ?? '',
-            'time'   => $history->occurred_at->translatedFormat('d M Y, H:i'),
-            'status' => match($history->new_status) {
-                'selesai'    => 'success',
-                'ditolak', 'dibatalkan' => 'error',
-                default      => 'in_progress',
-            },
-        ])->all()" />
+    <x-ui.panel title="Tahapan penjemputan" description="Semua tahapan ditampilkan; tahapan berikutnya tetap redup sampai status tugas berubah.">
+        <x-ui.status-stepper
+            :steps="$pickupStages"
+            :current-status="$pickupStatus"
+            :history="$pickup->statusHistory"
+            :terminal-step="$pickupTerminalStep"
+            :completed-statuses="['selesai']"
+            label="Tahapan tugas penjemputan"
+        />
     </x-ui.panel>
 
     @if ($failureDialogOpen)

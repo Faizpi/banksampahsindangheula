@@ -1,6 +1,27 @@
 <x-slot:title>Detail pencairan</x-slot:title>
 <x-slot:context>Layanan warga</x-slot:context>
 
+@php
+    $withdrawalStages = [
+        ['title' => 'Diajukan', 'description' => 'Pengajuan tercatat dan menunggu pemeriksaan.', 'icon' => 'file-check', 'statuses' => ['menunggu_verifikasi']],
+        ['title' => 'Disetujui', 'description' => 'Nominal disetujui dan hold saldo tetap tercatat.', 'icon' => 'clipboard-check', 'statuses' => ['disetujui']],
+        ['title' => 'Siap diambil', 'description' => 'Pembayaran sudah siap diproses bendahara.', 'icon' => 'calendar-days', 'statuses' => ['siap_diambil']],
+        ['title' => 'Sudah dibayar', 'description' => 'Penerimaan diverifikasi dan bukti pembayaran tersimpan.', 'icon' => 'banknote', 'statuses' => ['sudah_dibayar']],
+    ];
+    $withdrawalStatus = $withdrawal->status->value;
+    $withdrawalTerminalStep = in_array($withdrawalStatus, ['ditolak', 'dibatalkan', 'kedaluwarsa'], true)
+        ? [
+            'status' => $withdrawalStatus,
+            'title' => match ($withdrawalStatus) {
+                'ditolak' => 'Pengajuan ditolak',
+                'dibatalkan' => 'Pengajuan dibatalkan',
+                default => 'Pengajuan kedaluwarsa',
+            },
+            'description' => 'Tahap berikutnya tidak dilanjutkan dan hold saldo mengikuti aturan status ini.',
+        ]
+        : null;
+@endphp
+
 <section aria-labelledby="withdrawal-detail-title" class="grid gap-6">
     {{-- Page header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -40,17 +61,15 @@
         </dl>
     </x-ui.panel>
 
-    <x-ui.panel title="Perjalanan status" description="Hold dilepas pada penolakan, pembatalan, atau kedaluwarsa; saldo keluar hanya saat dibayar.">
-        <x-ui.timeline :steps="$withdrawal->statusHistory->map(fn ($history): array => [
-            'title'  => ucwords(str_replace('_', ' ', $history->new_status)),
-            'note'   => $history->reason ?? '',
-            'time'   => $history->occurred_at->translatedFormat('d F Y, H:i'),
-            'status' => match(true) {
-                $history->new_status === 'sudah_dibayar'                                       => 'success',
-                in_array($history->new_status, ['ditolak', 'dibatalkan', 'kedaluwarsa'], true) => 'error',
-                default                                                                        => 'in_progress',
-            },
-        ])->all()" />
+    <x-ui.panel title="Tahapan pencairan" description="Tahap yang belum tercapai tetap terlihat agar status dan langkah berikutnya mudah dipahami.">
+        <x-ui.status-stepper
+            :steps="$withdrawalStages"
+            :current-status="$withdrawalStatus"
+            :history="$withdrawal->statusHistory"
+            :terminal-step="$withdrawalTerminalStep"
+            :completed-statuses="['sudah_dibayar']"
+            label="Tahapan pencairan"
+        />
     </x-ui.panel>
 
     @if ($withdrawal->status->value === 'menunggu_verifikasi')
