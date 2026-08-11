@@ -200,7 +200,9 @@
                                     <button type="button" wire:click="handoff" wire:loading.attr="disabled" class="mt-3 inline-flex min-h-touch items-center rounded-xl border-2 border-forest-600 px-5 text-label font-bold text-forest-700 transition hover:bg-success-bg">Serahkan Bukti dan Saldo</button>
                                 @endif
                                 @if (session('assisted-handoff'))
-                                    @php($handoff = session('assisted-handoff'))
+                                    @php
+                                        $handoff = session('assisted-handoff');
+                                    @endphp
                                     <div role="status" class="mt-4 rounded-xl border border-border bg-warm-canvas p-4">
                                         <p class="text-label font-bold text-deep-green">Handoff selesai</p>
                                         <p class="mt-1 text-body-sm text-text-secondary">Bukti {{ $handoff->receipt['number'] }} · Saldo tersedia Rp {{ number_format($handoff->availableBalance, 0, ',', '.') }}</p>
@@ -233,16 +235,29 @@
                     @endif
 
                     @if ($selectedService === 'withdrawal' && $canCreateAssistedWithdrawal)
+                        @php
+                            $requestedWithdrawalAmount = ctype_digit($withdrawalAmount) ? (int) $withdrawalAmount : null;
+                            $withdrawalBalanceInsufficient = $candidateAvailableBalance !== null && $requestedWithdrawalAmount !== null && $requestedWithdrawalAmount > $candidateAvailableBalance;
+                        @endphp
                         <div class="mt-5 rounded-xl border border-warning-bg bg-warning-bg p-4">
                             <p class="text-label font-bold text-deep-green">Pencairan berbantuan</p>
                             <p class="mt-1 text-body-sm text-text-secondary">Ajukan pencairan atas nama warga setelah persetujuan dan bukti privat tercatat. Nominal akan mengikuti proses approval dan hold saldo yang sama.</p>
+                            @if ($candidateAvailableBalance !== null)
+                                <div role="status" aria-live="polite" class="mt-3 flex items-center gap-3 rounded-xl border border-forest-600 bg-success-bg px-3 py-2.5">
+                                    <svg viewBox="0 0 24 24" class="size-5 shrink-0 text-forest-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/></svg>
+                                    <div>
+                                        <p class="text-caption text-forest-700">Saldo tersedia warga</p>
+                                        <p class="amount-tabular text-label font-bold text-forest-700">Rp{{ number_format($candidateAvailableBalance, 0, ',', '.') }}</p>
+                                    </div>
+                                </div>
+                            @endif
                             @if ($assistedWithdrawalId)
                                 <div role="status" class="mt-3 rounded-xl border border-forest-600 bg-success-bg p-3 text-body-sm text-forest-700">
                                     Pencairan {{ $assistedWithdrawalId }} berhasil diajukan dan terhubung ke bukti consent.
                                 </div>
                             @else
                                 <div class="mt-4 grid gap-4 sm:grid-cols-2">
-                                    <x-ui.input name="withdrawalAmount" label="Nominal (rupiah)" wire:model="withdrawalAmount" inputmode="numeric" placeholder="Minimal Rp10.000" :error="$errors->first('withdrawalAmount')" />
+                                    <x-ui.input name="withdrawalAmount" label="Nominal (rupiah)" wire:model.live.debounce.300ms="withdrawalAmount" inputmode="numeric" placeholder="Minimal Rp10.000" :hint="$withdrawalBalanceInsufficient ? 'Nominal melebihi saldo tersedia warga.' : null" :error="$errors->first('withdrawalAmount')" />
                                     <x-ui.input name="withdrawalDate" label="Tanggal pengambilan" wire:model="withdrawalDate" type="date" :error="$errors->first('withdrawalDate')" />
                                     <x-ui.textarea name="withdrawalLocation" label="Lokasi pengambilan" wire:model="withdrawalLocation" rows="2" class="sm:col-span-2" :error="$errors->first('withdrawalLocation')" />
                                     <label class="sm:col-span-2 flex items-start gap-3 text-body-sm text-text-primary">
@@ -261,7 +276,7 @@
                                         @enderror
                                     </div>
                                     <div class="sm:col-span-2">
-                                        <x-ui.button type="button" wire:click="requestAssistedWithdrawal" wire:loading.attr="disabled">
+                                        <x-ui.button type="button" wire:click="requestAssistedWithdrawal" wire:loading.attr="disabled" wire:target="requestAssistedWithdrawal" :disabled="$withdrawalBalanceInsufficient">
                                             <span wire:loading.remove wire:target="requestAssistedWithdrawal">Ajukan Pencairan Berbantuan</span>
                                             <span wire:loading wire:target="requestAssistedWithdrawal">Memproses...</span>
                                         </x-ui.button>

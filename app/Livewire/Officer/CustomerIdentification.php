@@ -14,6 +14,7 @@ use App\Domain\CustomersRegions\Contracts\EvidenceReference;
 use App\Domain\CustomersRegions\Queries\SearchCustomers;
 use App\Domain\MobileServices\Enums\MobileServiceStatus;
 use App\Domain\MobileServices\Models\MobileService;
+use App\Domain\Ledger\Models\LedgerAccount;
 use App\Domain\Platform\Actions\StorePrivateMedia;
 use App\Domain\Withdrawals\Services\WithdrawalService;
 use App\Models\User;
@@ -142,6 +143,19 @@ final class CustomerIdentification extends Component
         $this->selectedService = $service;
     }
 
+    public function updatedWithdrawalAmount(): void
+    {
+        $this->resetValidation('withdrawalAmount');
+
+        if ($this->candidate === null || ! ctype_digit($this->withdrawalAmount)) {
+            return;
+        }
+
+        if ((int) $this->withdrawalAmount > $this->availableBalanceFor($this->candidate->userId)) {
+            $this->addError('withdrawalAmount', 'Nominal melebihi saldo tersedia warga.');
+        }
+    }
+
     public function recordAssistedService(
         AssistedCustomerServiceAction $service,
         StorePrivateMedia $mediaStore,
@@ -228,6 +242,12 @@ final class CustomerIdentification extends Component
             'withdrawalEvidence.required_if' => 'Bukti privat wajib diunggah.',
         ]);
 
+        if ((int) $this->withdrawalAmount > $this->availableBalanceFor($this->candidate->userId)) {
+            $this->addError('withdrawalAmount', 'Nominal melebihi saldo tersedia warga.');
+
+            return;
+        }
+
         /** @var User $actor */
         $actor = auth()->user();
         if ($this->assistedWithdrawalId !== null) {
@@ -260,13 +280,20 @@ final class CustomerIdentification extends Component
             }
         }
 
-        $withdrawal = $withdrawals->request($actor, [
-            'customer_id' => $this->candidate->userId,
-            'amount' => $this->withdrawalAmount,
-            'pickup_location' => $this->withdrawalLocation,
-            'pickup_date' => $this->withdrawalDate,
-            'assisted_service_id' => $this->assistedWithdrawalServiceId,
-        ], $this->assistedWithdrawalIdempotencyKey);
+        try {
+            $withdrawal = $withdrawals->request($actor, [
+                'customer_id' => $this->candidate->userId,
+                'amount' => $this->withdrawalAmount,
+                'pickup_location' => $this->withdrawalLocation,
+                'pickup_date' => $this->withdrawalDate,
+                'assisted_service_id' => $this->assistedWithdrawalServiceId,
+            ], $this->assistedWithdrawalIdempotencyKey);
+        } catch (ValidationException $exception) {
+            $this->presentAssistedWithdrawalErrors($exception);
+
+            return;
+        }
+
         $this->assistedWithdrawalId = $withdrawal->id;
         $this->selectedService = 'withdrawal';
         $this->withdrawalEvidence = null;
@@ -281,8 +308,32 @@ final class CustomerIdentification extends Component
         return view('livewire.officer.customer-identification', [
             'canCreateAssisted' => $permissions->allows($actor, 'customer.create-assisted'),
             'canCreateAssistedWithdrawal' => $permissions->allows($actor, 'customer.create-assisted') && $permissions->allows($actor, 'withdrawal.request'),
+            'candidateAvailableBalance' => $this->candidate === null ? null : $this->availableBalanceFor($this->candidate->userId),
             'mobileServices' => MobileService::query()->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))->where('status', MobileServiceStatus::Open)->where('ends_at', '>=', now())->orderBy('starts_at')->get(),
         ]);
+    }
+
+    private function availableBalanceFor(int $customerId): int
+    {
+        return LedgerAccount::query()
+            ->where('user_id', $customerId)
+            ->first()
+            ?->availableBalance() ?? 0;
+    }
+
+    private function presentAssistedWithdrawalErrors(ValidationException $exception): void
+    {
+        foreach ($exception->errors() as $field => $messages) {
+            $target = match ($field) {
+                'amount', 'balance' => 'withdrawalAmount',
+                'pickup_location' => 'withdrawalLocation',
+                'pickup_date' => 'withdrawalDate',
+                'assisted_service_id' => 'withdrawalEvidence',
+                default => 'withdrawalAmount',
+            };
+
+            $this->addError($target, $messages[0] ?? 'Pencairan berbantuan tidak dapat diproses.');
+        }
     }
 
     private function resetCandidate(): void

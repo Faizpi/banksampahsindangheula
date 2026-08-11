@@ -16,9 +16,12 @@ use App\Domain\Ledger\Models\LedgerEntry;
 use App\Domain\Platform\Enums\MediaVisibility;
 use App\Domain\Platform\Models\Media;
 use App\Domain\Withdrawals\Services\WithdrawalService;
+use App\Livewire\Officer\CustomerIdentification;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 final class AssistedWithdrawalTest extends TestCase
@@ -73,6 +76,33 @@ final class AssistedWithdrawalTest extends TestCase
         ]);
         self::assertDatabaseHas('withdrawal_requests', ['id' => $withdrawal->id, 'requested_by_id' => $operator->id]);
         self::assertSame(60_000, $owner->ledgerAccount()->firstOrFail()->fresh()->availableBalance());
+    }
+
+    public function test_assisted_withdrawal_form_blocks_an_amount_above_the_customer_balance_before_recording_consent(): void
+    {
+        $operator = $this->userWith('customer.create-assisted', 'customer.view', 'user.view', 'user.view.all', 'withdrawal.request');
+        $owner = User::factory()->create(['name' => 'Warga Saldo Terbatas']);
+        CustomerProfile::factory()->for($owner)->create(['customer_number' => 'CST-00009999']);
+        $this->credit($owner, 20_000);
+
+        Livewire::actingAs($operator)
+            ->test(CustomerIdentification::class)
+            ->set('search', 'CST-00009999')
+            ->call('find')
+            ->call('confirm')
+            ->call('chooseService', 'withdrawal')
+            ->assertSee('Saldo tersedia warga')
+            ->assertSee('Rp20.000')
+            ->set('withdrawalAmount', '30000')
+            ->assertHasErrors(['withdrawalAmount'])
+            ->set('withdrawalLocation', 'Balai warga')
+            ->set('withdrawalConsent', true)
+            ->set('withdrawalEvidence', UploadedFile::fake()->image('consent.jpg'))
+            ->call('requestAssistedWithdrawal')
+            ->assertHasErrors(['withdrawalAmount']);
+
+        self::assertDatabaseCount('assisted_customer_services', 0);
+        self::assertDatabaseCount('withdrawal_requests', 0);
     }
 
     private function credit(User $owner, int $amount): void
