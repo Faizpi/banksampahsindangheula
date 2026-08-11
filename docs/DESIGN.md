@@ -244,7 +244,7 @@ Filament 5 dengan custom theme. Sidebar dikelompokkan:
 1. **Operasional:** dashboard, setoran, penjemputan/kapasitas, pencairan, sembako, tugas/jadwal.
 2. **Data Master:** pengguna/nasabah/petugas, wilayah, jenis/kategori/satuan/kondisi, harga, paket.
 3. **Program:** target, layanan keliling, pengumuman, statistik publik/partisipasi.
-4. **Pengawasan:** laporan/ekspor, koreksi/reversal, ledger/hold, audit log, konfigurasi teknis/backup sesuai role.
+4. **Pengawasan:** Laporan/ekspor Excel, koreksi/reversal, ledger/hold, audit log, konfigurasi teknis/backup sesuai permission; superadmin mewarisi seluruh entry point admin dan menambah kontrol teknis.
 
 Sidebar menampilkan item sesuai permission. Tabel admin tidak dipaksakan ke layout kartu pada desktop; mobile memakai list/stack atau horizontal region yang diberi label dan fokus terkelola hanya bila tak terhindarkan.
 

@@ -9,6 +9,7 @@ use App\Domain\Identity\Models\Role;
 use App\Domain\WasteMaster\Models\WasteCategory;
 use App\Domain\WasteMaster\Models\WastePrice;
 use App\Filament\Pages\OperationsDashboard;
+use App\Filament\Pages\Reports as ReportsPage;
 use App\Filament\Resources\AuditReconciliation\Models\AuditLogs\AuditLogResource;
 use App\Filament\Resources\Communication\Models\Announcements\AnnouncementResource;
 use App\Filament\Resources\CustomersRegions\Models\Dusuns\DusunResource;
@@ -93,6 +94,38 @@ final class BackofficePanelTest extends TestCase
         self::assertFalse(OperationsDashboard::canAccess());
     }
 
+    public function test_admin_and_superadmin_can_open_the_permission_gated_report_page(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        $admin = User::factory()->create();
+        $superadmin = User::factory()->create();
+        $panelViewer = User::factory()->create();
+        $admin->roles()->attach(Role::query()->where('name', 'admin')->sole());
+        $superadmin->roles()->attach(Role::query()->where('name', 'superadmin')->sole());
+        $this->grant($panelViewer, 'report-panel-viewer', 'backoffice.access');
+
+        self::assertContains(ReportsPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
+
+        $this->actingAs($panelViewer->fresh());
+        self::assertFalse(ReportsPage::canAccess());
+
+        $this->actingAs($admin->fresh());
+        self::assertTrue(ReportsPage::canAccess());
+        $this->get('/backoffice/reports')
+            ->assertOk()
+            ->assertSee('Ringkasan transaksi dan ekspor Excel')
+            ->assertSee('Unduh Excel')
+            ->assertDontSee('CSV')
+            ->assertDontSee('PDF');
+
+        $this->actingAs($superadmin->fresh());
+        self::assertTrue(ReportsPage::canAccess());
+        $this->get('/backoffice/reports')
+            ->assertOk()
+            ->assertSee('Ringkasan transaksi dan ekspor Excel')
+            ->assertSee('Unduh Excel');
+    }
+
     public function test_backoffice_navigation_has_the_settled_taxonomy_groups_in_order(): void
     {
         $panel = Filament::getPanel('backoffice');
@@ -137,7 +170,7 @@ final class BackofficePanelTest extends TestCase
             $this->navigationLabelsForGroup($panel, 'Program & Publikasi'),
         );
         self::assertSame(
-            ['Audit log'],
+            ['Laporan', 'Audit log'],
             $this->navigationLabelsForGroup($panel, 'Laporan & Audit'),
         );
         self::assertSame(

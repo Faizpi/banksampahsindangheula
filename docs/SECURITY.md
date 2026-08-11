@@ -77,7 +77,7 @@ Nilai numerik ditentukan setelah load test/UAT dan dicatat sebagai konfigurasi, 
 2. Query list menerapkan scope sebelum pagination/agregasi; action detail mengulang policy pada record.
 3. Livewire method dan Filament action mengotorisasi setiap pemanggilan; visibility menu bukan kontrol.
 4. File, ekspor, QR rotation, audit, dan dashboard turut diotorisasi.
-5. Warga hanya record sendiri; petugas hanya assignment/area; bendahara hanya pembayaran/laporan terkait; admin sesuai permission; superadmin tidak otomatis mengakses bisnis/ledger. Admission panel teknis Filament memerlukan `backoffice.access`, yang baseline-nya dimiliki `admin` dan `superadmin`, dan tidak menggantikan pemeriksaan permission, action, atau record scope.
+5. Warga hanya record sendiri; petugas hanya assignment/area; bendahara hanya pembayaran/laporan terkait; admin dan superadmin mengikuti permission serta policy operasional, dengan superadmin mewarisi seluruh baseline admin dan permission teknis tambahan. Permission khusus ledger/koreksi tetap eksplisit. Admission panel teknis Filament memerlukan `backoffice.access` dan tidak menggantikan pemeriksaan permission, action, atau record scope.
 6. IDOR diuji dengan mengganti ID warga, transaksi, file, pengajuan, dan export.
 7. Approve/pay serta approve/handover memakai permission terpisah sebagaimana [PERMISSIONS.md](PERMISSIONS.md).
 

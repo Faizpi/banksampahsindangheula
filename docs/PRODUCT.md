@@ -45,7 +45,7 @@ Mengelola pengguna, wilayah, harga, transaksi, saldo, penjemputan, pencairan, se
 
 ### Superadmin
 
-Mengelola konfigurasi teknis, role, permission, backup, dan pemeliharaan tanpa hak mengubah saldo di luar mekanisme koreksi.
+Mewarisi seluruh akses operasional admin, lalu mengelola konfigurasi teknis, role, permission, backup, dan pemeliharaan. Permission khusus untuk koreksi/penyesuaian saldo tetap diberikan secara eksplisit dan diaudit.
 
 ### Pemerintah desa
 

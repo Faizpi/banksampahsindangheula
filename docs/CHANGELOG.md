@@ -5,6 +5,7 @@ Semua perubahan penting terhadap baseline disimpan pada dokumen ini.
 ## Unreleased
 
 ### Added
+- Halaman Filament back-office **Laporan** pada grup **Laporan & Audit**, aman berdasarkan `report.view` dan memakai ekspor XLSX privat yang sama dengan alur operasional.
 - Klarifikasi audit-gap implementation: pengaturan teknis non-secret melalui UI tetap termasuk scope; eksekusi artefak backup/restore tetap deployment/SOP-only. Password mandiri setelah login tetap tersedia, dan reset berbantuan admin atau superadmin hanya melalui alur PasswordAssistance tervalidasi untuk pengguna yang terkunci karena lupa kata sandi.
 - Paket dokumentasi development lengkap: requirement, aturan bisnis, permission, validasi, 36 user flow, arsitektur, model data, keamanan, deployment, desain, test plan, operasi, dan ADR.
 - Traceability seluruh baseline fitur, 36 flowchart, aturan bisnis, dan test case.
@@ -26,6 +27,7 @@ Semua perubahan penting terhadap baseline disimpan pada dokumen ini.
 
 ### Changed
 
+- Superadmin kini ditegaskan sebagai superset role admin: seluruh permission baseline admin diwariskan, lalu ditambah permission teknis. Permission khusus ledger/koreksi tetap eksplisit.
 - Database memakai MySQL 8.0.30; development berjalan melalui Laragon.
 - Deployment sistem menggunakan Hostinger Web Hosting Premium/Business.
 - Frontend menggunakan Blade dan Livewire 4 tanpa React.

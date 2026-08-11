@@ -238,6 +238,19 @@ final class RolesAndPermissionsTest extends TestCase
         }
     }
 
+    public function test_superadmin_inherits_every_admin_permission_and_adds_technical_access(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+
+        $adminPermissions = Role::query()->where('name', 'admin')->sole()->permissions()->pluck('permissions.name')->all();
+        $superadminPermissions = Role::query()->where('name', 'superadmin')->sole()->permissions()->pluck('permissions.name')->all();
+
+        self::assertSame([], array_diff($adminPermissions, $superadminPermissions));
+        self::assertContains('role.manage', $superadminPermissions);
+        self::assertContains('system.settings.manage', $superadminPermissions);
+        self::assertContains('backup.restore', $superadminPermissions);
+    }
+
     public function test_migrations_reverse_and_restore_the_schema_safely_on_sqlite(): void
     {
         $pivotMigration = require database_path('migrations/2026_07_30_120500_create_role_user_and_permission_role_tables.php');

@@ -12,7 +12,7 @@ Dokumen ini menjadi SOP harian bagi warga, petugas, bendahara, admin, dan pengel
 | Petugas | Identifikasi, timbang, setoran, pickup, tugas, bukti, layanan berbantuan/keliling. | Rekap tugas, alat, bukti, insiden. |
 | Bendahara | Verifikasi penerima, pembayaran disetujui, kas, bukti, laporan. | Daftar paid/pending, bukti, dan ekspor laporan. |
 | Admin | Verifikasi, master/harga, approve, kapasitas/jadwal, koreksi, laporan/audit. | Keputusan tertunda, koreksi, selisih, perubahan master. |
-| Superadmin teknis | Deploy, akses teknis, metadata backup/restore, cron, health, insiden teknis; bersama admin membuka panel back-office (`backoffice.access`). Eksekusi artefak backup/restore dilakukan melalui deployment/SOP, bukan UI aplikasi. | Release, backup, secret/access rotation, log insiden. |
+| Superadmin | Seluruh tugas operasional admin, laporan/audit, serta deploy, akses teknis, metadata backup/restore, cron, health, dan insiden teknis. Bersama admin membuka panel back-office (`backoffice.access`). Eksekusi artefak backup/restore dilakukan melalui deployment/SOP, bukan UI aplikasi. | Keputusan operasional, release, backup, secret/access rotation, log insiden. |
 
 ## 3. Pembukaan pelayanan
 
@@ -246,7 +246,7 @@ UI aplikasi hanya mengelola metadata, status, dan verifikasi backup/restore. Eks
 
 ### Setelah pergantian
 
-Tinjau audit, failed task, laporan, backup, cron, dan contact list. Superadmin tidak menerima kewenangan saldo hanya karena menangani pergantian teknis.
+Tinjau audit, failed task, laporan, backup, cron, dan contact list. Permission khusus koreksi atau penyesuaian saldo tetap tidak otomatis aktif hanya karena superadmin menangani pergantian teknis.
 
 ## 19. Monitoring rutin
 

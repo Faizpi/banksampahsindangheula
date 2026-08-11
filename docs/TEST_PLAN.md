@@ -255,7 +255,7 @@ Browser target: Chrome Android/desktop, Edge, Safari mobile, Firefox versi dukun
 
 ## 10. UAT
 
-Peserta: minimal perwakilan warga smartphone, warga tanpa smartphone, petugas lapangan, bendahara, admin, superadmin teknis, dan pemerintah desa untuk statistik.
+Peserta: minimal perwakilan warga smartphone, warga tanpa smartphone, petugas lapangan, bendahara, admin, superadmin, dan pemerintah desa untuk statistik.
 
 Setiap skenario memuat data awal, langkah, expected result, hasil aktual, bukti, severity, dan tanda tangan/keputusan. UAT mencakup 36 flow pada [USER_FLOWS.md](USER_FLOWS.md), dengan fokus bahasa, kejelasan status, prosedur gagal, bukti, dan tugas nyata.
 
@@ -307,7 +307,6 @@ Kriteria penerimaan:
 | PUB-001–002 | TC-PUB-001–002 |
 | RPT-001 | TC-RPT-001 |
 | AUD-001 | TC-AUD-001 |
-| REC-001 | TC-REC-001 |
 | PWA-001 | TC-PWA-001 |
 
 ## 13. Exit criteria dan bukti

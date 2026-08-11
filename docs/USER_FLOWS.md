@@ -29,7 +29,7 @@ Dokumen ini adalah representasi tekstual normatif dari 36 diagram pada dokumen f
 
 ### FL-04 — Diagram Konteks Sistem
 - **Aktor:** warga, petugas, bendahara, admin, superadmin.
-- **Alur utama:** warga mengirim pendaftaran/pengajuan; petugas memasukkan hasil operasional; admin mengelola dan memutuskan; bendahara membayar; superadmin memelihara teknis.
+- **Alur utama:** warga mengirim pendaftaran/pengajuan; petugas memasukkan hasil operasional; admin mengelola dan memutuskan; bendahara membayar; superadmin menjalankan seluruh alur admin sekaligus memelihara teknis.
 - **Keputusan/gagal:** semua interaksi ditolak bila role, permission, atau scope record tidak sah.
 - **Hasil:** pertukaran data terkontrol dan aktivitas penting diaudit.
 - **Jejak:** USR-001–002; [PERMISSIONS.md](PERMISSIONS.md).
@@ -190,7 +190,7 @@ Dokumen ini adalah representasi tekstual normatif dari 36 diagram pada dokumen f
 ## 6. Administrasi dan pemeliharaan
 
 ### FL-26 — Pembuatan Laporan dan Statistik
-- **Aktor:** admin, sistem.
+- **Aktor:** admin, superadmin, bendahara/petugas berizin, sistem.
 - **Alur utama:** pilih laporan dan filter → otorisasi sesuai scope → tampilkan ringkasan/detail web → buat Excel privat → audit → unduh.
 - **Keputusan/gagal:** data besar masuk antrean terbatas; proses gagal tidak menerbitkan file parsial.
 - **Hasil:** laporan konsisten dan statistik publik teragregasi.
@@ -204,7 +204,7 @@ Dokumen ini adalah representasi tekstual normatif dari 36 diagram pada dokumen f
 - **Jejak:** AUD-001; BR-AUD-001–006.
 
 ### FL-28 — Backup dan Pemulihan Data
-- **Aktor:** superadmin/pengelola teknis.
+- **Aktor:** superadmin.
 - **Alur utama:** jadwal → backup database/media → enkripsi+simpan terpisah → verifikasi integritas → retensi → uji restore berkala.
 - **Keputusan/gagal:** backup invalid dicatat dan diulang; restore gagal memperbaiki prosedur lalu mengulang dari backup.
 - **Hasil:** sasaran RPO/RTO dapat dibuktikan.

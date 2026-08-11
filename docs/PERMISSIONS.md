@@ -6,7 +6,7 @@
 2. Setiap request memeriksa autentikasi, permission tindakan, scope record, status record, dan separation of duties.
 3. Menyembunyikan menu tidak dianggap sebagai kontrol keamanan. Policy/service tetap menolak akses langsung.
 4. Scope default adalah paling sempit: `own`, `assigned`, `area`, atau `all`; untuk record pengguna, scope harus diberikan secara eksplisit melalui `user.view.area` atau `user.view.all`.
-5. Superadmin mengelola aspek teknis dan akses, tetapi **tidak otomatis** memiliki `ledger.adjust`, `transaction.correct`, `withdrawal.approve`, `withdrawal.pay`, `grocery.approve`, atau `grocery.handover`.
+5. Superadmin adalah superset role `admin`: seluruh permission baseline admin diwariskan, lalu ditambah permission teknis. Permission berisiko tinggi di luar baseline role, seperti `ledger.adjust`, `transaction.correct`, dan `transaction.reverse`, tetap hanya diberikan secara eksplisit dan diaudit.
 6. Permission sensitif hanya diberikan melalui keputusan pengelola dan dicatat dalam audit log.
 7. Editor role/permission (RoleResource & PermissionResource) tersedia di panel back-office dan dibatasi `role.view`/`role.manage`: mutasi menyimpan metadata `granted_by` dan `reason`, dan role sistem (`warga`, `petugas`, `bendahara`, `admin`, `superadmin`) tidak dapat dihapus. Katalog permission tetap sumber otoritatif.
 
@@ -20,7 +20,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `petugas` | Setoran, penjemputan, layanan keliling, layanan berbantuan, pembayaran/penyerahan bila ditugaskan. | Scope penugasan/area; tidak mengubah harga, role, atau saldo langsung. |
 | `bendahara` | Pembayaran pencairan yang telah disetujui, bukti, kas, dan laporan. | Tidak menyetujui pencairan secara default dan tidak mengoreksi saldo. |
 | `admin` | Operasional, master data, verifikasi, persetujuan, laporan, koreksi bila permission khusus diberikan. | Tidak mengelola konfigurasi teknis berisiko tinggi atau melewati mekanisme ledger. |
-| `superadmin` | Konfigurasi teknis non-secret, role/permission, status sistem, metadata backup/restore, dan retensi teknis. | Tidak otomatis berwenang melakukan tindakan keuangan operasional atau eksekusi artefak backup/restore di luar deployment/SOP. |
+| `superadmin` | Seluruh tanggung jawab dan permission baseline admin, ditambah konfigurasi teknis non-secret, role/permission, status sistem, metadata backup/restore, dan retensi teknis. | Tetap mengikuti policy, separation of duties, permission khusus, serta SOP backup/restore. |
 
 ## 3. Katalog permission granular
 
@@ -112,57 +112,57 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `user.view` | — | O* | O* | O* | O* |
 | `user.view.area` | — | A | A | — | — |
 | `user.view.all` | — | — | — | X | X |
-| `user.create`, `user.update`, `user.activate` | — | — | — | X | — |
-| `user.verify`, `user.reject` | — | — | — | X | — |
+| `user.create`, `user.update`, `user.activate` | — | — | — | X | X |
+| `user.verify`, `user.reject` | — | — | — | X | X |
 | `user.reset-password`, `session.revoke` | — | — | — | X | X |
 | `role.view` | — | — | — | X | X |
 | `role.manage` | — | — | — | — | X |
 | `backoffice.access` | — | — | — | X | X |
-| `customer.view` | O | A | A | X | — |
-| `customer.create-assisted` | — | A | — | X | — |
-| `customer.update` | O | A terbatas | — | X | — |
-| `customer.card.issue`, `customer.qr.rotate` | — | A | — | X | — |
+| `customer.view` | O | A | A | X | X |
+| `customer.create-assisted` | — | A | — | X | X |
+| `customer.update` | O | A terbatas | — | X | X |
+| `customer.card.issue`, `customer.qr.rotate` | — | A | — | X | X |
 | `region.view` | O | A | A | X | X |
-| `region.manage` | — | — | — | X | — |
+| `region.manage` | — | — | — | X | X |
 | `waste.view`, `price.view` | X | X | X | X | X |
-| `waste.manage`, `price.manage` | — | — | — | X | — |
+| `waste.manage`, `price.manage` | — | — | — | X | X |
 
 ### 4.2 Setoran, transaksi, dan saldo
 
 | Permission | Warga | Petugas | Bendahara | Admin | Superadmin |
 |---|:---:|:---:|:---:|:---:|:---:|
-| `deposit.view` | O | A | — | X | — |
-| `deposit.create`, `deposit.update-draft` | — | A | — | X | — |
-| `deposit.finalize` | — | A | — | X | — |
-| `transaction.correct` | — | — | — | Khusus | — |
-| `transaction.reverse` | — | — | — | Khusus | — |
-| `ledger.view` | O | A terbatas | A | X | — |
-| `ledger.adjust` | — | — | — | Khusus | — |
-| `correction.view-customer` | O | A | A | X | — |
+| `deposit.view` | O | A | — | X | X |
+| `deposit.create`, `deposit.update-draft` | — | A | — | X | X |
+| `deposit.finalize` | — | A | — | X | X |
+| `transaction.correct` | — | — | — | Khusus | Khusus |
+| `transaction.reverse` | — | — | — | Khusus | Khusus |
+| `ledger.view` | O | A terbatas | A | X | X |
+| `ledger.adjust` | — | — | — | Khusus | Khusus |
+| `correction.view-customer` | O | A | A | X | X |
 
-`Khusus` berarti permission tidak melekat otomatis hanya karena role `admin`; permission diberikan kepada admin yang ditunjuk dan diaudit. Superadmin teknis tidak memperoleh permission ini secara implisit.
+`Khusus` berarti permission tidak melekat otomatis hanya karena role `admin` atau `superadmin`; permission diberikan kepada aktor yang ditunjuk dan diaudit. Ini tidak mengurangi pewarisan permission baseline admin oleh superadmin.
 
 ### 4.3 Penjemputan, pencairan, dan sembako
 
 | Permission | Warga | Petugas | Bendahara | Admin | Superadmin |
 |---|:---:|:---:|:---:|:---:|:---:|
-| `pickup.view` | O | A | — | X | — |
-| `pickup.request` | O | A berbantuan | — | X berbantuan | — |
-| `pickup.review`, `pickup.schedule` | — | A bila ditunjuk | — | X | — |
-| `pickup.execute`, `pickup.complete` | — | A | — | X | — |
-| `pickup.cancel` | O sesuai status | A | — | X | — |
-| `pickup.capacity.manage` | — | — | — | X | — |
-| `withdrawal.request`, `withdrawal.view` | O | A berbantuan | A | X | — |
-| `withdrawal.approve` | — | — | — | X | — |
-| `withdrawal.pay` | — | A bila ditugaskan | X | A bila ditugaskan | — |
-| `withdrawal.cancel` | O sesuai status | — | A | X | — |
+| `pickup.view` | O | A | — | X | X |
+| `pickup.request` | O | A berbantuan | — | X berbantuan | X berbantuan |
+| `pickup.review`, `pickup.schedule` | — | A bila ditunjuk | — | X | X |
+| `pickup.execute`, `pickup.complete` | — | A | — | X | X |
+| `pickup.cancel` | O sesuai status | A | — | X | X |
+| `pickup.capacity.manage` | — | — | — | X | X |
+| `withdrawal.request`, `withdrawal.view` | O | A berbantuan | A | X | X |
+| `withdrawal.approve` | — | — | — | X | X |
+| `withdrawal.pay` | — | A bila ditugaskan | X | A bila ditugaskan | X |
+| `withdrawal.cancel` | O sesuai status | — | A | X | X |
 | `grocery.package.view` | X | X | X | X | X |
-| `grocery.package.manage` | — | — | — | X | — |
-| `grocery.request`, `grocery.view` | O | A berbantuan | — | X | — |
-| `grocery.approve` | — | — | — | X | — |
-| `grocery.prepare` | — | A | — | X | — |
-| `grocery.handover` | — | A | — | A bila ditugaskan | — |
-| `grocery.cancel` | O sesuai status | A | — | X | — |
+| `grocery.package.manage` | — | — | — | X | X |
+| `grocery.request`, `grocery.view` | O | A berbantuan | — | X | X |
+| `grocery.approve` | — | — | — | X | X |
+| `grocery.prepare` | — | A | — | X | X |
+| `grocery.handover` | — | A | — | A bila ditugaskan | X |
+| `grocery.cancel` | O sesuai status | A | — | X | X |
 
 ### 4.4 Program, laporan, pengawasan, dan teknis
 
@@ -170,18 +170,18 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 |---|:---:|:---:|:---:|:---:|:---:|
 | `notification.view` | O | O | O | O | O |
 | `announcement.view` | X sesuai audiens | X sesuai audiens | X | X | X |
-| `announcement.manage`, `announcement.publish` | — | — | — | X | — |
+| `announcement.manage`, `announcement.publish` | — | — | — | X | X |
 | `mobile-service.view` | X | A | X | X | X |
-| `mobile-service.manage` | — | — | — | X | — |
-| `mobile-service.operate` | — | A | — | A | — |
+| `mobile-service.manage` | — | — | — | X | X |
+| `mobile-service.operate` | — | A | — | A | X |
 | `target.view` | X sesuai visibilitas | X | X | X | X |
-| `target.manage`, `target.publish` | — | — | — | X | — |
-| `statistics.internal.view` | — | A terbatas | X | X | — |
-| `statistics.public.manage` | — | — | — | X | — |
-| `qr-verification.rotate` | — | — | — | X | — |
-| `report.view` | — | A terbatas | X | X | — |
-| `report.export` | — | — | X | X | — |
-| `audit.view` | — | — | — | X | X terbatas teknis |
+| `target.manage`, `target.publish` | — | — | — | X | X |
+| `statistics.internal.view` | — | A terbatas | X | X | X |
+| `statistics.public.manage` | — | — | — | X | X |
+| `qr-verification.rotate` | — | — | — | X | X |
+| `report.view` | — | A terbatas | X | X | X |
+| `report.export` | — | — | X | X | X |
+| `audit.view` | — | — | — | X | X |
 | `system.settings.manage`, `system.maintenance` | — | — | — | — | X |
 | `backup.run`, `backup.view`, `backup.restore` | — | — | — | — | X |
 | `audit.retention.execute` | — | — | — | — | X |
@@ -205,7 +205,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 ### Koreksi
 
 1. Pembuat transaksi final tidak boleh mengoreksi transaksi sendiri tanpa permission khusus dan alasan konflik kepentingan yang diaudit.
-2. Superadmin hanya memulihkan aspek teknis; kebutuhan koreksi data setelah restore tetap diputuskan admin operasional berizin.
+2. Superadmin dapat menjalankan alur admin sesuai permission; setelah restore, kebutuhan koreksi data tetap memakai action resmi, separation of duties, dan approval yang berlaku.
 
 ### 4.1.1 Kontrak scope record pengguna
 
@@ -221,11 +221,11 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 
 | Domain | Warga | Petugas | Bendahara | Admin | Superadmin |
 |---|---|---|---|---|---|
-| Profil/saldo/transaksi | Milik sendiri | Nasabah pada tugas/area dan data minimum | Pencairan/laporan terkait | Seluruh operasional sesuai permission | Tidak ada akses bisnis default |
-| Penjemputan | Milik sendiri | Ditugaskan/area | Tidak ada | Seluruh operasional | Tidak ada |
-| Pencairan | Milik sendiri | Ditugaskan sebagai payer | Disetujui/siap dibayar | Seluruh sesuai tindakan | Tidak ada |
-| Sembako | Milik sendiri | Ditugaskan prepare/handover | Tidak ada | Seluruh sesuai tindakan | Tidak ada |
-| Laporan/audit | Tidak ada | Ringkasan tugas sendiri | Keuangan sesuai tugas | Sesuai permission | Teknis dan akses, bukan isi bisnis penuh secara default |
+| Profil/saldo/transaksi | Milik sendiri | Nasabah pada tugas/area dan data minimum | Pencairan/laporan terkait | Seluruh operasional sesuai permission | Sama seperti admin |
+| Penjemputan | Milik sendiri | Ditugaskan/area | Tidak ada | Seluruh operasional | Sama seperti admin |
+| Pencairan | Milik sendiri | Ditugaskan sebagai payer | Disetujui/siap dibayar | Seluruh sesuai tindakan | Sama seperti admin |
+| Sembako | Milik sendiri | Ditugaskan prepare/handover | Tidak ada | Seluruh sesuai tindakan | Sama seperti admin |
+| Laporan/audit | Tidak ada | Ringkasan tugas sendiri | Keuangan sesuai tugas | Sesuai permission | Sama seperti admin + teknis |
 
 Policy wajib memeriksa kepemilikan atau penugasan pada query dan aksi. ID record yang dapat ditebak tidak boleh memperluas scope.
 

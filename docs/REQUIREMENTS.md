@@ -301,7 +301,7 @@ Setiap kebutuhan memakai format `KELOMPOK-NNN`. Kata **harus** berarti wajib. Se
 ### RPT — laporan dan ekspor
 
 #### RPT-001 — Laporan web dan Excel
-- **Aktor:** admin dan pihak internal berizin.
+- **Aktor:** admin, superadmin, dan pihak internal berizin.
 - **Prasyarat:** permission laporan/ekspor dan filter valid.
 - **Alur:** pengguna memilih jenis, periode, wilayah, dan filter; sistem mengotorisasi scope, membangun laporan, mencatat ekspor, lalu menyediakan file Excel.
 - **Hasil:** laporan operasional, transaksi, saldo, penjemputan, pencairan, sembako, koreksi, dan partisipasi tersedia di web dan Excel.
@@ -312,7 +312,7 @@ Setiap kebutuhan memakai format `KELOMPOK-NNN`. Kata **harus** berarti wajib. Se
 ### AUD — audit log
 
 #### AUD-001 — Audit aktivitas penting dan retensi
-- **Aktor:** sistem, admin pembaca, superadmin teknis untuk retensi resmi.
+- **Aktor:** sistem, admin/superadmin pembaca, dan superadmin untuk retensi resmi.
 - **Prasyarat:** kejadian audit terjadi atau pembaca berizin.
 - **Alur:** sistem mencatat pelaku, waktu, IP/perangkat relevan, aksi, objek, nilai lama/baru yang aman, dan korelasi; admin menelusuri; retensi hanya dijalankan melalui kebijakan teknis.
 - **Hasil:** perubahan akun, akses, harga, transaksi, saldo, status, persetujuan, pembayaran, penyerahan, ekspor, dan konfigurasi teknis non-secret melalui UI berizin dapat ditelusuri.
@@ -380,7 +380,7 @@ Nomor mengacu pada urutan diagram di `Kumpulan_Flowchart_Bank_Sampah_Digital_Sin
 | FL-26 | Pembuatan Laporan dan Statistik | RPT-001, PUB-001, PUB-002 |
 | FL-27 | Audit Log | AUD-001 |
 | FL-28 | Backup dan Pemulihan Data | NFR-OPS-001, AUD-001 |
-| FL-29 | Penanganan Kesalahan Transaksi | DEP-003, BAL-002, REC-001 |
+| FL-29 | Penanganan Kesalahan Transaksi | DEP-003, BAL-002 |
 | FL-31 | Target Pengumpulan Sampah Desa | TGT-001 |
 | FL-32 | Bank Sampah Keliling per RT/RW | MOB-001, DEP-001 |
 | FL-33 | Estimasi Nilai Sebelum Setor | EST-001, WST-001 |

@@ -64,7 +64,7 @@ The following must be completed during facilitated UAT. Empty fields are intenti
 | Petugas lapangan |  |  |  |  |
 | Bendahara |  |  |  |  |
 | Admin operasional |  |  |  |  |
-| Superadmin teknis |  |  |  |  |
+| Superadmin |  |  |  |  |
 | Pemerintah desa/statistik |  |  |  |  |
 
 ## Open acceptance gates
