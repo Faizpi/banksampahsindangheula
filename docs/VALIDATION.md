@@ -202,7 +202,8 @@ Transisi yang tidak tercantum pada BR-PUP-009 ditolak. Pembatalan warga setelah 
 | Foto penjemputan | JPEG atau PNG pada input; dinormalisasi menjadi JPEG | 1 MB/file; maksimal 2 foto | Privat |
 | Foto transaksi/sembako | JPEG, PNG, WebP berdasarkan pemeriksaan MIME dan signature | 5 MB/file; maksimal 1 sesuai alur | Privat |
 | Foto master/pengumuman | JPEG, PNG, WebP | 5 MB/file | Publik terkontrol atau hasil turunan; asli privat |
-| Bukti pembayaran/penyerahan | JPEG, PNG, WebP, PDF | 5 MB/file | Privat |
+| Bukti pembayaran | JPEG atau PNG; dinormalisasi menjadi JPEG | Maksimal 1 MB setelah kompresi | Privat |
+| Bukti penyerahan | JPEG, PNG, WebP, PDF | 5 MB/file | Privat |
 | Ekspor | CSV, XLSX, PDF yang dibuat sistem | Batas sesuai job/hosting | Privat dan kedaluwarsa |
 
 Aturan tambahan:

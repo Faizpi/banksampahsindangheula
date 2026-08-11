@@ -40,6 +40,7 @@ final class WithdrawalPayments extends Component
         $this->selectedWithdrawalId = $withdrawalId;
         $this->showPaymentReview = false;
         $this->reset(['recipientReference', 'proof']);
+        $this->recipientVerification = 'kartu_nasabah';
         $this->idempotencyKey = (string) str()->uuid();
     }
 
@@ -63,6 +64,7 @@ final class WithdrawalPayments extends Component
         $service->pay($actor, $withdrawal, $this->recipientVerification, $this->recipientReference, $this->proof, $this->idempotencyKey);
         session()->flash('success', 'Pembayaran tercatat dan saldo keluar dibuat.');
         $this->reset(['selectedWithdrawalId', 'recipientReference', 'proof', 'showPaymentReview']);
+        $this->recipientVerification = 'kartu_nasabah';
         $this->idempotencyKey = (string) str()->uuid();
     }
 
@@ -87,8 +89,14 @@ final class WithdrawalPayments extends Component
         $this->validate([
             'selectedWithdrawalId' => ['required', 'integer', 'min:1'],
             'recipientVerification' => ['required', 'in:kartu_nasabah,nomor_nasabah'],
-            'recipientReference' => ['required', 'string', 'min:3', 'max:120'],
-            'proof' => ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
-        ], ['proof.required' => 'Bukti pembayaran wajib diunggah.']);
+            'recipientReference' => ['required', 'string', 'regex:/^CST-[0-9]{8}$/'],
+            'proof' => ['required', 'file', 'max:1024', 'mimes:jpg,jpeg,png'],
+        ], [
+            'recipientReference.required' => 'Masukkan nomor nasabah yang diverifikasi.',
+            'recipientReference.regex' => 'Nomor nasabah harus berformat CST-########.',
+            'proof.required' => 'Tambahkan satu foto bukti pembayaran melalui kamera atau galeri.',
+            'proof.max' => 'Foto bukti pembayaran maksimal 1 MB.',
+            'proof.mimes' => 'Foto bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
+        ]);
     }
 }

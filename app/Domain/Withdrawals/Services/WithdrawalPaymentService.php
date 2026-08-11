@@ -56,7 +56,7 @@ final readonly class WithdrawalPaymentService
         $media = null;
 
         try {
-            $media = $this->mediaStore->handle($proof, $actor);
+            $media = $this->mediaStore->handlePhoto($proof, $actor);
 
             return DB::transaction(function () use ($actor, $withdrawal, $verification, $reference, $media, $idempotencyKey, $payloadHash): WithdrawalRequest {
                 $existing = $this->existingIdempotency($actor, $idempotencyKey, $payloadHash);
@@ -152,6 +152,10 @@ final readonly class WithdrawalPaymentService
         $text = trim($value);
         if (mb_strlen($text) < $min || mb_strlen($text) > $max) {
             throw ValidationException::withMessages([$field => 'Nilai tidak memenuhi panjang yang diizinkan.']);
+        }
+
+        if ($field === 'recipient_reference' && preg_match('/^CST-[0-9]{8}$/', $text) !== 1) {
+            throw ValidationException::withMessages([$field => 'Nomor nasabah harus berformat CST-########.']);
         }
 
         return $text;

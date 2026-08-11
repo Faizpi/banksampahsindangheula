@@ -219,6 +219,32 @@ final class WithdrawalWaveTest extends TestCase
         $service->pay($petugas, $withdrawal, 'kartu_nasabah', (string) $customer->customerProfile?->customer_number, UploadedFile::fake()->image('unassigned.png'), 'w6-role-boundary-payment-0001');
     }
 
+    public function test_bendahara_payment_form_explains_identity_methods_and_accepts_one_compressed_photo(): void
+    {
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 50_000);
+        $approver = User::factory()->create();
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $payer = $this->payerFor($area);
+        $service = app(WithdrawalService::class);
+        $withdrawal = $service->assignPayer($approver, $service->approve($approver, $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-form-request-0001'), true), $payer);
+
+        Livewire::actingAs($payer)
+            ->test(WithdrawalPayments::class)
+            ->call('select', $withdrawal->id)
+            ->assertSee('Kartu dan nomor nasabah berbeda')
+            ->assertSee('Kartu nasabah adalah media identitas fisik atau digital.')
+            ->assertSee('Masukkan nomor yang tercetak pada kartu atau yang disebutkan warga.')
+            ->assertSee('Ambil dari kamera')
+            ->assertSee('Pilih dari galeri')
+            ->assertSeeHtml('data-photo-picker-max="1"')
+            ->assertSeeHtml('accept="image/jpeg,image/png"')
+            ->assertDontSeeHtml('application/pdf')
+            ->set('recipientVerification', 'nomor_nasabah')
+            ->assertSee('Nomor nasabah adalah kode unik warga.');
+    }
+
     public function test_lane_c_payment_verifies_recipient_keeps_proof_private_and_posts_one_outgoing_entry(): void
     {
         Storage::fake('media_private');
@@ -247,6 +273,26 @@ final class WithdrawalWaveTest extends TestCase
         self::assertSame('private', $paid->proofMedia()->firstOrFail()->getRawOriginal('visibility'));
         Storage::disk('media_private')->assertExists($paid->proofMedia->path);
         Event::assertDispatchedTimes(NotificationRequested::class, 1);
+    }
+
+    public function test_lane_c_payment_normalizes_one_photo_proof_to_jpeg_under_one_megabyte(): void
+    {
+        Storage::fake('media_private');
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 60_000);
+        $approver = User::factory()->create();
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $payer = $this->payerFor($area);
+        $service = app(WithdrawalService::class);
+        $withdrawal = $service->assignPayer($approver, $service->approve($approver, $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-photo-request-0001'), true), $payer);
+
+        $paid = $service->pay($payer, $withdrawal, 'kartu_nasabah', (string) $customer->customerProfile?->customer_number, UploadedFile::fake()->image('payment.png', 2400, 1800), 'w6-photo-payment-0001');
+        $media = $paid->proofMedia()->firstOrFail();
+
+        self::assertSame('image/jpeg', $media->mime_type);
+        self::assertLessThanOrEqual(1 * 1024 * 1024, $media->size);
+        self::assertSame('jpg', pathinfo($media->path, PATHINFO_EXTENSION));
     }
 
     public function test_lane_c_payment_is_denied_before_assignment_invalid_recipient_and_out_of_scope_proof(): void
