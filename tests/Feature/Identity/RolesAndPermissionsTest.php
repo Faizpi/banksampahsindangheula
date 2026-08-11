@@ -44,7 +44,7 @@ final class RolesAndPermissionsTest extends TestCase
         'petugas' => ['profile.view', 'profile.update', 'user.view', 'user.view.area', 'customer.view', 'customer.create-assisted', 'customer.update', 'customer.card.issue', 'customer.qr.rotate', 'region.view', 'waste.view', 'price.view', 'deposit.view', 'deposit.create', 'deposit.update-draft', 'deposit.finalize', 'ledger.view', 'correction.view-customer', 'pickup.view', 'pickup.request', 'pickup.review', 'pickup.schedule', 'pickup.execute', 'pickup.complete', 'pickup.cancel', 'withdrawal.request', 'withdrawal.view', 'withdrawal.pay', 'grocery.package.view', 'grocery.view', 'grocery.prepare', 'grocery.handover', 'grocery.cancel', 'notification.view', 'announcement.view', 'mobile-service.view', 'mobile-service.operate', 'target.view', 'statistics.internal.view', 'report.view'],
         'bendahara' => ['profile.view', 'profile.update', 'user.view', 'user.view.area', 'customer.view', 'region.view', 'waste.view', 'price.view', 'ledger.view', 'correction.view-customer', 'withdrawal.request', 'withdrawal.view', 'withdrawal.pay', 'withdrawal.cancel', 'grocery.package.view', 'notification.view', 'announcement.view', 'mobile-service.view', 'target.view', 'statistics.internal.view', 'report.view', 'report.export'],
         'admin' => ['profile.view', 'profile.update', 'backoffice.access', 'user.view', 'user.view.all', 'user.create', 'user.update', 'user.activate', 'user.verify', 'user.reject', 'user.reset-password', 'role.view', 'session.revoke', 'customer.view', 'customer.create-assisted', 'customer.update', 'customer.card.issue', 'customer.qr.rotate', 'region.view', 'region.manage', 'waste.view', 'waste.manage', 'price.view', 'price.manage', 'deposit.view', 'deposit.create', 'deposit.update-draft', 'deposit.finalize', 'ledger.view', 'correction.view-customer', 'pickup.view', 'pickup.request', 'pickup.review', 'pickup.schedule', 'pickup.execute', 'pickup.complete', 'pickup.cancel', 'pickup.capacity.manage', 'withdrawal.request', 'withdrawal.view', 'withdrawal.approve', 'withdrawal.pay', 'withdrawal.cancel', 'grocery.package.view', 'grocery.package.manage', 'grocery.view', 'grocery.approve', 'grocery.prepare', 'grocery.handover', 'grocery.cancel', 'notification.view', 'announcement.view', 'announcement.manage', 'announcement.publish', 'mobile-service.view', 'mobile-service.manage', 'mobile-service.operate', 'target.view', 'target.manage', 'target.publish', 'statistics.internal.view', 'statistics.public.manage', 'qr-verification.rotate', 'report.view', 'report.export', 'audit.view'],
-        'superadmin' => ['profile.view', 'profile.update', 'backoffice.access', 'user.view', 'user.view.all', 'user.create', 'user.update', 'user.activate', 'user.verify', 'user.reject', 'user.reset-password', 'role.view', 'role.manage', 'session.revoke', 'customer.view', 'customer.create-assisted', 'customer.update', 'customer.card.issue', 'customer.qr.rotate', 'region.view', 'region.manage', 'waste.view', 'waste.manage', 'price.view', 'price.manage', 'deposit.view', 'deposit.create', 'deposit.update-draft', 'deposit.finalize', 'ledger.view', 'correction.view-customer', 'pickup.view', 'pickup.request', 'pickup.review', 'pickup.schedule', 'pickup.execute', 'pickup.complete', 'pickup.cancel', 'pickup.capacity.manage', 'withdrawal.request', 'withdrawal.view', 'withdrawal.approve', 'withdrawal.pay', 'withdrawal.cancel', 'grocery.package.view', 'grocery.package.manage', 'grocery.view', 'grocery.approve', 'grocery.prepare', 'grocery.handover', 'grocery.cancel', 'notification.view', 'announcement.view', 'announcement.manage', 'announcement.publish', 'mobile-service.view', 'mobile-service.manage', 'mobile-service.operate', 'target.view', 'target.manage', 'target.publish', 'statistics.internal.view', 'statistics.public.manage', 'qr-verification.rotate', 'report.view', 'report.export', 'audit.view', 'system.settings.manage', 'system.maintenance', 'backup.run', 'backup.view', 'backup.restore', 'audit.retention.execute'],
+        'superadmin' => ['profile.view', 'profile.update', 'backoffice.access', 'user.view', 'user.view.all', 'user.create', 'user.update', 'user.activate', 'user.verify', 'user.reject', 'user.reset-password', 'role.view', 'role.manage', 'session.revoke', 'customer.view', 'customer.create-assisted', 'customer.update', 'customer.card.issue', 'customer.qr.rotate', 'region.view', 'region.manage', 'waste.view', 'waste.manage', 'price.view', 'price.manage', 'deposit.view', 'deposit.create', 'deposit.update-draft', 'deposit.finalize', 'ledger.view', 'transaction.correct', 'transaction.reverse', 'ledger.adjust', 'correction.view-customer', 'pickup.view', 'pickup.request', 'pickup.review', 'pickup.schedule', 'pickup.execute', 'pickup.complete', 'pickup.cancel', 'pickup.capacity.manage', 'withdrawal.request', 'withdrawal.view', 'withdrawal.approve', 'withdrawal.pay', 'withdrawal.cancel', 'grocery.package.view', 'grocery.package.manage', 'grocery.view', 'grocery.approve', 'grocery.prepare', 'grocery.handover', 'grocery.cancel', 'notification.view', 'announcement.view', 'announcement.manage', 'announcement.publish', 'mobile-service.view', 'mobile-service.manage', 'mobile-service.operate', 'target.view', 'target.manage', 'target.publish', 'statistics.internal.view', 'statistics.public.manage', 'qr-verification.rotate', 'report.view', 'report.export', 'audit.view', 'system.settings.manage', 'system.maintenance', 'backup.run', 'backup.view', 'backup.restore', 'audit.retention.execute'],
     ];
 
     public function test_schema_has_documented_catalog_and_assignment_metadata(): void
@@ -183,7 +183,7 @@ final class RolesAndPermissionsTest extends TestCase
         self::assertSame(array_sum(array_map('count', self::ROLE_PERMISSIONS)), DB::table('permission_role')->count());
     }
 
-    public function test_superadmin_permissions_are_exactly_the_admin_union_with_technical_permissions_only(): void
+    public function test_superadmin_permissions_are_exactly_the_admin_union_with_technical_and_reconciliation_permissions(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);
 
@@ -197,15 +197,12 @@ final class RolesAndPermissionsTest extends TestCase
             'backup.restore',
             'audit.retention.execute',
         ];
-        $expected = collect([...$adminPermissions, ...$technicalPermissions])->unique()->sort()->values()->all();
+        $reconciliationPermissions = ['transaction.correct', 'transaction.reverse', 'ledger.adjust'];
+        $expected = collect([...$adminPermissions, ...$technicalPermissions, ...$reconciliationPermissions])->unique()->sort()->values()->all();
         $actual = Role::query()->where('name', 'superadmin')->sole()->permissions()->pluck('name')->sort()->values()->all();
 
         self::assertSame($expected, $actual);
-        self::assertFalse(Role::query()->where('name', 'superadmin')->sole()->permissions()->whereIn('name', [
-            'transaction.correct',
-            'transaction.reverse',
-            'ledger.adjust',
-        ])->exists());
+        self::assertTrue(Role::query()->where('name', 'superadmin')->sole()->permissions()->whereIn('name', $reconciliationPermissions)->count() === 3);
     }
 
     public function test_role_create_and_update_roll_back_role_and_permission_changes_atomically(): void

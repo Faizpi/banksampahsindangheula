@@ -61,7 +61,8 @@ final class WasteConditionResource extends Resource
             IconColumn::make('is_active')->label('Aktif')->boolean(),
         ])->recordActions([
             EditAction::make()->using(fn (WasteCondition $record, array $data): WasteCondition => tap($record, fn () => app(ManageWasteMaster::class)->updateCondition(auth()->user(), $record, $data['code'], $data['name'], $data['description'] ?? null, (int) $data['sort_order']))),
-            Action::make('deactivate')->label('Nonaktifkan')->authorize('deactivate')->requiresConfirmation()->visible(fn (WasteCondition $record): bool => $record->is_active)->action(fn (WasteCondition $record) => app(ManageWasteMaster::class)->deactivate(auth()->user(), $record)),
+            Action::make('activate')->label('Aktifkan kembali')->icon(Heroicon::OutlinedCheckCircle)->color('success')->authorize('activate')->requiresConfirmation()->modalHeading(fn (WasteCondition $record): string => "Aktifkan kondisi {$record->name}?")->modalDescription('Kondisi ini kembali tersedia untuk jenis sampah baru. Data historis tetap tersimpan.')->modalSubmitActionLabel('Aktifkan kondisi')->visible(fn (WasteCondition $record): bool => ! $record->is_active)->action(fn (WasteCondition $record) => app(ManageWasteMaster::class)->activate(auth()->user(), $record)),
+            Action::make('deactivate')->label('Nonaktifkan')->authorize('deactivate')->requiresConfirmation()->modalHeading(fn (WasteCondition $record): string => "Nonaktifkan kondisi {$record->name}?")->modalDescription('Kondisi ini tidak tersedia untuk transaksi baru. Data historis tetap tersimpan.')->modalSubmitActionLabel('Nonaktifkan kondisi')->visible(fn (WasteCondition $record): bool => $record->is_active)->action(fn (WasteCondition $record) => app(ManageWasteMaster::class)->deactivate(auth()->user(), $record)),
         ]);
     }
 

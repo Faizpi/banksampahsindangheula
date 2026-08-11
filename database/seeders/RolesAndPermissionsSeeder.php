@@ -31,13 +31,18 @@ final class RolesAndPermissionsSeeder extends Seeder
         'role.manage', 'system.settings.manage', 'system.maintenance', 'backup.run', 'backup.view', 'backup.restore', 'audit.retention.execute',
     ];
 
+    /** @var list<string> Financial reconciliation permissions reserved for the superadmin baseline. */
+    private const SUPERADMIN_RECONCILIATION_PERMISSIONS = [
+        'transaction.correct', 'transaction.reverse', 'ledger.adjust',
+    ];
+
     /** @var array<string, list<string>> */
     private const ROLE_PERMISSIONS = [
         'warga' => ['profile.view', 'profile.update', 'customer.view', 'customer.update', 'region.view', 'waste.view', 'price.view', 'deposit.view', 'ledger.view', 'correction.view-customer', 'pickup.view', 'pickup.request', 'pickup.cancel', 'withdrawal.request', 'withdrawal.view', 'withdrawal.cancel', 'grocery.package.view', 'grocery.request', 'grocery.view', 'grocery.cancel', 'notification.view', 'announcement.view', 'mobile-service.view', 'target.view'],
         'petugas' => ['profile.view', 'profile.update', 'user.view', 'user.view.area', 'customer.view', 'customer.create-assisted', 'customer.update', 'customer.card.issue', 'customer.qr.rotate', 'region.view', 'waste.view', 'price.view', 'deposit.view', 'deposit.create', 'deposit.update-draft', 'deposit.finalize', 'ledger.view', 'correction.view-customer', 'pickup.view', 'pickup.request', 'pickup.review', 'pickup.schedule', 'pickup.execute', 'pickup.complete', 'pickup.cancel', 'withdrawal.request', 'withdrawal.view', 'withdrawal.pay', 'grocery.package.view', 'grocery.view', 'grocery.prepare', 'grocery.handover', 'grocery.cancel', 'notification.view', 'announcement.view', 'mobile-service.view', 'mobile-service.operate', 'target.view', 'statistics.internal.view', 'report.view'],
         'bendahara' => ['profile.view', 'profile.update', 'user.view', 'user.view.area', 'customer.view', 'region.view', 'waste.view', 'price.view', 'ledger.view', 'correction.view-customer', 'withdrawal.request', 'withdrawal.view', 'withdrawal.pay', 'withdrawal.cancel', 'grocery.package.view', 'notification.view', 'announcement.view', 'mobile-service.view', 'target.view', 'statistics.internal.view', 'report.view', 'report.export'],
         'admin' => self::ADMIN_PERMISSIONS,
-        'superadmin' => [...self::ADMIN_PERMISSIONS, ...self::SUPERADMIN_TECHNICAL_PERMISSIONS],
+        'superadmin' => [...self::ADMIN_PERMISSIONS, ...self::SUPERADMIN_TECHNICAL_PERMISSIONS, ...self::SUPERADMIN_RECONCILIATION_PERMISSIONS],
     ];
 
     public function run(): void

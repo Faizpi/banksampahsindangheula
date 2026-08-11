@@ -246,7 +246,7 @@ UI aplikasi hanya mengelola metadata, status, dan verifikasi backup/restore. Eks
 
 ### Setelah pergantian
 
-Tinjau audit, failed task, laporan, backup, cron, dan contact list. Permission khusus koreksi atau penyesuaian saldo tetap tidak otomatis aktif hanya karena superadmin menangani pergantian teknis.
+Tinjau audit, failed task, laporan, backup, cron, dan contact list. Permission koreksi, pembalikan, dan penyesuaian saldo hanya tersedia pada pemilik rekonsiliasi yang ditetapkan; baseline saat ini berada pada superadmin dan tetap wajib memakai alasan, bukti, serta audit.
 
 ## 19. Monitoring rutin
 

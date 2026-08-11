@@ -62,9 +62,9 @@ final class DepositResource extends Resource
                 TextInput::make('status')->label('Status')->disabled(),
                 TextInput::make('total_weight_kg')->label('Berat total (kg)')->disabled(),
                 TextInput::make('total_value')->label('Nilai total')->disabled(),
-                Textarea::make('items')->label('Snapshot detail dan harga')->disabled()->rows(8),
-                Textarea::make('ledgerEntries')->label('Riwayat mutasi')->disabled()->rows(5),
-                Textarea::make('media')->label('Bukti privat')->disabled()->rows(3),
+                Textarea::make('items')->label('Rincian saat transaksi')->disabled()->rows(8),
+                Textarea::make('ledgerEntries')->label('Riwayat mutasi saldo')->disabled()->rows(5),
+                Textarea::make('media')->label('Bukti')->disabled()->rows(3),
             ])->columns(2),
         ]);
     }
@@ -90,16 +90,16 @@ final class DepositResource extends Resource
             ])
             ->recordActions([
                 Action::make('inspect')
-                    ->label('Periksa')
+                    ->label('Tinjau setoran')
                     ->icon(Heroicon::OutlinedEye)
-                    ->modalHeading('Detail setoran, snapshot, dan riwayat')
+                    ->modalHeading('Tinjau setoran')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->schema([
-                        Textarea::make('snapshot')->label('Snapshot detail dan harga')->disabled()->rows(8),
-                        Textarea::make('ledger')->label('Ledger dan saldo setelah mutasi')->disabled()->rows(5),
-                        Textarea::make('holds')->label('Hold terkait rekening')->disabled()->rows(4),
-                        Textarea::make('evidence')->label('Bukti privat')->disabled()->rows(3),
+                        Textarea::make('snapshot')->label('Rincian saat transaksi')->disabled()->rows(8),
+                        Textarea::make('ledger')->label('Mutasi dan saldo akhir')->disabled()->rows(5),
+                        Textarea::make('holds')->label('Dana terkait yang ditahan')->disabled()->rows(4),
+                        Textarea::make('evidence')->label('Bukti')->disabled()->rows(3),
                     ])
                     ->fillForm(fn (Deposit $record): array => self::inspectionData($record)),
                 Action::make('rotateVerificationQr')
@@ -109,7 +109,7 @@ final class DepositResource extends Resource
                     ->visible(fn (Deposit $record): bool => self::verificationRotation()->canRotate(self::actor(), $record))
                     ->authorize(fn (Deposit $record): bool => self::verificationRotation()->canRotate(self::actor(), $record))
                     ->requiresConfirmation()
-                    ->modalHeading('Rotasi QR verifikasi setoran')
+                    ->modalHeading(fn (Deposit $record): string => "Rotasi QR setoran {$record->deposit_number}?")
                     ->modalDescription('QR lama akan langsung tidak aktif. Warga dapat membuka bukti setoran untuk mendapatkan QR baru.')
                     ->schema([
                         Textarea::make('reason')->label('Alasan rotasi')->required()->minLength(10)->maxLength(1000)->rows(4),
@@ -123,8 +123,9 @@ final class DepositResource extends Resource
                     ->visible(fn (Deposit $record): bool => self::correctionService()->canCorrect(self::actor(), $record) && $record->status === Deposit::STATUS_FINAL)
                     ->authorize(fn (Deposit $record): bool => self::correctionService()->canCorrect(self::actor(), $record))
                     ->requiresConfirmation()
-                    ->modalHeading('Koreksi nilai setoran')
-                    ->modalDescription('Transaksi asli tidak diubah. Sistem akan membuat catatan koreksi dan mutasi penyesuaian baru.')
+                    ->modalHeading(fn (Deposit $record): string => "Koreksi setoran {$record->deposit_number}?")
+                    ->modalDescription('Transaksi asli tetap tersimpan. Sistem menambahkan catatan koreksi dan mutasi penyesuaian baru.')
+                    ->modalSubmitActionLabel('Catat koreksi')
                     ->schema([
                         TextInput::make('new_value')->label('Nilai benar')->numeric()->integer()->minValue(0)->required(),
                         Textarea::make('reason')->label('Alasan dan referensi pemeriksaan')->required()->minLength(10)->maxLength(1000)->rows(4),
@@ -139,11 +140,12 @@ final class DepositResource extends Resource
                     ->visible(fn (Deposit $record): bool => self::correctionService()->canReverse(self::actor(), $record) && $record->status === Deposit::STATUS_FINAL)
                     ->authorize(fn (Deposit $record): bool => self::correctionService()->canReverse(self::actor(), $record))
                     ->requiresConfirmation()
-                    ->modalHeading('Reversal setoran')
-                    ->modalDescription('Mutasi lawan akan ditambahkan. Transaksi dan mutasi asli tetap dipertahankan.')
+                    ->modalHeading(fn (Deposit $record): string => "Balikkan setoran {$record->deposit_number}?")
+                    ->modalDescription('Sistem menambahkan mutasi pembalik. Transaksi asli tetap tersimpan.')
+                    ->modalSubmitActionLabel('Balikkan setoran')
                     ->schema([
                         Textarea::make('reason')->label('Alasan dan referensi pemeriksaan')->required()->minLength(10)->maxLength(1000)->rows(4),
-                        FileUpload::make('evidence')->label('Bukti reversal')->required()->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])->maxSize(5120)->storeFiles(false),
+                        FileUpload::make('evidence')->label('Bukti pembalikan')->required()->acceptedFileTypes(['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])->maxSize(5120)->storeFiles(false),
                     ])
                     ->action(fn (Deposit $record, array $data): mixed => self::correctionService()->reverse(self::actor(), $record, (string) $data['reason'], self::idempotencyKey(), self::uploadedFile($data['evidence'] ?? null)))
 

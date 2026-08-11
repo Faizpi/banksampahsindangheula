@@ -26,7 +26,7 @@ final class OperationsDashboard extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Sistem & Teknis';
+    protected static string|UnitEnum|null $navigationGroup = 'Administrasi sistem';
 
     protected static ?int $navigationSort = 10;
 
@@ -46,6 +46,10 @@ final class OperationsDashboard extends Page
     public string $retentionBefore = '';
 
     public string $retentionResult = '';
+
+    public string $retentionPreviewBefore = '';
+
+    public string $retentionPreviewedAt = '';
 
     public string $backupDatabaseAlias = '';
 
@@ -69,7 +73,7 @@ final class OperationsDashboard extends Page
 
     public string $restoreEvidenceReference = '';
 
-    public bool $restorePassed = true;
+    public string $restoreResult = '';
 
     public static function canAccess(): bool
     {
@@ -89,8 +93,13 @@ final class OperationsDashboard extends Page
 
     public function mount(): void
     {
-        $this->settings = app(OperationalSettingsService::class)->values();
-        $this->maintenanceEnabled = app()->maintenanceMode()->active();
+        $actor = $this->actor();
+        $permissions = app(PermissionChecker::class);
+        $this->settings = $permissions->allows($actor, 'system.settings.manage')
+            ? app(OperationalSettingsService::class)->values()
+            : [];
+        $this->maintenanceEnabled = $permissions->allows($actor, 'system.maintenance')
+            && app()->maintenanceMode()->active();
     }
 
     public function saveSettings(): void
@@ -115,13 +124,31 @@ final class OperationsDashboard extends Page
     public function previewRetention(): void
     {
         $preview = app(AuditRetentionService::class)->preview($this->actor(), $this->retentionBefore);
+        $this->retentionPreviewBefore = $this->retentionBefore;
+        $this->retentionPreviewedAt = now()->toIso8601String();
         $this->retentionResult = sprintf('Kandidat hapus: %d; dilindungi: %d.', $preview->deletableCount, $preview->protectedCount);
     }
 
     public function executeRetention(): void
     {
+        if ($this->retentionPreviewBefore !== $this->retentionBefore || $this->retentionPreviewedAt === '') {
+            throw ValidationException::withMessages(['retentionBefore' => 'Jalankan preview dengan batas tanggal yang sama sebelum retensi.']);
+        }
+
+        try {
+            $previewedAt = CarbonImmutable::parse($this->retentionPreviewedAt);
+        } catch (\Throwable) {
+            throw ValidationException::withMessages(['retentionBefore' => 'Preview retensi tidak valid. Jalankan preview kembali.']);
+        }
+
+        if ($previewedAt->addMinutes(10)->isPast()) {
+            throw ValidationException::withMessages(['retentionBefore' => 'Preview retensi sudah kedaluwarsa. Jalankan preview kembali.']);
+        }
+
         $count = app(AuditRetentionService::class)->execute($this->actor(), $this->retentionBefore);
         $this->retentionResult = sprintf('Retensi selesai. Baris audit dihapus: %d.', $count);
+        $this->retentionPreviewBefore = '';
+        $this->retentionPreviewedAt = '';
     }
 
     public function recordBackupMetadata(): void
@@ -143,6 +170,10 @@ final class OperationsDashboard extends Page
 
     public function recordRestoreVerification(): void
     {
+        if (! in_array($this->restoreResult, ['passed', 'failed'], true)) {
+            throw ValidationException::withMessages(['restoreResult' => 'Pilih hasil verifikasi: lulus atau gagal.']);
+        }
+
         if (! ctype_digit($this->restoreBackupId) || (int) $this->restoreBackupId < 1) {
             throw ValidationException::withMessages(['restoreBackupId' => 'ID backup tidak valid.']);
         }
@@ -153,7 +184,7 @@ final class OperationsDashboard extends Page
             backup: $backup,
             verificationTargetAlias: $this->restoreTargetAlias,
             evidenceReference: $this->restoreEvidenceReference,
-            passed: $this->restorePassed,
+            passed: $this->restoreResult === 'passed',
             correlationId: $this->correlationId(),
         );
 
@@ -161,6 +192,7 @@ final class OperationsDashboard extends Page
         $this->restoreBackupId = '';
         $this->restoreTargetAlias = '';
         $this->restoreEvidenceReference = '';
+        $this->restoreResult = '';
     }
 
     /** @return array<string, mixed> */
@@ -173,7 +205,7 @@ final class OperationsDashboard extends Page
             ? BackupLog::query()->select([
                 'id', 'backup_pair_uuid', 'status', 'database_location_alias', 'media_location_alias',
                 'database_sha256', 'media_sha256', 'database_size_bytes', 'media_size_bytes',
-                'retention_until', 'started_at', 'finished_at', 'restore_tested_at', 'restore_verification_result',
+                'retention_until', 'started_at', 'finished_at', 'restore_tested_at', 'restore_verification_result', 'created_at',
             ])->latest('id')->limit(20)->get()
             : collect();
 
@@ -185,6 +217,7 @@ final class OperationsDashboard extends Page
             'canRunBackup' => $permissions->allows($actor, 'backup.run'),
             'canRestoreBackup' => $permissions->allows($actor, 'backup.restore'),
             'canExecuteRetention' => $permissions->allows($actor, 'audit.retention.execute'),
+            'canViewBackups' => $permissions->allows($actor, 'backup.view'),
         ];
     }
 

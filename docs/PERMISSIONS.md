@@ -6,7 +6,7 @@
 2. Setiap request memeriksa autentikasi, permission tindakan, scope record, status record, dan separation of duties.
 3. Menyembunyikan menu tidak dianggap sebagai kontrol keamanan. Policy/service tetap menolak akses langsung.
 4. Scope default adalah paling sempit: `own`, `assigned`, `area`, atau `all`; untuk record pengguna, scope harus diberikan secara eksplisit melalui `user.view.area` atau `user.view.all`.
-5. Superadmin adalah superset role `admin`: seluruh permission baseline admin diwariskan, lalu ditambah permission teknis. Permission berisiko tinggi di luar baseline role, seperti `ledger.adjust`, `transaction.correct`, dan `transaction.reverse`, tetap hanya diberikan secara eksplisit dan diaudit.
+5. Superadmin adalah superset role `admin`: seluruh permission baseline admin diwariskan, lalu ditambah permission teknis dan rekonsiliasi finansial. `ledger.adjust`, `transaction.correct`, dan `transaction.reverse` hanya tersedia pada baseline superadmin serta tetap diaudit.
 6. Permission sensitif hanya diberikan melalui keputusan pengelola dan dicatat dalam audit log.
 7. Editor role/permission (RoleResource & PermissionResource) tersedia di panel back-office dan dibatasi `role.view`/`role.manage`: mutasi menyimpan metadata `granted_by` dan `reason`, dan role sistem (`warga`, `petugas`, `bendahara`, `admin`, `superadmin`) tidak dapat dihapus. Katalog permission tetap sumber otoritatif.
 
@@ -20,7 +20,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `petugas` | Setoran, penjemputan, layanan keliling, layanan berbantuan, pembayaran/penyerahan bila ditugaskan. | Scope penugasan/area; tidak mengubah harga, role, atau saldo langsung. |
 | `bendahara` | Pembayaran pencairan yang telah disetujui, bukti, kas, dan laporan. | Tidak menyetujui pencairan secara default dan tidak mengoreksi saldo. |
 | `admin` | Operasional, master data, verifikasi, persetujuan, laporan, koreksi bila permission khusus diberikan. | Tidak mengelola konfigurasi teknis berisiko tinggi atau melewati mekanisme ledger. |
-| `superadmin` | Seluruh tanggung jawab dan permission baseline admin, ditambah konfigurasi teknis non-secret, role/permission, status sistem, metadata backup/restore, dan retensi teknis. | Tetap mengikuti policy, separation of duties, permission khusus, serta SOP backup/restore. |
+| `superadmin` | Seluruh tanggung jawab dan permission baseline admin, ditambah koreksi/reversal transaksi, penyesuaian saldo, konfigurasi teknis non-secret, role/permission, status sistem, metadata backup/restore, dan retensi teknis. | Tetap mengikuti policy, separation of duties, alasan+bukti koreksi, serta SOP backup/restore. |
 
 ## 3. Katalog permission granular
 
@@ -55,10 +55,10 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 |---|---|
 | `deposit.view` / `deposit.create` / `deposit.update-draft` | Melihat, membuat, atau mengubah draf setoran. |
 | `deposit.finalize` | Finalisasi setoran dan efek ledger atomik. |
-| `transaction.correct` | Membuat koreksi transaksi final. |
-| `transaction.reverse` | Membuat reversal transaksi final. |
+| `transaction.correct` | Membuat koreksi transaksi final dengan alasan dan bukti. Baseline diberikan kepada superadmin. |
+| `transaction.reverse` | Membuat pembalikan transaksi final dengan alasan dan bukti. Baseline diberikan kepada superadmin. |
 | `ledger.view` | Melihat ledger dalam scope. |
-| `ledger.adjust` | Membuat penyesuaian ledger resmi, bukan edit saldo. |
+| `ledger.adjust` | Membuat penyesuaian mutasi saldo resmi, bukan edit saldo. Baseline diberikan kepada superadmin. |
 | `correction.view-customer` | Melihat versi koreksi yang aman bagi warga. |
 
 ### Penjemputan, pencairan, dan sembako
@@ -134,13 +134,13 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `deposit.view` | O | A | — | X | X |
 | `deposit.create`, `deposit.update-draft` | — | A | — | X | X |
 | `deposit.finalize` | — | A | — | X | X |
-| `transaction.correct` | — | — | — | Khusus | Khusus |
-| `transaction.reverse` | — | — | — | Khusus | Khusus |
+| `transaction.correct` | — | — | — | — | X |
+| `transaction.reverse` | — | — | — | — | X |
 | `ledger.view` | O | A terbatas | A | X | X |
-| `ledger.adjust` | — | — | — | Khusus | Khusus |
+| `ledger.adjust` | — | — | — | — | X |
 | `correction.view-customer` | O | A | A | X | X |
 
-`Khusus` berarti permission tidak melekat otomatis hanya karena role `admin` atau `superadmin`; permission diberikan kepada aktor yang ditunjuk dan diaudit. Ini tidak mengurangi pewarisan permission baseline admin oleh superadmin.
+Permission rekonsiliasi hanya melekat pada baseline `superadmin`; aktor custom tetap harus ditunjuk melalui perubahan role resmi dan seluruh tindakan diaudit. Admin biasa tidak dapat menjalankan koreksi, pembalikan, atau penyesuaian saldo.
 
 ### 4.3 Penjemputan, pencairan, dan sembako
 

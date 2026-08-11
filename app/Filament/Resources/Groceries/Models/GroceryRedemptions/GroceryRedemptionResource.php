@@ -47,11 +47,11 @@ final class GroceryRedemptionResource extends Resource
     {
         return $table->recordTitleAttribute('request_number')->columns([
             TextColumn::make('request_number')->label('Nomor')->searchable()->sortable(),
-            TextColumn::make('customer.name')->label('Warga')->searchable(),
+            TextColumn::make('customer.name')->label('Nasabah')->searchable(),
             TextColumn::make('package.name')->label('Paket')->searchable(),
             TextColumn::make('value_snapshot')->label('Nilai')->money('IDR'),
             TextColumn::make('status')->label('Status')->badge(),
-            TextColumn::make('approver.name')->label('Approver')->placeholder('Belum diputuskan'),
+            TextColumn::make('approver.name')->label('Disetujui oleh')->placeholder('Belum disetujui'),
         ])->recordActions([
             Action::make('approve')
                 ->label('Setujui')
@@ -59,7 +59,10 @@ final class GroceryRedemptionResource extends Resource
                 ->color('success')
                 ->visible(fn (GroceryRedemption $record): bool => $record->status->value === 'menunggu_verifikasi')
                 ->authorize('approve')
-                ->schema([Textarea::make('availability_note')->label('Catatan ketersediaan manual')->required()->minLength(3)->maxLength(1000)->rows(4)])
+                ->modalHeading('Setujui penukaran sembako?')
+                ->modalDescription('Periksa ketersediaan paket dan dana yang ditahan sebelum menyetujui.')
+                ->modalSubmitActionLabel('Setujui penukaran')
+                ->schema([Textarea::make('availability_note')->label('Catatan ketersediaan')->required()->minLength(3)->maxLength(1000)->rows(4)])
                 ->action(fn (GroceryRedemption $record, array $data): GroceryRedemption => app(GroceryService::class)->approve(auth()->user(), $record, true, (string) $data['availability_note'])),
             Action::make('reject')
                 ->label('Tolak')

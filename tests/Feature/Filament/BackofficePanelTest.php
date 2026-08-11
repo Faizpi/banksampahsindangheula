@@ -69,13 +69,13 @@ final class BackofficePanelTest extends TestCase
         $this->actingAs($admin->fresh())->get('/backoffice/login')->assertRedirect('/backoffice');
         self::assertNotContains(
             'Kontrol teknis',
-            $this->navigationLabelsForGroup($panel, 'Sistem & Teknis'),
+            $this->navigationLabelsForGroup($panel, 'Administrasi sistem'),
         );
 
         $this->actingAs($superadmin->fresh())->get('/backoffice/login')->assertRedirect('/backoffice');
         self::assertContains(
             'Kontrol teknis',
-            $this->navigationLabelsForGroup($panel, 'Sistem & Teknis'),
+            $this->navigationLabelsForGroup($panel, 'Administrasi sistem'),
         );
     }
 
@@ -138,7 +138,7 @@ final class BackofficePanelTest extends TestCase
                 'Program & Publikasi',
                 'Laporan & Audit',
                 'Data Master',
-                'Sistem & Teknis',
+                'Administrasi sistem',
             ],
             collect($panel->getNavigationGroups())->map(static fn ($group): string => $group->getLabel())->all(),
         );
@@ -158,7 +158,7 @@ final class BackofficePanelTest extends TestCase
             $this->navigationLabelsForGroup($panel, 'Identitas & Akses'),
         );
         self::assertSame(
-            ['Setoran dan Koreksi', 'Ledger', 'Hold Saldo', 'Pencairan', 'Penukaran Sembako'],
+            ['Setoran dan Koreksi', 'Mutasi saldo', 'Hold Saldo', 'Pencairan', 'Penukaran Sembako'],
             $this->navigationLabelsForGroup($panel, 'Transaksi & Saldo'),
         );
         self::assertSame(
@@ -177,7 +177,7 @@ final class BackofficePanelTest extends TestCase
             ['Area Pelayanan', 'Dusun', 'RW', 'RT', 'Paket Sembako', 'Jenis Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Harga Sampah', 'Satuan Sampah'],
             $this->navigationLabelsForGroup($panel, 'Data Master'),
         );
-        self::assertSame([], $this->navigationLabelsForGroup($panel, 'Sistem & Teknis'));
+        self::assertSame([], $this->navigationLabelsForGroup($panel, 'Administrasi sistem'));
     }
 
     public function test_backoffice_panel_discovers_only_the_regional_resources(): void

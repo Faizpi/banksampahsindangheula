@@ -113,11 +113,11 @@ final class WasteMasterManagementTest extends TestCase
         $type = app(ManageWasteMaster::class)->createType($manager, $category, $unit, 'TYPE-01', 'PET', null, 0, false, true, [$condition->id]);
 
         app(ManageWasteMaster::class)->deactivate($manager, $type);
-        $this->assertValidationError('waste_unit', function () use ($manager, $unit): void {
-            app(ManageWasteMaster::class)->deactivate($manager, $unit);
-        });
+        app(ManageWasteMaster::class)->deactivate($manager, $unit);
+        app(ManageWasteMaster::class)->activate($manager, $unit);
 
         self::assertFalse($type->fresh()->is_active);
+        self::assertTrue($unit->fresh()->is_active);
         self::assertDatabaseHas('waste_types', ['id' => $type->id, 'is_active' => false]);
         self::assertDatabaseHas('waste_type_conditions', ['waste_type_id' => $type->id, 'waste_condition_id' => $condition->id]);
 

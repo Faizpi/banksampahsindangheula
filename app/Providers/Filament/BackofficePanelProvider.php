@@ -44,7 +44,7 @@ final class BackofficePanelProvider extends PanelProvider
                 NavigationGroup::make('Program & Publikasi'),
                 NavigationGroup::make('Laporan & Audit'),
                 NavigationGroup::make('Data Master'),
-                NavigationGroup::make('Sistem & Teknis'),
+                NavigationGroup::make('Administrasi sistem'),
             ])
             ->middleware([
                 EncryptCookies::class,

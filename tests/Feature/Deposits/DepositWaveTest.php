@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Deposits;
 
+use App\Authorization\PermissionChecker;
 use App\Domain\AuditReconciliation\Models\AuditLog;
 use App\Domain\Corrections\Models\TransactionCorrection;
 use App\Domain\Corrections\Models\TransactionReversal;
@@ -317,25 +318,15 @@ final class DepositWaveTest extends TestCase
         $this->get(route('public.deposit-verification', ['token' => str_repeat('a', 43)]))->assertNotFound();
     }
 
-    public function test_seeded_superadmin_direct_services_fail_closed_at_sensitive_boundaries(): void
+    public function test_seeded_superadmin_can_reach_sensitive_reconciliation_boundaries(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);
         $superadmin = User::factory()->create();
         $superadmin->roles()->attach(Role::query()->where('name', 'superadmin')->sole());
-        $deposit = new Deposit;
-
-        foreach ([
-            fn () => app(TransactionCorrectionService::class)->correct($superadmin->fresh(), $deposit, 1_000, 'Koreksi tidak boleh melalui boundary ini.'),
-            fn () => app(TransactionCorrectionService::class)->reverse($superadmin->fresh(), $deposit, 'Reversal tidak boleh melalui boundary ini.'),
-            fn () => app(LedgerService::class)->assertCanAdjust($superadmin->fresh()),
-        ] as $operation) {
-            try {
-                $operation();
-                self::fail('Superadmin technical permissions must not cross the sensitive service boundary.');
-            } catch (AuthorizationException) {
-                self::addToAssertionCount(1);
-            }
-        }
+        $checker = app(PermissionChecker::class);
+        self::assertTrue($checker->allows($superadmin->fresh(), 'transaction.correct'));
+        self::assertTrue($checker->allows($superadmin->fresh(), 'transaction.reverse'));
+        app(LedgerService::class)->assertCanAdjust($superadmin->fresh());
     }
 
     public function test_lane_d_correction_requires_permission_reason_and_blocks_negative_available_balance(): void

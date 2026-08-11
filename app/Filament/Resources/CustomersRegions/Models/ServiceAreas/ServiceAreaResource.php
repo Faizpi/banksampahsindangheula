@@ -52,7 +52,8 @@ final class ServiceAreaResource extends Resource
             IconColumn::make('is_active')->boolean(),
         ])->recordActions([
             EditAction::make()->using(fn (ServiceArea $record, array $data): ServiceArea => tap($record, fn () => app(ManageRegions::class)->updateServiceArea(auth()->user(), $record, $data['name'], Rt::query()->findMany($data['rts'] ?? [])->all()))),
-            Action::make('deactivate')->authorize('deactivate')->requiresConfirmation()->visible(fn (ServiceArea $record): bool => $record->is_active)->action(fn (ServiceArea $record) => app(ManageRegions::class)->deactivate(auth()->user(), $record)),
+            Action::make('activate')->label('Aktifkan kembali')->icon(Heroicon::OutlinedCheckCircle)->color('success')->authorize('activate')->requiresConfirmation()->modalHeading(fn (ServiceArea $record): string => "Aktifkan area {$record->name}?")->modalDescription('Area ini kembali tersedia untuk penjadwalan layanan. RT yang terhubung harus aktif.')->modalSubmitActionLabel('Aktifkan area')->visible(fn (ServiceArea $record): bool => ! $record->is_active)->action(fn (ServiceArea $record) => app(ManageRegions::class)->activate(auth()->user(), $record)),
+            Action::make('deactivate')->label('Nonaktifkan')->authorize('deactivate')->requiresConfirmation()->modalHeading(fn (ServiceArea $record): string => "Nonaktifkan area {$record->name}?")->modalDescription('Area ini tidak tersedia untuk penjadwalan baru. Data historis tetap tersimpan.')->modalSubmitActionLabel('Nonaktifkan area')->visible(fn (ServiceArea $record): bool => $record->is_active)->action(fn (ServiceArea $record) => app(ManageRegions::class)->deactivate(auth()->user(), $record)),
         ]);
     }
 

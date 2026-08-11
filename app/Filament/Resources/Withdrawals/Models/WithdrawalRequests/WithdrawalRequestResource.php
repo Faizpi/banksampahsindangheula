@@ -65,7 +65,7 @@ final class WithdrawalRequestResource extends Resource
                 TextColumn::make('amount')->label('Nominal')->money('IDR'),
                 TextColumn::make('status')->label('Status')->formatStateUsing(fn ($state): string => StatusLabel::for($state))->badge(),
                 TextColumn::make('approver.name')->label('Approver')->placeholder('Belum diputuskan'),
-                TextColumn::make('payer.name')->label('Payer')->placeholder('Belum ditugaskan'),
+                TextColumn::make('payer.name')->label('Petugas pembayaran')->placeholder('Belum ditugaskan'),
                 TextColumn::make('expires_at')->label('Batas')->dateTime('d M Y H:i'),
             ])
             ->filters([
@@ -86,9 +86,9 @@ final class WithdrawalRequestResource extends Resource
             ])
             ->recordActions([
                 Action::make('inspect')
-                    ->label('Detail review')
+                    ->label('Tinjau pencairan')
                     ->icon(Heroicon::OutlinedEye)
-                    ->modalHeading('Detail review pencairan')
+                    ->modalHeading('Tinjau pencairan')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->schema([
@@ -98,9 +98,9 @@ final class WithdrawalRequestResource extends Resource
                         TextInput::make('held_balance')->label('Saldo hold')->disabled(),
                         TextInput::make('status')->label('Status')->disabled(),
                         TextInput::make('expires_at')->label('Batas pengambilan')->disabled(),
-                        Textarea::make('consent')->label('Consent/verifikasi')->disabled()->rows(3),
-                        Textarea::make('evidence')->label('Evidence')->disabled()->rows(3),
-                        Textarea::make('impact')->label('Dampak keputusan approve')->disabled()->rows(4),
+                        Textarea::make('consent')->label('Persetujuan dan verifikasi')->disabled()->rows(3),
+                        Textarea::make('evidence')->label('Bukti')->disabled()->rows(3),
+                        Textarea::make('impact')->label('Dampak persetujuan')->disabled()->rows(4),
                     ])
                     ->fillForm(fn (WithdrawalRequest $record): array => self::inspectionData($record)),
                 Action::make('approve')
@@ -110,7 +110,7 @@ final class WithdrawalRequestResource extends Resource
                     ->visible(fn (WithdrawalRequest $record): bool => $record->status->value === 'menunggu_verifikasi')
                     ->authorize('approve')
                     ->requiresConfirmation()
-                    ->modalDescription('Approve mempertahankan hold saldo dan meneruskan pencairan ke penetapan payer. Buka Detail review terlebih dahulu untuk memeriksa konteks penerima dan evidence.')
+                    ->modalDescription('Dana tetap ditahan dan pengajuan diteruskan ke petugas pembayaran. Periksa penerima dan bukti sebelum menyetujui.')
                     ->action(fn (WithdrawalRequest $record): WithdrawalRequest => app(WithdrawalService::class)->approve(self::actor(), $record, true)),
                 Action::make('reject')
                     ->label('Tolak')
@@ -121,11 +121,11 @@ final class WithdrawalRequestResource extends Resource
                     ->schema([Textarea::make('reason')->label('Alasan')->required()->minLength(10)->maxLength(1000)->rows(4)])
                     ->action(fn (WithdrawalRequest $record, array $data): WithdrawalRequest => app(WithdrawalService::class)->approve(self::actor(), $record, false, (string) $data['reason'])),
                 Action::make('assignPayer')
-                    ->label('Tetapkan payer')
+                    ->label('Tetapkan petugas pembayaran')
                     ->icon(Heroicon::OutlinedUser)
                     ->visible(fn (WithdrawalRequest $record): bool => $record->status->value === 'disetujui')
                     ->authorize('approve')
-                    ->schema([Select::make('payer_id')->label('Payer')->options(fn (WithdrawalRequest $record): array => User::query()->where('status', 'aktif')->whereHas('roles.permissions', fn (Builder $permissions): Builder => $permissions->where('permissions.name', 'withdrawal.pay'))->pluck('name', 'id')->all())->required()])
+                    ->schema([Select::make('payer_id')->label('Petugas pembayaran')->options(fn (WithdrawalRequest $record): array => User::query()->where('status', 'aktif')->whereHas('roles.permissions', fn (Builder $permissions): Builder => $permissions->where('permissions.name', 'withdrawal.pay'))->pluck('name', 'id')->all())->required()])
                     ->action(fn (WithdrawalRequest $record, array $data): WithdrawalRequest => app(WithdrawalService::class)->assignPayer(self::actor(), $record, User::query()->findOrFail((int) $data['payer_id']))),
             ]);
     }

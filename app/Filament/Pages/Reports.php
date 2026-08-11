@@ -21,7 +21,7 @@ final class Reports extends Page
 
     protected static ?string $navigationLabel = 'Laporan';
 
-    protected static ?string $title = 'Laporan operasional';
+    protected static ?string $title = 'Laporan transaksi';
 
     protected string $view = 'filament.backoffice.reports';
 

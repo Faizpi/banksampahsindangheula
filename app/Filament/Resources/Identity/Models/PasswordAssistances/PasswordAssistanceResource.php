@@ -76,8 +76,8 @@ final class PasswordAssistanceResource extends Resource
                         && auth()->user()->can('revokeSession', $record))
                     ->requiresConfirmation()
                     ->modalHeading('Bantuan kata sandi')
-                    ->modalDescription('Gunakan hanya untuk pengguna yang benar-benar lupa kata sandi dan tidak dapat masuk. Semua sesi pengguna akan diakhiri.')
-                    ->modalSubmitActionLabel('Ubah dan akhiri semua sesi')
+                    ->modalDescription('Kata sandi akan diganti dan semua sesi aktif pengguna diakhiri.')
+                    ->modalSubmitActionLabel('Atur ulang kata sandi')
                     ->schema([
                         Select::make('verification_method')
                             ->label('Metode verifikasi')

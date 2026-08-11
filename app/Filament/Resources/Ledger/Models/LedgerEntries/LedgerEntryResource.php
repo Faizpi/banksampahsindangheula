@@ -34,11 +34,11 @@ final class LedgerEntryResource extends Resource
 
     protected static ?int $navigationSort = 20;
 
-    protected static ?string $navigationLabel = 'Ledger';
+    protected static ?string $navigationLabel = 'Mutasi saldo';
 
-    protected static ?string $modelLabel = 'mutasi ledger';
+    protected static ?string $modelLabel = 'mutasi saldo';
 
-    protected static ?string $pluralModelLabel = 'mutasi ledger';
+    protected static ?string $pluralModelLabel = 'mutasi saldo';
 
     public static function canViewAny(): bool
     {
@@ -81,7 +81,7 @@ final class LedgerEntryResource extends Resource
             ])
             ->headerActions([
                 Action::make('adjust')
-                    ->label('Penyesuaian ledger')
+                    ->label('Penyesuaian saldo')
                     ->icon(Heroicon::OutlinedAdjustmentsHorizontal)
                     ->visible(fn (): bool => app(PermissionChecker::class)->allows(self::actor(), 'ledger.adjust'))
                     ->schema([
@@ -93,13 +93,13 @@ final class LedgerEntryResource extends Resource
                     ->action(function (array $data): void {
                         app(LedgerService::class)->adjust(self::actor(), User::query()->findOrFail((int) $data['owner_id']), (int) $data['delta'], (string) $data['reason'], (string) $data['idempotency_key']);
                     })
-                    ->successNotificationTitle('Penyesuaian ledger tercatat.'),
+                    ->successNotificationTitle('Penyesuaian saldo tercatat.'),
             ])
             ->recordActions([
                 Action::make('inspect')
-                    ->label('Periksa')
+                    ->label('Lihat mutasi')
                     ->icon(Heroicon::OutlinedEye)
-                    ->modalHeading('Detail mutasi ledger')
+                    ->modalHeading('Lihat mutasi saldo')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->schema([
