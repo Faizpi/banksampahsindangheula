@@ -22,7 +22,7 @@
             $destinations['Pembayaran'] = route('treasurer.withdrawal.payments');
         }
         if ($can('report.view')) {
-            $destinations['Rekonsiliasi'] = route('treasurer.reports');
+            $destinations['Laporan'] = route('treasurer.reports');
         }
         if ($can('profile.view')) {
             $destinations['Akun'] = route('profile.password');
@@ -30,7 +30,7 @@
         $activeNav = match (true) {
             $routeName === 'treasurer.dashboard' => 'Tugas',
             str_starts_with($routeName, 'treasurer.withdrawal') => 'Pembayaran',
-            str_starts_with($routeName, 'treasurer.reports') => 'Rekonsiliasi',
+            str_starts_with($routeName, 'treasurer.reports') => 'Laporan',
             default => 'Akun',
         };
     } else {

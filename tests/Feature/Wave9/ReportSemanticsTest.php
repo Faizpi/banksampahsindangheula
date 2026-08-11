@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Wave9;
 
-use App\Domain\AuditReconciliation\Enums\ReconciliationStatus;
-use App\Domain\AuditReconciliation\Models\Reconciliation;
 use App\Domain\CustomersRegions\Models\Dusun;
 use App\Domain\CustomersRegions\Models\Rt;
 use App\Domain\CustomersRegions\Models\Rw;
@@ -79,9 +77,6 @@ final class ReportSemanticsTest extends TestCase
         $this->seedPickup($actor, $rt, $area, 'PUP-SEMANTICS-1', '2.500');
         $this->seedPickup($otherCustomer, $rt, $area, 'PUP-SEMANTICS-2', '5.000');
 
-        $this->seedReconciliation($actor, 'all', null, 1_250);
-        $this->seedReconciliation($otherCustomer, 'area-'.$area->id, $area->id, -250);
-
         $reports = app(ReportQueryService::class);
         self::assertSame([
             'subject_count' => 2,
@@ -111,12 +106,6 @@ final class ReportSemanticsTest extends TestCase
             'collected_weight_kg' => '4.000',
             'collected_value' => 30_000,
         ], $reports->aggregate($actor, $period, 'participation'));
-        self::assertSame([
-            'creator_count' => 2,
-            'scope_count' => 2,
-            'reconciliation_count' => 2,
-            'total_difference' => 1_000,
-        ], $reports->aggregate($actor, $period, 'reconciliation'));
     }
 
     public function test_summary_covers_the_full_filtered_dataset_beyond_the_interactive_record_limit(): void
@@ -163,6 +152,29 @@ final class ReportSemanticsTest extends TestCase
         }
     }
 
+    public function test_treasurer_report_uses_simple_period_presets_and_excel_only_export(): void
+    {
+        $actor = $this->userWith('report.view', 'report.export');
+        Livewire::actingAs($actor);
+
+        $component = Livewire::test(TreasurerReports::class)
+            ->set('month', '01')
+            ->set('year', '2026')
+            ->call('setPeriod', 'month')
+            ->assertSet('start', '2026-01-01')
+            ->assertSet('end', '2026-01-31')
+            ->set('period', 'custom')
+            ->set('start', '2026-02-03')
+            ->set('end', '2026-02-05')
+            ->call('refreshReport')
+            ->assertSet('start', '2026-02-03')
+            ->assertSet('end', '2026-02-05');
+
+        $component->assertSee('Unduh Excel')
+            ->assertDontSee('CSV')
+            ->assertDontSee('PDF');
+    }
+
     /** @return array<string, list<array{key: string, label: string, format: string}>> */
     private function summaryContracts(): array
     {
@@ -194,12 +206,6 @@ final class ReportSemanticsTest extends TestCase
                 ['key' => 'participation_count', 'label' => 'Partisipasi', 'format' => 'count'],
                 ['key' => 'collected_weight_kg', 'label' => 'Berat Terkumpul', 'format' => 'weight'],
                 ['key' => 'collected_value', 'label' => 'Nilai Terkumpul', 'format' => 'currency'],
-            ],
-            'reconciliation' => [
-                ['key' => 'creator_count', 'label' => 'Pembuat', 'format' => 'count'],
-                ['key' => 'scope_count', 'label' => 'Scope', 'format' => 'count'],
-                ['key' => 'reconciliation_count', 'label' => 'Rekonsiliasi', 'format' => 'count'],
-                ['key' => 'total_difference', 'label' => 'Total Selisih', 'format' => 'currency'],
             ],
         ];
     }
@@ -278,26 +284,6 @@ final class ReportSemanticsTest extends TestCase
             'estimated_weight_kg' => $weight,
             'status' => PickupStatus::Completed,
             'completed_at' => '2026-08-01 13:00:00',
-        ]);
-    }
-
-    private function seedReconciliation(User $creator, string $scopeKey, ?int $serviceAreaId, int $difference): Reconciliation
-    {
-        return Reconciliation::query()->create([
-            'uuid' => (string) Str::uuid(),
-            'business_date' => '2026-08-01',
-            'service_area_id' => $serviceAreaId,
-            'scope_key' => $scopeKey,
-            'status' => ReconciliationStatus::Approved,
-            'version' => 1,
-            'opening_total' => 0,
-            'deposit_total' => 0,
-            'withdrawal_total' => 0,
-            'grocery_total' => 0,
-            'hold_total' => 0,
-            'closing_total' => 0,
-            'difference' => $difference,
-            'created_by' => $creator->id,
         ]);
     }
 

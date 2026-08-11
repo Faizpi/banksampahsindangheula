@@ -63,8 +63,8 @@ WhatsApp bukan integrasi pengiriman. Aplikasi hanya membentuk tautan dan membuka
 | Groceries | Paket deskriptif, approve, prepare, handover, bukti. | Mengelola stok rinci. |
 | Programs | Target, layanan keliling, partisipasi wilayah, statistik publik. | Mengelola produksi paving block. |
 | Communications | Notifikasi, pengingat, pengumuman, template `wa.me`. | Menyatakan WhatsApp terkirim otomatis. |
-| Reporting | Laporan web/CSV/XLSX/PDF dan file ekspor privat. | Melewati scope record. |
-| AuditReconciliation | Audit append-oriented, rekonsiliasi, insiden operasional. | Menghapus audit lewat fungsi operasional. |
+| Reporting | Laporan web/XLSX dan file ekspor privat. | Melewati scope record. |
+| AuditReconciliation | Audit append-oriented dan insiden operasional. | Menghapus audit lewat fungsi operasional. |
 | Platform | Media, setting, scheduler, queue terbatas, health, backup log, PWA. | Memerlukan layanan daemon shared hosting. |
 
 ### 4.2 Struktur kode yang disarankan
@@ -201,7 +201,7 @@ Shell khusus mobile-first, saldo-first, maksimal lima bottom navigation item. Bu
 
 ### Petugas/bendahara
 
-Shell khusus task-first untuk smartphone lapangan, scan/nomor, setoran, pickup, pay/handover, layanan keliling, warga berbantuan, dan rekonsiliasi sesuai assignment. Bukan Filament.
+Shell khusus task-first untuk smartphone lapangan, scan/nomor, setoran, pickup, pay/handover, layanan keliling, warga berbantuan, dan laporan sesuai assignment. Bukan Filament.
 
 ### Admin/superadmin
 

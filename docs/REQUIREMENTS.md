@@ -142,7 +142,7 @@ Setiap kebutuhan memakai format `KELOMPOK-NNN`. Kata **harus** berarti wajib. Se
 #### DEP-003 — Idempotensi dan penanganan kegagalan
 - **Aktor:** petugas, sistem, admin.
 - **Prasyarat:** permintaan finalisasi memiliki idempotency key.
-- **Alur:** sistem mencari hasil lama; permintaan baru diproses dalam database transaction dengan lock dan constraint; hasil lama dikembalikan untuk pengulangan; kegagalan parsial di-rollback dan direkonsiliasi.
+- **Alur:** sistem mencari hasil lama; permintaan baru diproses dalam database transaction dengan lock dan constraint; hasil lama dikembalikan untuk pengulangan; kegagalan parsial di-rollback dan dicatat untuk ditelusuri.
 - **Hasil:** satu kejadian bisnis menghasilkan paling banyak satu transaksi final dan mutasi sumber.
 - **Kegagalan:** commit gagal menghasilkan status gagal tanpa saldo berubah.
 - **Kriteria penerimaan:** klik ganda tidak menggandakan saldo; retry aman; insiden dapat dilacak.
@@ -300,13 +300,13 @@ Setiap kebutuhan memakai format `KELOMPOK-NNN`. Kata **harus** berarti wajib. Se
 
 ### RPT — laporan dan ekspor
 
-#### RPT-001 — Laporan web, CSV, Excel, dan PDF
+#### RPT-001 — Laporan web dan Excel
 - **Aktor:** admin dan pihak internal berizin.
 - **Prasyarat:** permission laporan/ekspor dan filter valid.
-- **Alur:** pengguna memilih jenis, periode, wilayah, dan filter; sistem mengotorisasi scope, membangun laporan langsung atau antrean berkala berbatas waktu, mencatat ekspor, lalu menyediakan hasil.
-- **Hasil:** laporan operasional, transaksi, saldo, penjemputan, pencairan, sembako, koreksi, partisipasi, dan rekonsiliasi tersedia dalam format diminta.
+- **Alur:** pengguna memilih jenis, periode, wilayah, dan filter; sistem mengotorisasi scope, membangun laporan, mencatat ekspor, lalu menyediakan file Excel.
+- **Hasil:** laporan operasional, transaksi, saldo, penjemputan, pencairan, sembako, koreksi, dan partisipasi tersedia di web dan Excel.
 - **Kegagalan:** akses/filter invalid ditolak; pekerjaan besar gagal tanpa membuka file parsial.
-- **Kriteria penerimaan:** angka lintas format konsisten; ekspor dilindungi dan kedaluwarsa; aktivitas tercatat; CSV aman dari formula injection.
+- **Kriteria penerimaan:** angka web dan Excel konsisten; ekspor dilindungi dan kedaluwarsa; aktivitas tercatat; nilai Excel aman dari formula injection.
 - **Jejak:** FL-26; BR-RPT-001–006; TC-RPT-001.
 
 ### AUD — audit log
@@ -319,17 +319,6 @@ Setiap kebutuhan memakai format `KELOMPOK-NNN`. Kata **harus** berarti wajib. Se
 - **Kegagalan:** pengguna operasional tidak dapat mengubah/menghapus log; secret tidak dicatat.
 - **Kriteria penerimaan:** log append-oriented; pencarian berizin; kegagalan audit pada aksi keuangan memblokir commit atau dicakup transaksi yang sama.
 - **Jejak:** FL-27; BR-AUD-001–006; TC-AUD-001.
-
-### REC — rekonsiliasi
-
-#### REC-001 — Rekonsiliasi harian dan penanganan selisih
-- **Aktor:** admin, bendahara, petugas.
-- **Prasyarat:** pelayanan harian ditutup dan seluruh bukti tersedia.
-- **Alur:** sistem mengambil saldo awal, transaksi, setoran, pencairan, penukaran, hold, koreksi, dan kas; petugas mencocokkan bukti; selisih ditelusuri dan dikoreksi resmi bila terbukti; rekap disahkan.
-- **Hasil:** laporan rekonsiliasi menyimpan hasil, selisih, penjelasan, pelaksana, dan pengesahan.
-- **Kegagalan:** selisih terbuka mencegah status “sesuai”; koreksi informal tidak diizinkan.
-- **Kriteria penerimaan:** total ledger dapat direproduksi; kas dibandingkan dengan pembayaran; selisih memiliki status dan tindak lanjut.
-- **Jejak:** FL-29, FL-30; BR-REC-001–006; TC-REC-001.
 
 ### PWA — aplikasi web progresif terbatas
 
@@ -392,7 +381,6 @@ Nomor mengacu pada urutan diagram di `Kumpulan_Flowchart_Bank_Sampah_Digital_Sin
 | FL-27 | Audit Log | AUD-001 |
 | FL-28 | Backup dan Pemulihan Data | NFR-OPS-001, AUD-001 |
 | FL-29 | Penanganan Kesalahan Transaksi | DEP-003, BAL-002, REC-001 |
-| FL-30 | Rekonsiliasi Harian | REC-001, PUB-001 |
 | FL-31 | Target Pengumpulan Sampah Desa | TGT-001 |
 | FL-32 | Bank Sampah Keliling per RT/RW | MOB-001, DEP-001 |
 | FL-33 | Estimasi Nilai Sebelum Setor | EST-001, WST-001 |
@@ -416,7 +404,7 @@ ID `FL-01`–`FL-36` mengikuti urutan generator dan diagram final sebagaimana di
 | Notifikasi, WhatsApp manual, pengumuman | NOT-001, WA-001, ANN-001 |
 | Target, keliling, estimasi, QR bukti | TGT-001, MOB-001, EST-001, QRV-001 |
 | Partisipasi, publik, laporan | PUB-001–002, RPT-001 |
-| Audit, rekonsiliasi, PWA | AUD-001, REC-001, PWA-001 |
+| Audit dan PWA | AUD-001, PWA-001 |
 
 ## 6. Perubahan requirement
 

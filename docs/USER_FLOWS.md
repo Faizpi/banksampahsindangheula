@@ -191,7 +191,7 @@ Dokumen ini adalah representasi tekstual normatif dari 36 diagram pada dokumen f
 
 ### FL-26 — Pembuatan Laporan dan Statistik
 - **Aktor:** admin, sistem.
-- **Alur utama:** pilih laporan/filter → tentukan publik/internal → agregasi+redaksi atau otorisasi → proses langsung/queue cron → web/grafik/CSV/Excel/PDF → audit → tampil/unduh.
+- **Alur utama:** pilih laporan dan filter → otorisasi sesuai scope → tampilkan ringkasan/detail web → buat Excel privat → audit → unduh.
 - **Keputusan/gagal:** data besar masuk antrean terbatas; proses gagal tidak menerbitkan file parsial.
 - **Hasil:** laporan konsisten dan statistik publik teragregasi.
 - **Jejak:** RPT-001, PUB-001–002; BR-RPT-*, BR-PUB-*.
@@ -215,14 +215,14 @@ Dokumen ini adalah representasi tekstual normatif dari 36 diagram pada dokumen f
 - **Alur utama:** deteksi → hentikan pengulangan manual → periksa transaksi/mutasi → gunakan hasil lengkap atau rollback parsial → bila saldo terlanjur berubah buat koreksi → insiden/audit → verifikasi.
 - **Keputusan/gagal:** transaksi lengkap tidak dibuat ulang; koreksi hanya jika saldo benar-benar terdampak.
 - **Hasil:** sistem pulih tanpa efek ganda.
-- **Jejak:** DEP-003, BAL-002, REC-001.
+- **Jejak:** DEP-003, BAL-002.
 
-### FL-30 — Rekonsiliasi Harian
+### FL-30 — Laporan dan Ekspor Excel
 - **Aktor:** admin, bendahara, petugas.
-- **Alur utama:** tutup layanan → ambil saldo/transaksi → hitung setoran/pencairan/sembako/koreksi → cocokkan kas/bukti → sahkan → simpan laporan.
-- **Keputusan/gagal:** bila selisih, telusuri dan koreksi resmi lalu ulangi pencocokan; tidak boleh disahkan sesuai.
-- **Hasil:** rekap harian dapat direproduksi.
-- **Jejak:** REC-001; BR-REC-001–006.
+- **Alur utama:** pilih jenis laporan → pilih hari ini, minggu ini, bulan, atau tanggal custom → terapkan filter → lihat ringkasan → unduh Excel.
+- **Keputusan/gagal:** periode atau filter tidak valid ditolak; akses dan scope record tetap diperiksa.
+- **Hasil:** laporan operasional dapat dibaca di web dan disimpan sebagai file Excel privat.
+- **Jejak:** RPT-001; BR-RPT-001–006.
 
 ## 7. Program, transparansi, dan inklusi
 

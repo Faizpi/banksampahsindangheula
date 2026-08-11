@@ -234,14 +234,14 @@ Header logo/nama, navigasi ringkas, CTA masuk/daftar, konten, footer layanan. Mo
 - Header: konteks tanggal/lokasi, status koneksi, profil.
 - Tugas hari ini sebagai halaman awal.
 - Bottom navigation maksimal lima: `Tugas`, `Setoran`, `Pindai`, `Riwayat`, `Akun`.
-- Bendahara dapat mengganti `Setoran/Pindai` dengan `Pembayaran/Rekonsiliasi` sesuai permission tanpa melebihi lima.
+- Bendahara dapat mengganti `Setoran/Pindai` dengan `Pembayaran/Laporan` sesuai permission tanpa melebihi lima.
 - Aksi scan memiliki alternatif input nomor nasabah.
 
 ### Shell admin/superadmin
 
 Filament 5 dengan custom theme. Sidebar dikelompokkan:
 
-1. **Operasional:** dashboard, setoran, penjemputan/kapasitas, pencairan, sembako, tugas/jadwal, rekonsiliasi.
+1. **Operasional:** dashboard, setoran, penjemputan/kapasitas, pencairan, sembako, tugas/jadwal.
 2. **Data Master:** pengguna/nasabah/petugas, wilayah, jenis/kategori/satuan/kondisi, harga, paket.
 3. **Program:** target, layanan keliling, pengumuman, statistik publik/partisipasi.
 4. **Pengawasan:** laporan/ekspor, koreksi/reversal, ledger/hold, audit log, konfigurasi teknis/backup sesuai role.
@@ -407,7 +407,7 @@ Filter “Hari ini”, area, status; task row; CTA kontekstual; indikator offlin
 
 ### Dashboard admin
 
-Action queue di atas (verifikasi, pickup, approve, rekonsiliasi), metrik ringkas, trend, operasional hari ini, anomali/selisih, aktivitas audit. Maksimal satu level panel; grafik tidak mendominasi tindakan.
+Action queue di atas (verifikasi, pickup, approve), metrik ringkas, trend, operasional hari ini, aktivitas audit. Maksimal satu level panel; grafik tidak mendominasi tindakan.
 
 ## 10. Responsif wajib
 

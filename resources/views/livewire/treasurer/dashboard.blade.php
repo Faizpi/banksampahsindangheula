@@ -36,7 +36,7 @@
             </div>
             <h1 id="treasurer-dashboard-title" class="mt-2 text-h2 font-bold text-deep-green">Selamat bertugas!</h1>
             <p class="mt-1.5 text-body-sm text-text-secondary">
-                {{ now()->translatedFormat('l, d F Y') }} — Pembayaran dan rekonsiliasi sesuai akses Anda.
+                {{ now()->translatedFormat('l, d F Y') }} — Pembayaran dan laporan sesuai akses Anda.
             </p>
         </div>
         <x-ui.mascot variant="12" bubble="Rekap keuangan hari ini!" bubblePosition="top" class="h-24 w-auto shrink-0 sm:h-28" animate />
@@ -98,7 +98,7 @@
                 <p class="text-label font-semibold text-harvest-gold">Alur Pembayaran</p>
                 <h2 class="mt-1 text-title font-bold text-deep-green">Verifikasi → Konfirmasi → Bukti</h2>
                 <p class="mt-1.5 text-body-sm text-text-secondary">
-                    Pastikan identitas penerima dan nominal sesuai sebelum pembayaran final. Bukti tersimpan otomatis untuk rekonsiliasi.
+                    Pastikan identitas penerima dan nominal sesuai sebelum pembayaran final. Bukti tersimpan otomatis untuk laporan.
                 </p>
                 <a href="{{ route('treasurer.withdrawal.payments') }}" class="mt-3 inline-flex min-h-touch items-center gap-2 rounded-xl bg-harvest-gold px-5 text-label font-bold text-deep-green transition hover:opacity-90">
                     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>

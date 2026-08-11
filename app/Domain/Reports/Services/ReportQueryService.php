@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Domain\Reports\Services;
 
 use App\Authorization\PermissionChecker;
-use App\Domain\AuditReconciliation\Enums\ReconciliationStatus;
-use App\Domain\AuditReconciliation\Models\Reconciliation;
 use App\Domain\Deposits\Models\Deposit;
 use App\Domain\Groceries\Models\GroceryRedemption;
 use App\Domain\Identity\Enums\UserStatus;
@@ -29,8 +27,8 @@ use Illuminate\Support\LazyCollection;
 use Illuminate\Validation\ValidationException;
 
 /**
- * @phpstan-type ReportModel Deposit|WithdrawalRequest|GroceryRedemption|PickupRequest|Reconciliation
- * @phpstan-type ReportBuilder Builder<Deposit>|Builder<WithdrawalRequest>|Builder<GroceryRedemption>|Builder<PickupRequest>|Builder<Reconciliation>
+ * @phpstan-type ReportModel Deposit|WithdrawalRequest|GroceryRedemption|PickupRequest
+ * @phpstan-type ReportBuilder Builder<Deposit>|Builder<WithdrawalRequest>|Builder<GroceryRedemption>|Builder<PickupRequest>
  * @phpstan-type ReportModelCollection EloquentCollection<int, Model>
  */
 final readonly class ReportQueryService
@@ -57,7 +55,6 @@ final readonly class ReportQueryService
         'groceries' => ['request_number', 'handed_over_at', 'customer_id', 'status', 'value_snapshot'],
         'pickups' => ['request_number', 'completed_at', 'customer_id', 'service_area_id', 'status'],
         'participation' => ['occurred_at', 'customer_id', 'status', 'total_weight_kg', 'total_value'],
-        'reconciliation' => ['business_date', 'scope_key', 'status', 'difference', 'created_by', 'approver_id'],
     ];
 
     /** @var array<string, list<array{key: string, label: string, format: string}>> */
@@ -89,12 +86,6 @@ final readonly class ReportQueryService
             ['key' => 'participation_count', 'label' => 'Partisipasi', 'format' => 'count'],
             ['key' => 'collected_weight_kg', 'label' => 'Berat Terkumpul', 'format' => 'weight'],
             ['key' => 'collected_value', 'label' => 'Nilai Terkumpul', 'format' => 'currency'],
-        ],
-        'reconciliation' => [
-            ['key' => 'creator_count', 'label' => 'Pembuat', 'format' => 'count'],
-            ['key' => 'scope_count', 'label' => 'Scope', 'format' => 'count'],
-            ['key' => 'reconciliation_count', 'label' => 'Rekonsiliasi', 'format' => 'count'],
-            ['key' => 'total_difference', 'label' => 'Total Selisih', 'format' => 'currency'],
         ],
     ];
 
@@ -140,7 +131,7 @@ final readonly class ReportQueryService
     }
 
     /**
-     * Deposit aggregation keeps its established metric keys because reconciliation and existing consumers depend on them.
+     * Deposit aggregation keeps its established metric keys because existing consumers depend on them.
      * Other report types use the explicit keys returned by summary().
      *
      * @param  array<string, mixed>  $filters
@@ -216,7 +207,7 @@ final readonly class ReportQueryService
             $rows[] = [
                 'reference' => $this->displayReference($record, $type),
                 'date' => $this->displayDate($record, $type),
-                'subject_id' => (string) ($record->getAttribute($type === ReportType::Reconciliation ? 'created_by' : 'customer_id') ?? ''),
+                'subject_id' => (string) ($record->getAttribute('customer_id') ?? ''),
                 'status' => $this->displayValue($record->getAttribute('status')),
                 'amount' => $this->displayAmount($record, $type),
             ];
@@ -260,12 +251,6 @@ final readonly class ReportQueryService
                 'participation_count' => $records->count(),
                 'collected_weight_kg' => number_format((float) $records->sum('total_weight_kg'), 3, '.', ''),
                 'collected_value' => (int) $records->sum('total_value'),
-            ],
-            ReportType::Reconciliation => [
-                'creator_count' => $records->pluck('created_by')->filter()->unique()->count(),
-                'scope_count' => $records->pluck('scope_key')->filter()->unique()->count(),
-                'reconciliation_count' => $records->count(),
-                'total_difference' => (int) $records->sum('difference'),
             ],
         };
     }
@@ -327,7 +312,6 @@ final readonly class ReportQueryService
             ReportType::Withdrawals => WithdrawalRequest::query()->whereNotNull('paid_at'),
             ReportType::Groceries => GroceryRedemption::query()->whereNotNull('handed_over_at'),
             ReportType::Pickups => PickupRequest::query()->whereNotNull('completed_at'),
-            ReportType::Reconciliation => Reconciliation::query()->whereIn('status', [ReconciliationStatus::Approved->value, ReconciliationStatus::Rejected->value]),
         };
         $this->applyRecordScope($actor, $type, $query);
         $this->applyFilters($query, $type, $filters);
@@ -359,8 +343,6 @@ final readonly class ReportQueryService
                     $scope->where('staff_id', $actor->id)->orWhereHas('customer.customerProfile.rt.serviceAreas', static fn (Builder $area): Builder => $area->whereKey($areaId));
                 } elseif ($type === ReportType::Pickups) {
                     $scope->where('service_area_id', $areaId)->orWhere('customer_id', $actor->id);
-                } elseif ($type === ReportType::Reconciliation) {
-                    $scope->where('service_area_id', $areaId)->orWhere('created_by', $actor->id);
                 } else {
                     $scope->where('customer_id', $actor->id)->orWhereHas('customer.customerProfile.rt.serviceAreas', static fn (Builder $area): Builder => $area->whereKey($areaId));
                 }
@@ -368,7 +350,7 @@ final readonly class ReportQueryService
 
             return;
         }
-        $query->where($type === ReportType::Reconciliation ? 'created_by' : 'customer_id', $actor->id);
+        $query->where('customer_id', $actor->id);
     }
 
     /**
@@ -382,14 +364,13 @@ final readonly class ReportQueryService
             ReportType::Withdrawals => 'paid_at',
             ReportType::Groceries => 'handed_over_at',
             ReportType::Pickups => 'completed_at',
-            ReportType::Reconciliation => 'business_date',
         };
         $start = CarbonImmutable::parse((string) $filters['start'], 'Asia/Jakarta')->startOfDay();
         $end = CarbonImmutable::parse((string) $filters['end'], 'Asia/Jakarta')->startOfDay();
         $query->where($dateColumn, '>=', $start)->where($dateColumn, '<', $end);
         if (isset($filters['rt_id']) && $type === ReportType::Pickups) {
             $query->where('rt_id', (int) $filters['rt_id']);
-        } elseif (isset($filters['rt_id']) && $type !== ReportType::Reconciliation) {
+        } elseif (isset($filters['rt_id'])) {
             $query->whereHas('customer.customerProfile', static fn (Builder $profile): Builder => $profile->where('rt_id', (int) $filters['rt_id']));
         }
         if (isset($filters['service_area_id'])) {
@@ -406,7 +387,7 @@ final readonly class ReportQueryService
             $query->whereHas('items', static fn (Builder $items): Builder => $items->where('waste_type_id', (int) $filters['waste_type_id']));
         }
         if (isset($filters['search']) && trim((string) $filters['search']) !== '') {
-            $field = in_array($type, [ReportType::Deposits, ReportType::Participation], true) ? 'deposit_number' : ($type === ReportType::Reconciliation ? 'scope_key' : 'request_number');
+            $field = in_array($type, [ReportType::Deposits, ReportType::Participation], true) ? 'deposit_number' : 'request_number';
             $query->where($field, 'like', '%'.addcslashes(trim((string) $filters['search']), '%_\\').'%');
         }
     }
@@ -426,7 +407,6 @@ final readonly class ReportQueryService
             ReportType::Withdrawals => ['sudah_dibayar'],
             ReportType::Groceries => ['selesai'],
             ReportType::Pickups => ['selesai'],
-            ReportType::Reconciliation => [ReconciliationStatus::Approved->value, ReconciliationStatus::Rejected->value],
         };
         if (isset($filters['status']) && ! in_array($filters['status'], $allowedStatuses, true)) {
             throw ValidationException::withMessages(['status' => 'Status laporan tidak diizinkan.']);
@@ -440,9 +420,7 @@ final readonly class ReportQueryService
 
     private function displayReference(Model $record, ReportType $type): string
     {
-        $column = $type === ReportType::Reconciliation
-            ? 'scope_key'
-            : (in_array($type, [ReportType::Deposits, ReportType::Participation], true) ? 'deposit_number' : 'request_number');
+        $column = in_array($type, [ReportType::Deposits, ReportType::Participation], true) ? 'deposit_number' : 'request_number';
 
         return $this->displayValue($record->getAttribute($column));
     }
@@ -454,7 +432,6 @@ final readonly class ReportQueryService
             ReportType::Withdrawals => 'paid_at',
             ReportType::Groceries => 'handed_over_at',
             ReportType::Pickups => 'completed_at',
-            ReportType::Reconciliation => 'business_date',
         };
 
         $value = $record->getAttribute($column);
@@ -471,7 +448,6 @@ final readonly class ReportQueryService
             ReportType::Deposits, ReportType::Participation => 'total_value',
             ReportType::Withdrawals => 'amount',
             ReportType::Groceries => 'value_snapshot',
-            ReportType::Reconciliation => 'difference',
             ReportType::Pickups => null,
         };
 
@@ -495,7 +471,6 @@ final readonly class ReportQueryService
         return match ($type) {
             ReportType::Deposits, ReportType::Participation => in_array($sort, ['occurred_at', 'deposit_number', 'total_weight_kg', 'total_value'], true) ? $sort : 'occurred_at',
             ReportType::Withdrawals, ReportType::Groceries, ReportType::Pickups => in_array($sort, ['occurred_at', 'request_number', 'amount', 'value_snapshot', 'created_at'], true) ? ($sort === 'occurred_at' ? ($type === ReportType::Withdrawals ? 'paid_at' : ($type === ReportType::Groceries ? 'handed_over_at' : 'completed_at')) : $sort) : 'created_at',
-            ReportType::Reconciliation => $sort === 'difference' ? 'difference' : 'business_date',
         };
     }
 

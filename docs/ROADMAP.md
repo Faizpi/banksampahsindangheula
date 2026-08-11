@@ -53,9 +53,8 @@ Urutan berikut adalah urutan pengerjaan, bukan pembagian ruang lingkup.
 
 ### Pengawasan dan peluncuran
 
-- Laporan web, CSV, Excel, dan PDF.
+- Laporan web dan ekspor Excel.
 - Audit log.
-- Rekonsiliasi harian.
 - Pengujian keamanan, aksesibilitas, responsif, UAT, deployment, dan pelatihan.
 
 ## Di Luar Baseline

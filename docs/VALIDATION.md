@@ -193,7 +193,7 @@ Transisi yang tidak tercantum pada BR-PUP-009 ditolak. Pembatalan warga setelah 
 - Pengumuman: judul 3–160, isi 3–10.000, audiens enum, periode valid, konten disanitasi.
 - Filter laporan: periode wajib dalam batas; wilayah/status/jenis dari enum/FK; sort dan kolom ekspor allowlist.
 - Nama file ekspor dibuat server; tidak memakai input path pengguna.
-- Sel CSV yang dimulai `=`, `+`, `-`, atau `@` dinetralkan sesuai strategi ekspor.
+- Nilai sel Excel yang dimulai `=`, `+`, `-`, atau `@` dinetralkan sesuai strategi ekspor.
 
 ## 13. File dan media
 
@@ -204,7 +204,7 @@ Transisi yang tidak tercantum pada BR-PUP-009 ditolak. Pembatalan warga setelah 
 | Foto master/pengumuman | JPEG, PNG, WebP | 5 MB/file | Publik terkontrol atau hasil turunan; asli privat |
 | Bukti pembayaran | JPEG atau PNG; dinormalisasi menjadi JPEG | Maksimal 1 MB setelah kompresi | Privat |
 | Bukti penyerahan | JPEG, PNG, WebP, PDF | 5 MB/file | Privat |
-| Ekspor | CSV, XLSX, PDF yang dibuat sistem | Batas sesuai job/hosting | Privat dan kedaluwarsa |
+| Ekspor | XLSX yang dibuat sistem | Batas sesuai job/hosting | Privat dan kedaluwarsa |
 
 Aturan tambahan:
 

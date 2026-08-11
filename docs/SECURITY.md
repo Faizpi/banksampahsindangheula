@@ -77,7 +77,7 @@ Nilai numerik ditentukan setelah load test/UAT dan dicatat sebagai konfigurasi, 
 2. Query list menerapkan scope sebelum pagination/agregasi; action detail mengulang policy pada record.
 3. Livewire method dan Filament action mengotorisasi setiap pemanggilan; visibility menu bukan kontrol.
 4. File, ekspor, QR rotation, audit, dan dashboard turut diotorisasi.
-5. Warga hanya record sendiri; petugas hanya assignment/area; bendahara hanya pembayaran/rekonsiliasi terkait; admin sesuai permission; superadmin tidak otomatis mengakses bisnis/ledger. Admission panel teknis Filament memerlukan `backoffice.access`, yang baseline-nya dimiliki `admin` dan `superadmin`, dan tidak menggantikan pemeriksaan permission, action, atau record scope.
+5. Warga hanya record sendiri; petugas hanya assignment/area; bendahara hanya pembayaran/laporan terkait; admin sesuai permission; superadmin tidak otomatis mengakses bisnis/ledger. Admission panel teknis Filament memerlukan `backoffice.access`, yang baseline-nya dimiliki `admin` dan `superadmin`, dan tidak menggantikan pemeriksaan permission, action, atau record scope.
 6. IDOR diuji dengan mengganti ID warga, transaksi, file, pengajuan, dan export.
 7. Approve/pay serta approve/handover memakai permission terpisah sebagaimana [PERMISSIONS.md](PERMISSIONS.md).
 
@@ -89,7 +89,7 @@ Nilai numerik ditentukan setelah load test/UAT dan dicatat sebagai konfigurasi, 
 - Saldo tersedia dihitung/diperiksa ulang di bawah lock dan tidak boleh negatif.
 - Audit aksi finansial berada dalam transaction yang sama atau operasi gagal.
 - Jalur gagal rollback penuh; notifikasi nonkritis diproses setelah commit.
-- Rekonsiliasi harian membuktikan ledger, hold, bukti, dan kas.
+- Laporan harian menampilkan transaksi, bukti, dan status yang dapat diekspor sesuai scope.
 
 ## 8. File privat dan upload
 
@@ -191,11 +191,11 @@ Gunakan incident ID dan masking. Akses ke log dibatasi pengelola teknis.
 3. **Preservasi:** simpan log/audit/checksum dan snapshot yang diperlukan tanpa memodifikasi bukti.
 4. **Analisis:** tentukan akar masalah, rentang waktu, record/pengguna terdampak, dan integritas ledger.
 5. **Eradikasi:** perbaiki kontrol, dependency, permission, secret, atau data melalui koreksi/reversal resmi.
-6. **Pemulihan:** restore bila diperlukan, jalankan migration/test, rekonsiliasi, verifikasi akses dan monitoring.
+6. **Pemulihan:** restore bila diperlukan, jalankan migration/test, verifikasi laporan, akses, dan monitoring.
 7. **Komunikasi:** pengelola menentukan pemberitahuan pihak terdampak dan kewajiban yang berlaku; informasi akurat tanpa klaim belum terbukti.
 8. **Tinjauan:** dokumentasikan timeline, dampak, tindakan, test regresi, dan perbaikan SOP.
 
-Khusus dugaan saldo ganda: hentikan pengulangan, periksa idempotency/audit/ledger, jangan edit saldo langsung, lakukan koreksi/reversal berizin, lalu rekonsiliasi.
+Khusus dugaan saldo ganda: hentikan pengulangan, periksa idempotency/audit/ledger, jangan edit saldo langsung, dan lakukan koreksi/reversal berizin.
 
 ## 16. Checklist rilis keamanan
 
@@ -205,7 +205,7 @@ Khusus dugaan saldo ganda: hentikan pengulangan, periksa idempotency/audit/ledge
 - Klik ganda dan konkurensi ledger lulus.
 - Upload privat dan signed route lulus.
 - QR/statistik tidak membuka data pribadi.
-- CSV formula injection dan XSS konten lulus.
+- Formula injection pada Excel dan XSS konten lulus.
 - Dependency audit tanpa risiko kritis tak tertangani.
 - Backup terbaru valid dan rollback tersedia.
 - Rehearsal MySQL 8.0.30 disposable release tercatat sebelum UAT/production; bila IMP-107 termasuk baseline rilis, bukti trigger append-only/immutability MySQL terisolasi tersedia. Hasil SQLite tidak diperlakukan sebagai bukti MySQL production.

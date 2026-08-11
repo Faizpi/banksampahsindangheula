@@ -50,7 +50,7 @@ Dokumentasi ini menjadi kontrak pengembangan Sistem Informasi Bank Sampah Digita
 ## Kualitas dan Operasional
 
 - [TEST_PLAN.md](TEST_PLAN.md) — strategi test, Given/When/Then, coverage, UAT, dan traceability.
-- [OPERATIONS.md](OPERATIONS.md) — SOP seluruh role, layanan, gangguan, rekonsiliasi, dan pemulihan.
+- [OPERATIONS.md](OPERATIONS.md) — SOP seluruh role, layanan, gangguan, laporan, dan pemulihan.
 - [DECISIONS.md](DECISIONS.md) — ADR ringan keputusan final.
 - [CHANGELOG.md](CHANGELOG.md) — riwayat perubahan baseline dan dokumentasi.
 

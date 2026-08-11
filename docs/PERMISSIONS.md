@@ -18,7 +18,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 |---|---|---|
 | `warga` | Mengelola akun sendiri, melihat saldo/riwayat, dan membuat pengajuan. | Hanya record sendiri; tidak dapat membuat mutasi atau keputusan administratif. |
 | `petugas` | Setoran, penjemputan, layanan keliling, layanan berbantuan, pembayaran/penyerahan bila ditugaskan. | Scope penugasan/area; tidak mengubah harga, role, atau saldo langsung. |
-| `bendahara` | Pembayaran pencairan yang telah disetujui, bukti, kas, dan rekonsiliasi. | Tidak menyetujui pencairan secara default dan tidak mengoreksi saldo. |
+| `bendahara` | Pembayaran pencairan yang telah disetujui, bukti, kas, dan laporan. | Tidak menyetujui pencairan secara default dan tidak mengoreksi saldo. |
 | `admin` | Operasional, master data, verifikasi, persetujuan, laporan, koreksi bila permission khusus diberikan. | Tidak mengelola konfigurasi teknis berisiko tinggi atau melewati mekanisme ledger. |
 | `superadmin` | Konfigurasi teknis non-secret, role/permission, status sistem, metadata backup/restore, dan retensi teknis. | Tidak otomatis berwenang melakukan tindakan keuangan operasional atau eksekusi artefak backup/restore di luar deployment/SOP. |
 
@@ -91,14 +91,12 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `statistics.public.manage` | Mengatur allowlist publikasi agregat. |
 | `qr-verification.rotate` | Merotasi token bukti transaksi. |
 
-### Laporan, audit, rekonsiliasi, dan teknis
+### Laporan, audit, dan teknis
 
 | Permission | Arti |
 |---|---|
 | `report.view` / `report.export` | Melihat atau mengekspor laporan dalam scope. |
 | `audit.view` | Menelusuri audit log yang telah disanitasi. |
-| `reconciliation.view` / `reconciliation.create` | Melihat atau membuat rekonsiliasi. |
-| `reconciliation.approve` | Mengesahkan rekonsiliasi; sebaiknya bukan pembuat yang sama. |
 | `system.settings.manage` | Mengelola konfigurasi teknis non-secret melalui UI. |
 | `system.maintenance` | Maintenance mode dan pemeriksaan sistem. |
 | `backup.run` / `backup.view` / `backup.restore` | Mengelola metadata, status, dan verifikasi backup/restore. Eksekusi artefak aktual tetap melalui deployment/SOP, bukan UI aplikasi. |
@@ -184,9 +182,6 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `report.view` | — | A terbatas | X | X | — |
 | `report.export` | — | — | X | X | — |
 | `audit.view` | — | — | — | X | X terbatas teknis |
-| `reconciliation.view` | — | A sendiri | X | X | — |
-| `reconciliation.create` | — | A input | X | X | — |
-| `reconciliation.approve` | — | — | X | X | — |
 | `system.settings.manage`, `system.maintenance` | — | — | — | — | X |
 | `backup.run`, `backup.view`, `backup.restore` | — | — | — | — | X |
 | `audit.retention.execute` | — | — | — | — | X |
@@ -207,11 +202,10 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 3. Pelaksana pengajuan berbantuan tidak boleh menyetujui pengajuan yang sama.
 4. Approver dan handover sebaiknya berbeda; pengecualian mengikuti kontrol tambahan yang sama seperti pencairan.
 
-### Koreksi dan rekonsiliasi
+### Koreksi
 
 1. Pembuat transaksi final tidak boleh mengoreksi transaksi sendiri tanpa permission khusus dan alasan konflik kepentingan yang diaudit.
-2. Admin yang membuat koreksi tidak boleh menjadi satu-satunya pengesah rekonsiliasi yang memuat koreksi tersebut.
-3. Superadmin hanya memulihkan aspek teknis; kebutuhan koreksi data setelah restore tetap diputuskan admin operasional berizin.
+2. Superadmin hanya memulihkan aspek teknis; kebutuhan koreksi data setelah restore tetap diputuskan admin operasional berizin.
 
 ### 4.1.1 Kontrak scope record pengguna
 
@@ -227,7 +221,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 
 | Domain | Warga | Petugas | Bendahara | Admin | Superadmin |
 |---|---|---|---|---|---|
-| Profil/saldo/transaksi | Milik sendiri | Nasabah pada tugas/area dan data minimum | Pencairan/rekonsiliasi terkait | Seluruh operasional sesuai permission | Tidak ada akses bisnis default |
+| Profil/saldo/transaksi | Milik sendiri | Nasabah pada tugas/area dan data minimum | Pencairan/laporan terkait | Seluruh operasional sesuai permission | Tidak ada akses bisnis default |
 | Penjemputan | Milik sendiri | Ditugaskan/area | Tidak ada | Seluruh operasional | Tidak ada |
 | Pencairan | Milik sendiri | Ditugaskan sebagai payer | Disetujui/siap dibayar | Seluruh sesuai tindakan | Tidak ada |
 | Sembako | Milik sendiri | Ditugaskan prepare/handover | Tidak ada | Seluruh sesuai tindakan | Tidak ada |

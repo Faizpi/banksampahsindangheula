@@ -5,14 +5,12 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Authorization\PermissionChecker;
-use App\Domain\AuditReconciliation\Models\Reconciliation;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Pickups\Enums\PickupStatus;
 use App\Domain\Pickups\Models\PickupRequest;
 use App\Domain\Withdrawals\Enums\WithdrawalStatus;
 use App\Domain\Withdrawals\Models\WithdrawalRequest;
-use App\Filament\Resources\AuditReconciliation\Models\Reconciliations\ReconciliationResource;
 use App\Filament\Resources\Identity\Models\CitizenVerifications\CitizenVerificationResource;
 use App\Filament\Resources\Pickups\Models\PickupRequests\PickupRequestResource;
 use App\Filament\Resources\Withdrawals\Models\WithdrawalRequests\WithdrawalRequestResource;
@@ -63,12 +61,6 @@ final class WorkQueueDashboard extends Page
                 })->count(),
                 'description' => 'Tugas yang perlu dipantau hari ini.',
                 'href' => PickupRequestResource::getUrl('index'),
-            ],
-            [
-                'label' => 'Discrepancy terbuka',
-                'count' => Reconciliation::query()->where('difference', '<>', 0)->count(),
-                'description' => 'Rekonsiliasi dengan selisih yang perlu ditindaklanjuti.',
-                'href' => ReconciliationResource::getUrl('index'),
             ],
             [
                 'label' => 'Pencairan menunggu keputusan',

@@ -21,7 +21,7 @@
 
     $canonicalLabels = $persona === 'officer'
         ? ['Tugas', 'Setoran', 'Layanan', 'Akun']
-        : ['Tugas', 'Pembayaran', 'Rekonsiliasi', 'Akun'];
+        : ['Tugas', 'Pembayaran', 'Laporan', 'Akun'];
 
     if (array_diff($labels, $canonicalLabels) !== []) {
         throw new InvalidArgumentException("Officer navigation destinations are invalid for persona {$persona}.");
@@ -75,7 +75,7 @@
         'Setoran' => 'wallet-cards',
         'Layanan' => 'grid-2x2',
         'Pembayaran' => 'wallet-cards',
-        'Rekonsiliasi' => 'clipboard-list',
+        'Laporan' => 'clipboard-list',
         'Akun' => 'user-round',
     ];
 

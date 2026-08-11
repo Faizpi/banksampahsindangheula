@@ -18,7 +18,7 @@ Menyediakan layanan bank sampah yang mudah digunakan, transparan, inklusif, dan 
 - Warga sulit melihat saldo dan riwayat.
 - Penjemputan, pencairan, dan penukaran belum memiliki alur terdokumentasi.
 - Perubahan harga dan koreksi transaksi sulit ditelusuri.
-- Laporan dan audit memerlukan proses manual.
+- Laporan dan audit tersedia dengan filter dan ekspor Excel.
 - Warga tanpa smartphone berisiko tertinggal dari pelayanan digital.
 
 ## Pengguna

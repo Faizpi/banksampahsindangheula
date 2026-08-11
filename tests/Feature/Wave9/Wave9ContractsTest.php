@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Wave9;
 
-use App\Domain\AuditReconciliation\Enums\ReconciliationStatus;
 use App\Domain\AuditReconciliation\Models\AuditLog;
 use App\Domain\AuditReconciliation\Services\AuditLogger;
 use App\Domain\AuditReconciliation\Services\AuditQueryService;
 use App\Domain\AuditReconciliation\Services\AuditRetentionService;
-use App\Domain\AuditReconciliation\Services\ReconciliationService;
 use App\Domain\CustomersRegions\Models\Dusun;
 use App\Domain\CustomersRegions\Models\Rt;
 use App\Domain\CustomersRegions\Models\Rw;
@@ -97,7 +95,7 @@ final class Wave9ContractsTest extends TestCase
         Storage::fake('media_private');
         $actor = $this->userWith('report.view', 'report.export');
 
-        foreach (['deposits', 'withdrawals', 'groceries', 'pickups', 'participation', 'reconciliation'] as $reportType) {
+        foreach (['deposits', 'withdrawals', 'groceries', 'pickups', 'participation'] as $reportType) {
             $export = app(ReportExportService::class)->export($actor, $reportType, ['start' => '2026-08-01', 'end' => '2026-08-02'], 'csv');
 
             self::assertSame(ReportExportStatus::Succeeded, $export->status);
@@ -113,7 +111,7 @@ final class Wave9ContractsTest extends TestCase
 
         self::assertContains('service_area_id', $contract['filters']);
         self::assertContains('status', $contract['filters']);
-        self::assertSame(['deposits', 'withdrawals', 'groceries', 'pickups', 'participation', 'reconciliation'], $contract['report_types']);
+        self::assertSame(['deposits', 'withdrawals', 'groceries', 'pickups', 'participation'], $contract['report_types']);
         self::assertSame('paid_at', $contract['report_columns']['withdrawals'][1]);
         self::assertSame('handed_over_at', $contract['report_columns']['groceries'][1]);
         self::assertSame('completed_at', $contract['report_columns']['pickups'][1]);
@@ -226,48 +224,6 @@ final class Wave9ContractsTest extends TestCase
         $audit = app(AuditLogger::class)->record($admin, 'test.audit', $admin, [], [], (string) Str::uuid());
         $this->assertThrowsException(fn (): mixed => app(AuditQueryService::class)->find($other, $audit->id), AuthorizationException::class);
         $this->assertThrowsException(fn (): mixed => app(AuditRetentionService::class)->execute($admin, '2026-08-02'), AuthorizationException::class);
-    }
-
-    public function test_reconciliation_uses_versioned_state_machine_sod_and_blocks_open_discrepancy(): void
-    {
-        $creator = $this->userWith('reconciliation.create', 'reconciliation.view', 'report.view');
-        $approver = $this->userWith('reconciliation.approve', 'reconciliation.view', 'user.view.all', 'report.view');
-        $this->seedDeposit($creator, 1_000, '2026-08-01 10:00:00', 'DEP-W9-REC');
-        $record = app(ReconciliationService::class)->create($creator, '2026-08-01', null, 'Penutupan layanan harian');
-        self::assertSame(1, $record->version);
-        app(ReconciliationService::class)->submit($creator, $record);
-        $this->expectException(ValidationException::class);
-        app(ReconciliationService::class)->approve($approver, $record);
-    }
-
-    public function test_reconciliation_invalid_transition_scope_and_approval_are_audited(): void
-    {
-        $creator = $this->userWith('reconciliation.create', 'reconciliation.view', 'report.view');
-        $approver = $this->userWith('reconciliation.approve', 'reconciliation.view', 'user.view.all', 'report.view');
-        $record = app(ReconciliationService::class)->create($creator, '2026-08-01', null);
-        $this->expectException(ValidationException::class);
-        app(ReconciliationService::class)->approve($approver, $record);
-        app(ReconciliationService::class)->submit($creator, $record);
-        $rejected = app(ReconciliationService::class)->reject($approver, $record, 'Selisih perlu ditelusuri ulang.');
-        self::assertSame(ReconciliationStatus::Rejected, $rejected->status);
-        self::assertSame(1, AuditLog::query()->where('action', 'reconciliation.rejected')->count());
-    }
-
-    public function test_reconciliation_discrepancy_resolution_allows_approval_and_revision_is_parented(): void
-    {
-        $creator = $this->userWith('reconciliation.create', 'reconciliation.view', 'report.view');
-        $approver = $this->userWith('reconciliation.approve', 'reconciliation.view', 'user.view.all', 'report.view');
-        $this->seedDeposit($creator, 1_000, '2026-08-01 10:00:00', 'DEP-W9-RESOLVE');
-        $record = app(ReconciliationService::class)->create($creator, '2026-08-01', null);
-        $resolved = app(ReconciliationService::class)->resolveDiscrepancy($creator, $record, ['note' => 'Selisih diverifikasi melalui bukti kas dan koreksi resmi.']);
-        app(ReconciliationService::class)->submit($creator, $resolved);
-        $approved = app(ReconciliationService::class)->approve($approver, $resolved);
-        self::assertSame(ReconciliationStatus::Approved, $approved->status);
-        $revision = app(ReconciliationService::class)->revise($creator, $approved, 'Revisi setelah bukti tambahan.');
-        self::assertSame($approved->id, $revision->parent_id);
-        self::assertSame(2, $revision->version);
-        self::assertDatabaseHas('reconciliations', ['id' => $revision->id, 'scope_key' => 'all']);
-        self::assertSame(1, AuditLog::query()->where('action', 'reconciliation.discrepancy.resolved')->count());
     }
 
     private function seedDeposit(User $owner, int $value, string $occurredAt, string $number = 'DEP-W9-OK'): object

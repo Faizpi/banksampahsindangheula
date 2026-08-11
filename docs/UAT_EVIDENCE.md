@@ -4,7 +4,7 @@
 
 Technical browser execution: **PASS**. Stakeholder acceptance and approval: **PENDING**.
 
-This document records an automated technical run only. It does not replace stakeholder observation, operational reconciliation, or a signed approval.
+This document records an automated technical run only. It does not replace stakeholder observation, operational report review, or a signed approval.
 
 ## Run record
 

@@ -57,7 +57,7 @@ final class DeveloperCredentialsTest extends TestCase
             ->get(route('treasurer.reports'))
             ->assertOk()
             ->assertSee('Laporan Setoran')
-            ->assertSee('Filter periode')
+            ->assertSee('Filter laporan')
             ->assertSee('Tidak ada data untuk filter ini.')
             ->assertSee('0.000');
     }

@@ -23,7 +23,7 @@ final class OfficerShellTest extends TestCase
     private const TREASURER_DESTINATIONS = [
         'Tugas' => '/dashboard/bendahara',
         'Pembayaran' => '/bendahara/pencairan',
-        'Rekonsiliasi' => '/bendahara/laporan',
+        'Laporan' => '/bendahara/laporan',
         'Akun' => '/profil/kata-sandi',
     ];
 
@@ -155,7 +155,7 @@ final class OfficerShellTest extends TestCase
             'Layanan' => '/petugas/layanan-keliling',
             'Akun' => '/profil/kata-sandi',
         ], 'Layanan', 'Navigasi petugas'];
-        yield 'treasurer full' => ['treasurer', self::TREASURER_DESTINATIONS, 'Rekonsiliasi', 'Navigasi bendahara'];
+        yield 'treasurer full' => ['treasurer', self::TREASURER_DESTINATIONS, 'Laporan', 'Navigasi bendahara'];
         yield 'treasurer core only' => ['treasurer', [
             'Tugas' => '/dashboard/bendahara',
             'Pembayaran' => '/bendahara/pencairan',

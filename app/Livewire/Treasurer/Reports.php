@@ -10,6 +10,8 @@ use App\Domain\Reports\Enums\ReportType;
 use App\Domain\Reports\Services\ReportExportService;
 use App\Domain\Reports\Services\ReportQueryService;
 use App\Models\User;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Contracts\View\View;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
@@ -22,9 +24,13 @@ final class Reports extends Component
 
     public string $end = '';
 
-    public string $format = 'csv';
-
     public string $reportType = 'deposits';
+
+    public string $period = 'today';
+
+    public string $month = '';
+
+    public string $year = '';
 
     public string $status = '';
 
@@ -65,15 +71,17 @@ final class Reports extends Component
         /** @var User|null $actor */
         $actor = auth()->user();
         abort_unless($actor instanceof User && $permissions->allows($actor, 'report.view'), 403);
-        $this->start = today('Asia/Jakarta')->subDays(7)->toDateString();
-        $this->end = today('Asia/Jakarta')->addDay()->toDateString();
+        $today = today('Asia/Jakarta');
+        $this->month = $today->format('m');
+        $this->year = $today->format('Y');
+        $this->start = $today->toDateString();
+        $this->end = $today->toDateString();
         $this->reportTypes = collect(ReportType::cases())->mapWithKeys(static fn (ReportType $type): array => [$type->value => match ($type) {
             ReportType::Deposits => 'Setoran',
             ReportType::Withdrawals => 'Pencairan',
             ReportType::Groceries => 'Sembako',
             ReportType::Pickups => 'Penjemputan',
             ReportType::Participation => 'Partisipasi',
-            ReportType::Reconciliation => 'Rekonsiliasi',
         }])->all();
         $this->refreshReport(app(ReportQueryService::class));
     }
@@ -82,7 +90,8 @@ final class Reports extends Component
     {
         /** @var User $actor */
         $actor = auth()->user();
-        $filters = ['start' => $this->start, 'end' => $this->end];
+        [$start, $end] = $this->periodRange();
+        $filters = ['start' => $start, 'end' => $end];
         if ($this->status !== '') {
             $filters['status'] = $this->status;
         }
@@ -99,13 +108,12 @@ final class Reports extends Component
 
     public function setPeriod(string $preset, ReportQueryService $reports): void
     {
-        $today = today('Asia/Jakarta');
-        [$this->start, $this->end] = match ($preset) {
-            'today' => [$today->toDateString(), $today->addDay()->toDateString()],
-            'week' => [$today->subDays(6)->toDateString(), $today->addDay()->toDateString()],
-            'month' => [$today->startOfMonth()->toDateString(), $today->addDay()->toDateString()],
-            default => [$this->start, $this->end],
-        };
+        if (in_array($preset, ['today', 'week', 'month', 'custom'], true)) {
+            $this->period = $preset;
+        }
+        [$start, $end] = $this->periodRange();
+        $this->start = $start;
+        $this->end = CarbonImmutable::parse($end, 'Asia/Jakarta')->subDay()->toDateString();
         $this->refreshReport($reports);
     }
 
@@ -113,7 +121,8 @@ final class Reports extends Component
     {
         /** @var User $actor */
         $actor = auth()->user();
-        $filters = ['start' => $this->start, 'end' => $this->end];
+        [$start, $end] = $this->periodRange();
+        $filters = ['start' => $start, 'end' => $end];
         if ($this->status !== '') {
             $filters['status'] = $this->status;
         }
@@ -123,7 +132,7 @@ final class Reports extends Component
         if ($this->serviceAreaId !== '') {
             $filters['service_area_id'] = (int) $this->serviceAreaId;
         }
-        $export = $exports->export($actor, $this->reportType, $filters, $this->format);
+        $export = $exports->export($actor, $this->reportType, $filters, 'xlsx');
         if ($export->isAvailable()) {
             $this->redirectRoute('reports.export.download', ['export' => $export->id]);
 
@@ -136,6 +145,38 @@ final class Reports extends Component
     {
         return view('livewire.treasurer.reports', [
             'serviceAreas' => ServiceArea::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id'),
+            'years' => array_combine(
+                range((int) today('Asia/Jakarta')->year - 2, (int) today('Asia/Jakarta')->year + 1),
+                range((int) today('Asia/Jakarta')->year - 2, (int) today('Asia/Jakarta')->year + 1),
+            ),
+            'months' => [
+                '01' => 'Januari', '02' => 'Februari', '03' => 'Maret', '04' => 'April',
+                '05' => 'Mei', '06' => 'Juni', '07' => 'Juli', '08' => 'Agustus',
+                '09' => 'September', '10' => 'Oktober', '11' => 'November', '12' => 'Desember',
+            ],
         ]);
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function periodRange(?CarbonInterface $today = null): array
+    {
+        $today = CarbonImmutable::instance($today ?? today('Asia/Jakarta'))->setTimezone('Asia/Jakarta');
+
+        return match ($this->period) {
+            'today' => [$today->toDateString(), $today->addDay()->toDateString()],
+            'week' => [$today->startOfWeek()->toDateString(), $today->addDay()->toDateString()],
+            'month' => $this->monthRange(),
+            default => [$this->start, CarbonImmutable::parse($this->end, 'Asia/Jakarta')->addDay()->toDateString()],
+        };
+    }
+
+    /** @return array{0: string, 1: string} */
+    private function monthRange(): array
+    {
+        $month = max(1, min(12, (int) $this->month));
+        $year = max(2000, min(2100, (int) $this->year));
+        $start = CarbonImmutable::create($year, $month, 1, 0, 0, 0, 'Asia/Jakarta');
+
+        return [$start->toDateString(), $start->addMonth()->toDateString()];
     }
 }

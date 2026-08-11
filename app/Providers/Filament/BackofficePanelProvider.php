@@ -42,7 +42,7 @@ final class BackofficePanelProvider extends PanelProvider
                 NavigationGroup::make('Transaksi & Saldo'),
                 NavigationGroup::make('Operasional Lapangan'),
                 NavigationGroup::make('Program & Publikasi'),
-                NavigationGroup::make('Laporan & Rekonsiliasi'),
+                NavigationGroup::make('Laporan & Audit'),
                 NavigationGroup::make('Data Master'),
                 NavigationGroup::make('Sistem & Teknis'),
             ])

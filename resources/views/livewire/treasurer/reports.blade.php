@@ -6,9 +6,9 @@
     {{-- Page Header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <p class="text-label font-semibold text-forest-600">Pengawasan Bendahara</p>
+            <p class="text-label font-semibold text-forest-600">Laporan operasional</p>
             <h1 id="reports-title" class="mt-1 text-h1 font-bold text-deep-green">Laporan {{ $reportTypes[$reportType] }}</h1>
-            <p class="mt-2 text-body text-text-secondary">Angka mengikuti scope dan filter aktif; metrik memakai definisi jenis laporan.</p>
+            <p class="mt-2 text-body text-text-secondary">Pilih periode, lihat ringkasan, lalu unduh Excel.</p>
         </div>
         <x-ui.mascot variant="5" class="hidden h-20 w-auto sm:block" />
     </div>
@@ -33,20 +33,30 @@
     </div>
 
     {{-- Filter Form --}}
-    <x-ui.panel title="Filter periode" description="Terapkan rentang tanggal untuk menyesuaikan laporan.">
+    <x-ui.panel title="Filter laporan" description="Gunakan pilihan cepat atau tentukan tanggal sendiri.">
         <div class="mb-4 flex flex-wrap gap-2" aria-label="Preset periode">
-            <span class="self-center pr-1 text-body-sm font-semibold text-text-secondary">Periode cepat:</span>
-            <button type="button" wire:click="setPeriod('today')" class="min-h-10 rounded-md border border-border bg-surface px-3 text-body-sm font-semibold text-deep-green hover:border-forest-600 hover:bg-success-bg">Hari ini</button>
-            <button type="button" wire:click="setPeriod('week')" class="min-h-10 rounded-md border border-border bg-surface px-3 text-body-sm font-semibold text-deep-green hover:border-forest-600 hover:bg-success-bg">Minggu ini</button>
-            <button type="button" wire:click="setPeriod('month')" class="min-h-10 rounded-md border border-border bg-surface px-3 text-body-sm font-semibold text-deep-green hover:border-forest-600 hover:bg-success-bg">Bulan ini</button>
+            <button type="button" wire:click="setPeriod('today')" class="min-h-10 rounded-md border px-3 text-body-sm font-semibold {{ $period === 'today' ? 'border-forest-600 bg-success-bg text-forest-700' : 'border-border bg-surface text-deep-green hover:border-forest-600 hover:bg-success-bg' }}">Hari ini</button>
+            <button type="button" wire:click="setPeriod('week')" class="min-h-10 rounded-md border px-3 text-body-sm font-semibold {{ $period === 'week' ? 'border-forest-600 bg-success-bg text-forest-700' : 'border-border bg-surface text-deep-green hover:border-forest-600 hover:bg-success-bg' }}">Minggu ini</button>
+            <button type="button" wire:click="setPeriod('month')" class="min-h-10 rounded-md border px-3 text-body-sm font-semibold {{ $period === 'month' ? 'border-forest-600 bg-success-bg text-forest-700' : 'border-border bg-surface text-deep-green hover:border-forest-600 hover:bg-success-bg' }}">Per bulan</button>
+            <button type="button" wire:click="setPeriod('custom')" class="min-h-10 rounded-md border px-3 text-body-sm font-semibold {{ $period === 'custom' ? 'border-forest-600 bg-success-bg text-forest-700' : 'border-border bg-surface text-deep-green hover:border-forest-600 hover:bg-success-bg' }}">Tanggal custom</button>
         </div>
         <form wire:submit="refreshReport" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Filter laporan">
             <x-ui.select wire:model="reportType" name="reportType" label="Jenis laporan" :options="$reportTypes" />
-            <x-ui.input wire:model="start" name="start" label="Mulai" type="date" />
-            <x-ui.input wire:model="end" name="end" label="Sampai (eksklusif)" type="date" />
+            @if ($period === 'month')
+                <x-ui.select wire:model="month" name="month" label="Bulan" :options="$months" />
+                <x-ui.select wire:model="year" name="year" label="Tahun" :options="$years" />
+            @elseif ($period === 'custom')
+                <x-ui.input wire:model="start" name="start" label="Mulai" type="date" />
+                <x-ui.input wire:model="end" name="end" label="Hingga" type="date" />
+            @else
+                <div class="rounded-md border border-border bg-warm-canvas px-4 py-3 sm:col-span-2">
+                    <p class="text-caption font-medium text-text-secondary">Periode aktif</p>
+                    <p class="mt-1 text-body-sm font-semibold text-deep-green">{{ \Carbon\CarbonImmutable::parse($start)->translatedFormat('d F Y') }} – {{ \Carbon\CarbonImmutable::parse($end)->translatedFormat('d F Y') }}</p>
+                </div>
+            @endif
             <x-ui.select wire:model="serviceAreaId" name="serviceAreaId" label="Area pelayanan (opsional)" :options="$serviceAreas->all()"><option value="">Semua area</option></x-ui.select>
             <x-ui.select wire:model="status" name="status" label="Status (opsional)" :options="$statusOptions"><option value="">Semua status</option></x-ui.select>
-            <x-ui.input wire:model="search" name="search" label="Cari nomor atau scope" hint="Nomor transaksi atau scope laporan." />
+            <x-ui.input wire:model="search" name="search" label="Cari nomor" hint="Nomor transaksi." />
             <x-ui.button type="submit" wire:loading.attr="disabled" class="lg:self-end">
                 <span wire:loading.remove>Terapkan</span>
                 <span wire:loading>Memuat...</span>
@@ -55,17 +65,14 @@
     </x-ui.panel>
 
     {{-- Export --}}
-    <x-ui.panel title="Ekspor laporan" description="Unduh data yang sesuai filter aktif dalam format yang Anda pilih.">
-        <div class="flex flex-wrap items-end gap-3">
-            <x-ui.select wire:model="format" label="Format ekspor" name="format" :options="['csv' => 'CSV', 'xlsx' => 'Excel', 'pdf' => 'PDF']" />
-            <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled">
-                <span wire:loading.remove wire:target="export">
-                    <svg viewBox="0 0 24 24" class="mr-2 inline size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    Ekspor Privat
-                </span>
-                <span wire:loading wire:target="export">Menyiapkan...</span>
-            </x-ui.button>
-        </div>
+    <x-ui.panel title="Ekspor Excel" description="Unduh data sesuai filter aktif untuk disimpan atau dibagikan secara internal.">
+        <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled">
+            <span wire:loading.remove wire:target="export">
+                <svg viewBox="0 0 24 24" class="mr-2 inline size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                Unduh Excel
+            </span>
+            <span wire:loading wire:target="export">Menyiapkan...</span>
+        </x-ui.button>
     </x-ui.panel>
 
     <x-ui.panel title="Hasil laporan" description="Read-only. Data mengikuti scope dan filter yang diterapkan.">

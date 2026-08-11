@@ -10,7 +10,7 @@ Dokumen ini menjadi SOP harian bagi warga, petugas, bendahara, admin, dan pengel
 |---|---|---|
 | Warga | Menjaga akun/kartu, memberi data/foto benar, memeriksa bukti/saldo. | Bukti, nomor pengajuan, alasan/status. |
 | Petugas | Identifikasi, timbang, setoran, pickup, tugas, bukti, layanan berbantuan/keliling. | Rekap tugas, alat, bukti, insiden. |
-| Bendahara | Verifikasi penerima, pembayaran disetujui, kas, bukti, rekonsiliasi. | Kas awal/akhir, daftar paid/pending, bukti. |
+| Bendahara | Verifikasi penerima, pembayaran disetujui, kas, bukti, laporan. | Daftar paid/pending, bukti, dan ekspor laporan. |
 | Admin | Verifikasi, master/harga, approve, kapasitas/jadwal, koreksi, laporan/audit. | Keputusan tertunda, koreksi, selisih, perubahan master. |
 | Superadmin teknis | Deploy, akses teknis, metadata backup/restore, cron, health, insiden teknis; bersama admin membuka panel back-office (`backoffice.access`). Eksekusi artefak backup/restore dilakukan melalui deployment/SOP, bukan UI aplikasi. | Release, backup, secret/access rotation, log insiden. |
 
@@ -126,7 +126,7 @@ Petugas/admin melakukan checklist sebelum menerima transaksi:
 
 1. Hentikan transaksi, pastikan semua request selesai/gagal jelas.
 2. Rekap warga, jumlah transaksi, berat, nilai, bukti, item ditolak, dan insiden.
-3. Tutup status titik dan serahkan rekap untuk rekonsiliasi.
+3. Tutup status titik dan serahkan rekap untuk laporan.
 
 ## 10. SOP warga tanpa smartphone
 
@@ -172,19 +172,16 @@ Petugas/admin melakukan checklist sebelum menerima transaksi:
 5. Konfirmasi hanya setelah pemeriksaan. Batal harus berhenti tanpa perubahan.
 6. Sistem membuat correction/reversal, mutasi penyesuaian/lawan, audit, dan notifikasi; transaksi asli tidak dihapus.
 7. Warga menerima informasi sebelum/sesudah, alasan, tanggal, dan dampak yang aman.
-8. Masukkan koreksi dalam rekonsiliasi harian dan minta pengesahan pihak berbeda bila memungkinkan.
+8. Pastikan koreksi tercermin pada laporan setelah proses resmi selesai.
 
-## 14. SOP rekonsiliasi dan penutupan pelayanan
+## 14. SOP laporan harian
 
-1. Hentikan penerimaan transaksi baru dan pastikan task in-flight memiliki status final/gagal jelas.
-2. Ambil saldo awal, setoran final, pickup selesai, pencairan paid, sembako selesai, hold aktif/dilepas, koreksi/reversal, dan kas.
-3. Cocokkan nomor, nilai, bukti, petugas, serta kas fisik pencairan.
-4. Cocokkan ledger masuk/keluar dan hold dengan kewajiban saldo.
-5. Jika selisih, tandai terbuka; telusuri idempotensi, status, bukti, kas, dan assignment. Jangan sahkan “sesuai”.
-6. Lakukan koreksi resmi hanya bila bukti memadai, lalu hitung ulang.
-7. Bendahara/admin mengesahkan sesuai separation of duties; simpan laporan dan catatan.
-8. Catat kas akhir, tugas tertunda, kapasitas/jadwal besok, alat, dan insiden.
-9. Logout, amankan kartu/perangkat/kas, dan tutup lokasi.
+1. Pastikan pencairan dan penyerahan yang dilakukan hari itu sudah memiliki status akhir atau alasan gagal yang jelas.
+2. Buka menu **Laporan** dan pilih jenis laporan yang diperlukan.
+3. Gunakan preset **Hari ini**, **Minggu ini**, **Per bulan**, atau **Tanggal custom**.
+4. Periksa ringkasan, filter area/status bila diperlukan, lalu unduh Excel.
+5. Simpan file dengan nama tanggal pelayanan dan letakkan pada folder laporan internal.
+6. Jika ada data yang tidak sesuai, gunakan alur koreksi resmi pada transaksi terkait; jangan mengubah file Excel untuk menggantikan data aplikasi.
 
 ## 15. Gangguan internet
 
@@ -193,7 +190,7 @@ Petugas/admin melakukan checklist sebelum menerima transaksi:
 3. Jika request telah dikirim tetapi hasil tidak jelas, periksa riwayat transaksi/ledger dari koneksi stabil sebelum retry.
 4. Jika hasil lama ada, gunakan/cetak hasil tersebut. Jika tidak ada dan sistem menyatakan aman, retry dengan mekanisme idempotent.
 5. Aplikasi tidak mengantrekan transaksi offline; catatan manual darurat tidak menjadi saldo sampai dimasukkan dan diverifikasi resmi.
-6. Setelah pulih, cocokkan semua catatan manual dengan sistem dan rekonsiliasi.
+6. Setelah pulih, cocokkan semua catatan manual dengan sistem dan laporan.
 
 ## 16. Gangguan timbangan
 
@@ -228,7 +225,7 @@ UI aplikasi hanya mengelola metadata, status, dan verifikasi backup/restore. Eks
 2. Tentukan restore point dan dampak data setelah RPO.
 3. Restore database+media konsisten, deploy release kompatibel, cache ulang.
 4. Verifikasi integritas, permission, ledger, hold, QR/file, scheduler.
-5. Rekonsiliasi data setelah restore; transaksi yang hilang dipulihkan melalui prosedur resmi, bukan edit saldo.
+5. Cocokkan data laporan setelah restore; transaksi yang hilang dipulihkan melalui prosedur resmi, bukan edit saldo.
 6. Dokumentasikan keputusan, pelaksana, hasil, dan komunikasi.
 
 ## 18. Pergantian petugas/admin
@@ -249,13 +246,13 @@ UI aplikasi hanya mengelola metadata, status, dan verifikasi backup/restore. Eks
 
 ### Setelah pergantian
 
-Tinjau audit, failed task, rekonsiliasi, backup, cron, dan contact list. Superadmin tidak menerima kewenangan saldo hanya karena menangani pergantian teknis.
+Tinjau audit, failed task, laporan, backup, cron, dan contact list. Superadmin tidak menerima kewenangan saldo hanya karena menangani pergantian teknis.
 
 ## 19. Monitoring rutin
 
 | Frekuensi | Pemeriksaan |
 |---|---|
-| Setiap pelayanan | alat, internet, harga, tugas, failed transaction, kas, rekonsiliasi |
+| Setiap pelayanan | alat, internet, harga, tugas, failed transaction, kas, laporan |
 | Harian | scheduler heartbeat, failed jobs, backup, error log, storage/inode, hold kedaluwarsa |
 | Mingguan | permission/assignment anomali, kapasitas, transaksi ganda, koreksi, statistik, file temp |
 | Bulanan | dependency/security update, restore sample, performa DB, quota hosting, SSL/domain, SOP |

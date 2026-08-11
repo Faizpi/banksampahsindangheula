@@ -10,7 +10,6 @@ use App\Domain\WasteMaster\Models\WasteCategory;
 use App\Domain\WasteMaster\Models\WastePrice;
 use App\Filament\Pages\OperationsDashboard;
 use App\Filament\Resources\AuditReconciliation\Models\AuditLogs\AuditLogResource;
-use App\Filament\Resources\AuditReconciliation\Models\Reconciliations\ReconciliationResource;
 use App\Filament\Resources\Communication\Models\Announcements\AnnouncementResource;
 use App\Filament\Resources\CustomersRegions\Models\Dusuns\DusunResource;
 use App\Filament\Resources\CustomersRegions\Models\Rts\RtResource;
@@ -104,7 +103,7 @@ final class BackofficePanelTest extends TestCase
                 'Transaksi & Saldo',
                 'Operasional Lapangan',
                 'Program & Publikasi',
-                'Laporan & Rekonsiliasi',
+                'Laporan & Audit',
                 'Data Master',
                 'Sistem & Teknis',
             ],
@@ -138,8 +137,8 @@ final class BackofficePanelTest extends TestCase
             $this->navigationLabelsForGroup($panel, 'Program & Publikasi'),
         );
         self::assertSame(
-            ['Audit log', 'Rekonsiliasi'],
-            $this->navigationLabelsForGroup($panel, 'Laporan & Rekonsiliasi'),
+            ['Audit log'],
+            $this->navigationLabelsForGroup($panel, 'Laporan & Audit'),
         );
         self::assertSame(
             ['Area Pelayanan', 'Dusun', 'RW', 'RT', 'Paket Sembako', 'Jenis Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Harga Sampah', 'Satuan Sampah'],
@@ -181,7 +180,6 @@ final class BackofficePanelTest extends TestCase
             StatisticPublicationResource::class,
             GroceryRedemptionResource::class,
             AuditLogResource::class,
-            ReconciliationResource::class,
             DepositResource::class,
             LedgerEntryResource::class,
             BalanceHoldResource::class,

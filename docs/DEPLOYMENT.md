@@ -223,7 +223,7 @@ Backup disimpan terpisah dari akun hosting utama, dienkripsi/dilindungi, diverif
 3. Jika kompatibel, rollback kode tanpa rollback data.
 4. Jika tidak kompatibel, gunakan prosedur migration balik yang telah diuji atau restore database+media konsisten dari backup.
 5. Jangan menjalankan `migrate:rollback` otomatis pada produksi tanpa meninjau dampak data.
-6. Setelah restore, verifikasi ledger, hold, transaksi, file, audit, dan rekonsiliasi; catat data setelah RPO yang harus dipulihkan/koreksi resmi.
+6. Setelah restore, verifikasi ledger, hold, transaksi, file, audit, dan laporan; catat data setelah RPO yang harus dipulihkan/koreksi resmi.
 
 ## 12. Verifikasi pascadeploy
 
@@ -264,7 +264,7 @@ Backup disimpan terpisah dari akun hosting utama, dienkripsi/dilindungi, diverif
 - Bersihkan export/upload sementara melalui scheduler dan retensi.
 - Uji restore dan prosedur insiden berkala.
 - Tinjau permission saat pergantian petugas/admin.
-- Rekonsiliasi harian tetap proses bisnis, bukan digantikan backup.
+- Laporan harian tetap proses bisnis, bukan digantikan backup.
 
 ## 14. Checklist go-live
 

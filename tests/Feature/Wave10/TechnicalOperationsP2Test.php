@@ -100,7 +100,7 @@ it('records backup metadata without claiming a real dump and exposes only safe m
 it('executes audit retention only before an explicit cutoff and preserves protected evidence', function (): void {
     $actor = operationsP2User('audit.retention.execute');
     $old = app(AuditLogger::class)->record($actor, 'test.old', $actor, [], [], (string) Str::uuid());
-    $protected = app(AuditLogger::class)->record($actor, 'reconciliation.created', $actor, [], [], (string) Str::uuid());
+    $protected = app(AuditLogger::class)->record($actor, 'report.export.completed', $actor, [], [], (string) Str::uuid());
     $cutoff = CarbonImmutable::now()->subDay()->startOfDay();
     $oldOccurredAt = $cutoff->subDay();
     DB::table('audit_retention_context')->insert(['token' => 'test-retention-context']);

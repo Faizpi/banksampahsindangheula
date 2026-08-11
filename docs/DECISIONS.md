@@ -56,9 +56,9 @@ IMP-019 menetapkan fondasi teknis back-office Filament 5 sesuai ADR ini: instala
 ## ADR-006 — Ledger sebagai sumber kebenaran saldo
 
 - **Status:** Accepted
-- **Konteks:** Saldo harus transparan, tidak negatif, dapat direkonsiliasi, dan tahan koreksi/transaksi ganda.
+- **Konteks:** Saldo harus transparan, tidak negatif, dapat diperiksa melalui ledger/laporan, dan tahan koreksi/transaksi ganda.
 - **Keputusan:** Saldo bersumber dari ledger append-only dan hold aktif. Rumus: total masuk dikurangi total keluar dan saldo tertahan. Koreksi/reversal membuat mutasi baru; tidak ada edit saldo langsung.
-- **Konsekuensi:** Semua operasi finansial membutuhkan transaction, lock, idempotensi, unique source, audit, dan rekonsiliasi. Query lebih disiplin, tetapi integritas dapat dibuktikan.
+- **Konsekuensi:** Semua operasi finansial membutuhkan transaction, lock, idempotensi, unique source, audit, dan laporan yang dapat ditelusuri. Query lebih disiplin, tetapi integritas dapat dibuktikan.
 - **Alternatif ditolak:** satu kolom saldo yang bebas diperbarui karena sulit diaudit dan rentan race condition.
 - **Referensi:** [BUSINESS_RULES.md](BUSINESS_RULES.md), [DATA_MODEL.md](DATA_MODEL.md).
 

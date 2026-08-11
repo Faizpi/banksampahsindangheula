@@ -79,10 +79,10 @@ Aturan bisnis adalah invariant wajib bagi seluruh alur pada [REQUIREMENTS.md](RE
 - **BR-BAL-002:** `saldo tersedia = total saldo masuk − total saldo keluar − saldo tertahan`.
 - **BR-BAL-003:** Rupiah menggunakan integer/bigint; nilai mutasi wajib lebih dari nol dengan arah/jenis yang eksplisit.
 - **BR-BAL-004:** Saldo tersedia tidak boleh negatif pada saat commit.
-- **BR-BAL-005:** Setiap mutasi memiliki nomor unik, rekening, jenis, nilai, sumber polymorphic/eksplisit, waktu efektif, dan saldo setelah mutasi atau data rekonsiliasi ekuivalen.
+- **BR-BAL-005:** Setiap mutasi memiliki nomor unik, rekening, jenis, nilai, sumber polymorphic/eksplisit, waktu efektif, dan saldo setelah mutasi atau bukti ledger yang setara.
 - **BR-BAL-006:** Kombinasi sumber dan jenis efek ledger harus unik agar satu sumber tidak membukukan efek yang sama dua kali.
 - **BR-BAL-007:** Mutasi final append-only secara operasional; pembetulan memakai mutasi penyesuaian atau reversal.
-- **BR-BAL-008:** Cache saldo, bila digunakan, hanya derivasi dan harus dapat direkonsiliasi dari ledger serta hold.
+- **BR-BAL-008:** Cache saldo, bila digunakan, hanya derivasi dan harus dapat diperiksa dari ledger serta hold.
 - **BR-BAL-009:** Hold dibuat saat pengajuan pencairan/penukaran sah diterima sistem, setelah saldo tersedia dikunci dan diperiksa.
 - **BR-BAL-010:** Hold aktif mengurangi saldo tersedia tetapi bukan saldo keluar.
 - **BR-BAL-011:** Satu pengajuan memiliki maksimal satu hold aktif; nilai hold sama dengan kewajiban nominal pengajuan.
@@ -194,12 +194,12 @@ Aturan bisnis adalah invariant wajib bagi seluruh alur pada [REQUIREMENTS.md](RE
 - **BR-PUB-008:** Cache publik dipisahkan dari cache respons terautentikasi dan tidak menyimpan data privat.
 - **BR-PUB-009:** Data sampah plastik hanya menjadi informasi pendukung pemanfaatan lanjutan paving block; sistem tidak menghitung atau mengelola produksi.
 
-## 15. Laporan, audit, dan rekonsiliasi
+## 15. Laporan dan audit
 
-- **BR-RPT-001:** Laporan memakai definisi metrik dan zona waktu yang sama dengan dashboard serta rekonsiliasi.
+- **BR-RPT-001:** Laporan memakai definisi metrik dan zona waktu yang sama dengan dashboard.
 - **BR-RPT-002:** Scope record diterapkan sebelum agregasi dan ekspor.
-- **BR-RPT-003:** Format web, CSV, Excel, dan PDF untuk filter yang sama menghasilkan angka yang sama.
-- **BR-RPT-004:** CSV/Excel menetralkan nilai yang dapat dieksekusi sebagai formula dan memakai encoding yang disepakati.
+- **BR-RPT-003:** Tampilan web dan Excel untuk filter yang sama menghasilkan angka yang sama.
+- **BR-RPT-004:** Excel menetralkan nilai yang dapat dieksekusi sebagai formula.
 - **BR-RPT-005:** File ekspor bersifat privat, memiliki masa berlaku, dan akses/unduh dicatat.
 - **BR-RPT-006:** Ekspor besar boleh diproses dengan database queue berbatas waktu melalui cron; kegagalan tidak menerbitkan file parsial.
 - **BR-AUD-001:** Audit mencatat pelaku, waktu, aksi, objek, korelasi, serta nilai lama/baru yang relevan dan aman.
@@ -208,13 +208,6 @@ Aturan bisnis adalah invariant wajib bagi seluruh alur pada [REQUIREMENTS.md](RE
 - **BR-AUD-004:** Retensi hanya dijalankan pengelola teknis sesuai kebijakan dan tetap menghasilkan catatan pelaksanaan.
 - **BR-AUD-005:** Password, token, secret, cookie, dan isi file sensitif tidak boleh masuk audit/log.
 - **BR-AUD-006:** Aksi keuangan yang mewajibkan audit harus menyimpan audit dalam transaksi yang sama atau gagal seluruhnya.
-- **BR-REC-001:** Rekonsiliasi dilakukan setiap hari pelayanan dan membandingkan ledger, hold, transaksi, bukti, kas, serta status pengajuan.
-- **BR-REC-002:** Rekap tidak dapat disahkan “sesuai” selama selisih terbuka belum dijelaskan.
-- **BR-REC-003:** Selisih ditelusuri ke record dan pelaksana; koreksi hanya melalui mekanisme resmi.
-- **BR-REC-004:** Pengesahan menyimpan admin/bendahara, waktu, hasil, catatan, dan ringkasan angka.
-- **BR-REC-005:** Rekonsiliasi yang telah disahkan tidak ditimpa; pembetulan membuat revisi tertaut.
-- **BR-REC-006:** Kegagalan internet/timbangan tidak membenarkan pencatatan ganda; transaksi dilanjutkan setelah hasil lama diperiksa.
-
 ## 16. PWA, file, dan ruang lingkup
 
 - **BR-PWA-001:** PWA boleh memasang manifest, ikon, shell, dan aset terversi.

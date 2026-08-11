@@ -4,7 +4,7 @@
 
 MySQL 8.0.30/InnoDB menjadi sumber data transaksional. ID internal memakai `BIGINT UNSIGNED` atau ULID secara konsisten. Rupiah memakai `BIGINT`; berat memakai `DECIMAL(15,3)` dan tidak pernah `FLOAT`. File disimpan pada storage, bukan blob database. Semua status memakai PHP backed enum/value object dan constraint yang kompatibel. Waktu bisnis ditampilkan dalam `Asia/Jakarta`.
 
-Kebijakan penghapusan: data finansial, audit, status, bukti, dan rekonsiliasi tidak dihapus operasional; master bereferensi dinonaktifkan atau soft-delete; pivot yang tidak memiliki histori boleh cascade; FK histori umumnya `RESTRICT`, sedangkan pelaku yang dinonaktifkan tetap dipertahankan.
+Kebijakan penghapusan: data finansial, audit, status, dan bukti tidak dihapus operasional; master bereferensi dinonaktifkan atau soft-delete; pivot yang tidak memiliki histori boleh cascade; FK histori umumnya `RESTRICT`, sedangkan pelaku yang dinonaktifkan tetap dipertahankan.
 
 ## 2. ERD inti
 
@@ -43,7 +43,6 @@ erDiagram
   ANNOUNCEMENTS }o--o{ RT : targets
   MEDIA }o--|| USERS : uploaded_by
   AUDIT_LOGS }o--|| USERS : actor
-  RECONCILIATIONS ||--o{ RECONCILIATION_ITEMS : contains
 ```
 
 ## 3. Identitas dan akses
@@ -96,7 +95,7 @@ Snapshot pada `deposit_items` wajib berdiri sendiri dari master. Perubahan `wast
 | `ledger_entries` | nomor, account FK, `direction` masuk/keluar, `kind`, `amount BIGINT`, source type/id, related entry, effective/created time, balance_after opsional | UQ nomor; UQ `(source_type,source_id,kind)`; IDX account/effective, source | Append-only |
 | `balance_holds` | nomor, account FK, source type/id, `amount BIGINT`, status aktif/dikonversi/dilepas, held/released/converted time | UQ nomor; UQ `(source_type,source_id)`; IDX account/status | Append-only status transition |
 
-Saldo tersedia dihitung dari agregat ledger masuk dikurangi keluar dan hold aktif. Jika `balance_after` disimpan, nilainya adalah bukti rekonsiliasi di bawah lock, bukan saldo bebas edit.
+Saldo tersedia dihitung dari agregat ledger masuk dikurangi keluar dan hold aktif. Jika `balance_after` disimpan, nilainya adalah bukti perhitungan di bawah lock, bukan saldo bebas edit.
 
 ## 7. Penjemputan, pencairan, dan sembako
 
@@ -133,8 +132,6 @@ Statistik partisipasi dan publik adalah query/read model agregat dari transaksi 
 | `media` | UUID, disk, path acak, original name, MIME, size, checksum, visibility, uploader, attachable type/id | UQ UUID/path; IDX attachable | Hapus hanya sesuai retensi dan referensi |
 | `report_exports` | requester, type, filters JSON, format, status, media, expires, error reference | IDX requester/status/date, expiry | File purge; metadata sesuai retensi |
 | `audit_logs` | event UUID, actor, action, auditable type/id, old/new JSON tersanitasi, IP hash/ringkas, user agent ringkas, correlation ID, time | UQ UUID; IDX object/time, actor/time, action/time | Append-only; retensi teknis |
-| `reconciliations` | business date, status, opening/closing totals, cash total, difference, notes, creator, approver, version | UQ `(business_date,version)`; IDX status/date | Append-only revisions |
-| `reconciliation_items` | reconciliation, type, reference, expected/actual/difference `BIGINT`, status/note | IDX reconciliation/type | RESTRICT |
 | `backup_logs` | started/finished, operator key nullable untuk kompatibilitas row lama, request payload hash nullable, type, location alias, checksum, status, size, restore_tested_at, error reference | UQ `(initiated_by,operator_key)` (nilai nullable historis tidak dipakai); IDX status/date | Retensi teknis |
 | `settings` | key, typed value encrypted bila sensitif, group, updated_by | UQ key | Audit perubahan |
 
@@ -159,7 +156,7 @@ Transisi mengikuti [BUSINESS_RULES.md](BUSINESS_RULES.md), bukan update string b
 ## 11. Strategi indeks dan integritas
 
 - Indeks komposit mengikuti query: `(customer_id, created_at)`, `(status, scheduled_date)`, `(rt_id, finalized_at)`, `(account_id, effective_at)`.
-- FK wajib untuk semua referensi internal; polymorphic source dibatasi katalog type dan diuji integritasnya melalui service serta reconciliation.
+- FK wajib untuk semua referensi internal; polymorphic source dibatasi katalog type dan diuji integritasnya melalui service serta audit.
 - UQ idempotensi, nomor bisnis, token hash, dan source ledger adalah kontrol wajib.
 - Migration besar menghindari lock panjang shared hosting: tambah nullable, backfill terbatas, verifikasi, lalu constraint.
 - JSON hanya untuk snapshot/audit/filter yang tidak menjadi relasi utama; data yang perlu difilter dan dijaga integritasnya menjadi kolom/tabel.
