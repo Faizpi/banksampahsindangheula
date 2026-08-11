@@ -110,7 +110,7 @@ final class DepositResource extends Resource
                     ->authorize(fn (Deposit $record): bool => self::verificationRotation()->canRotate(self::actor(), $record))
                     ->requiresConfirmation()
                     ->modalHeading(fn (Deposit $record): string => "Rotasi QR setoran {$record->deposit_number}?")
-                    ->modalDescription('QR lama akan langsung tidak aktif. Warga dapat membuka bukti setoran untuk mendapatkan QR baru.')
+                    ->modalDescription('QR lama akan langsung tidak aktif. Nasabah dapat membuka bukti setoran untuk mendapatkan QR baru.')
                     ->schema([
                         Textarea::make('reason')->label('Alasan rotasi')->required()->minLength(10)->maxLength(1000)->rows(4),
                     ])
@@ -149,7 +149,7 @@ final class DepositResource extends Resource
                     ])
                     ->action(fn (Deposit $record, array $data): mixed => self::correctionService()->reverse(self::actor(), $record, (string) $data['reason'], self::idempotencyKey(), self::uploadedFile($data['evidence'] ?? null)))
 
-                    ->successNotificationTitle('Reversal setoran tercatat.'),
+                    ->successNotificationTitle('Pembalikan setoran tercatat.'),
             ]);
     }
 

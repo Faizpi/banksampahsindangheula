@@ -17,7 +17,7 @@ final class ManageUsers extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Pengguna Baru')->using(fn (array $data): User => app(ManageUsersAction::class)->create(auth()->user(), $data)),
+            CreateAction::make()->label('Pengguna baru')->using(fn (array $data): User => app(ManageUsersAction::class)->create(auth()->user(), $data)),
         ];
     }
 }

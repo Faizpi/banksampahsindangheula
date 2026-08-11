@@ -60,7 +60,7 @@ final class WastePriceResource extends Resource
             TextColumn::make('condition.name')->label('Kondisi')->searchable(),
             TextColumn::make('price')->label('Harga')->formatStateUsing(fn (int $state): string => 'Rp'.number_format($state, 0, ',', '.'))->sortable(),
             TextColumn::make('effective_from')->label('Mulai')->dateTime('d M Y, H:i')->sortable(),
-            TextColumn::make('effective_to')->label('Sampai')->dateTime('d M Y, H:i')->placeholder('Terbuka')->sortable(),
+            TextColumn::make('effective_to')->label('Sampai')->dateTime('d M Y, H:i')->placeholder('Tanpa batas')->sortable(),
             TextColumn::make('createdBy.name')->label('Dibuat oleh')->placeholder('Sistem'),
         ])->defaultSort('effective_from', 'desc');
     }

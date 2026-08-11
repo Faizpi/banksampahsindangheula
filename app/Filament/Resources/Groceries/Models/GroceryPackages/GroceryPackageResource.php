@@ -63,7 +63,7 @@ final class GroceryPackageResource extends Resource
             TextColumn::make('name')->label('Nama')->searchable()->sortable(),
             TextColumn::make('value')->label('Nilai')->money('IDR')->sortable(),
             TextColumn::make('active_from')->label('Mulai')->date('d M Y'),
-            TextColumn::make('active_until')->label('Berakhir')->date('d M Y')->placeholder('Tidak dibatasi'),
+            TextColumn::make('active_until')->label('Berakhir')->date('d M Y')->placeholder('Tanpa batas'),
             IconColumn::make('status')->label('Aktif')->boolean(fn (string $state): bool => $state === 'aktif'),
         ])->recordActions([
             EditAction::make()->using(fn (GroceryPackage $record, array $data): GroceryPackage => app(ManageGroceryPackageAction::class)->update(auth()->user(), $record, (string) $data['code'], (string) $data['name'], (string) $data['contents'], (int) $data['value'], $data['active_from'] ?? null, $data['active_until'] ?? null)),

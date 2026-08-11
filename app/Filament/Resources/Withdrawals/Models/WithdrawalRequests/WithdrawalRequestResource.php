@@ -46,7 +46,7 @@ final class WithdrawalRequestResource extends Resource
     {
         return $schema->components([
             TextInput::make('request_number')->label('Nomor')->disabled(),
-            TextInput::make('customer.name')->label('Warga')->disabled(),
+            TextInput::make('customer.name')->label('Nasabah')->disabled(),
             TextInput::make('amount')->label('Nominal')->prefix('Rp')->disabled(),
             TextInput::make('status')->label('Status')->disabled(),
             Textarea::make('pickup_location')->label('Lokasi')->disabled(),
@@ -61,10 +61,10 @@ final class WithdrawalRequestResource extends Resource
             ->recordTitleAttribute('request_number')
             ->columns([
                 TextColumn::make('request_number')->label('Nomor')->searchable()->sortable(),
-                TextColumn::make('customer.name')->label('Warga')->searchable(),
+                TextColumn::make('customer.name')->label('Nasabah')->searchable(),
                 TextColumn::make('amount')->label('Nominal')->money('IDR'),
                 TextColumn::make('status')->label('Status')->formatStateUsing(fn ($state): string => StatusLabel::for($state))->badge(),
-                TextColumn::make('approver.name')->label('Approver')->placeholder('Belum diputuskan'),
+                TextColumn::make('approver.name')->label('Disetujui oleh')->placeholder('Belum diputuskan'),
                 TextColumn::make('payer.name')->label('Petugas pembayaran')->placeholder('Belum ditugaskan'),
                 TextColumn::make('expires_at')->label('Batas')->dateTime('d M Y H:i'),
             ])
@@ -94,8 +94,8 @@ final class WithdrawalRequestResource extends Resource
                     ->schema([
                         TextInput::make('customer')->label('Penerima')->disabled(),
                         TextInput::make('amount')->label('Nominal')->disabled(),
-                        TextInput::make('available_balance')->label('Saldo tersedia saat review')->disabled(),
-                        TextInput::make('held_balance')->label('Saldo hold')->disabled(),
+                        TextInput::make('available_balance')->label('Saldo tersedia saat pemeriksaan')->disabled(),
+                        TextInput::make('held_balance')->label('Dana ditahan')->disabled(),
                         TextInput::make('status')->label('Status')->disabled(),
                         TextInput::make('expires_at')->label('Batas pengambilan')->disabled(),
                         Textarea::make('consent')->label('Persetujuan dan verifikasi')->disabled()->rows(3),
@@ -110,7 +110,9 @@ final class WithdrawalRequestResource extends Resource
                     ->visible(fn (WithdrawalRequest $record): bool => $record->status->value === 'menunggu_verifikasi')
                     ->authorize('approve')
                     ->requiresConfirmation()
+                    ->modalHeading(fn (WithdrawalRequest $record): string => "Setujui pencairan {$record->request_number}?")
                     ->modalDescription('Dana tetap ditahan dan pengajuan diteruskan ke petugas pembayaran. Periksa penerima dan bukti sebelum menyetujui.')
+                    ->modalSubmitActionLabel('Setujui pencairan')
                     ->action(fn (WithdrawalRequest $record): WithdrawalRequest => app(WithdrawalService::class)->approve(self::actor(), $record, true)),
                 Action::make('reject')
                     ->label('Tolak')
@@ -148,9 +150,9 @@ final class WithdrawalRequestResource extends Resource
         $record->loadMissing(['customer.ledgerAccount', 'balanceHold', 'assistedService', 'proofMedia']);
         $availableBalance = $record->customer?->ledgerAccount?->availableBalance();
         $impact = match ($record->status->value) {
-            WithdrawalStatus::PendingVerification->value => 'Approve mempertahankan hold Rp '.number_format((int) (data_get($record->balanceHold, 'amount') ?? $record->amount), 0, ',', '.').' dan mengubahnya menjadi pencairan yang siap ditugaskan kepada payer.',
-            WithdrawalStatus::Approved->value, WithdrawalStatus::ReadyForPickup->value => 'Pencairan sudah melewati review. Pastikan penerima dan bukti pembayaran cocok sebelum saldo keluar.',
-            default => 'Tidak ada tindakan approve yang tersedia pada status ini.',
+            WithdrawalStatus::PendingVerification->value => 'Persetujuan mempertahankan dana ditahan Rp '.number_format((int) (data_get($record->balanceHold, 'amount') ?? $record->amount), 0, ',', '.').' dan meneruskan pencairan untuk ditugaskan kepada petugas pembayaran.',
+            WithdrawalStatus::Approved->value, WithdrawalStatus::ReadyForPickup->value => 'Pencairan sudah melewati pemeriksaan. Pastikan penerima dan bukti pembayaran cocok sebelum saldo keluar.',
+            default => 'Tidak ada tindakan persetujuan yang tersedia pada status ini.',
         };
 
         return [
@@ -160,8 +162,8 @@ final class WithdrawalRequestResource extends Resource
             'held_balance' => 'Rp '.number_format((int) (data_get($record->balanceHold, 'amount') ?? 0), 0, ',', '.'),
             'status' => StatusLabel::for($record->status),
             'expires_at' => $record->expires_at?->setTimezone('Asia/Jakarta')->format('d M Y H:i') ?? 'Belum ditetapkan',
-            'consent' => $record->assistedService === null ? 'Pengajuan mandiri; verifikasi warga dilakukan pada tahap pembayaran.' : 'Consent: '.$record->assistedService->consent_version.' · waktu: '.$record->assistedService->consented_at,
-            'evidence' => data_get($record->proofMedia, 'original_name') ?? ($record->assistedService?->evidence_media_id === null ? 'Belum ada evidence privat.' : 'Evidence consent privat tersimpan.'),
+            'consent' => $record->assistedService === null ? 'Pengajuan mandiri; verifikasi nasabah dilakukan pada tahap pembayaran.' : 'Persetujuan: '.$record->assistedService->consent_version.' · waktu: '.$record->assistedService->consented_at,
+            'evidence' => data_get($record->proofMedia, 'original_name') ?? ($record->assistedService?->evidence_media_id === null ? 'Belum ada bukti privat.' : 'Bukti persetujuan privat tersimpan.'),
             'impact' => $impact,
         ];
     }

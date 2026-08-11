@@ -3,7 +3,7 @@
 <x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
 <x-slot:todayTasks>
-    <x-ui.panel title="Pencairan siap dibayar" description="Hanya pencairan dalam scope Anda yang tampil.">
+    <x-ui.panel title="Pencairan siap dibayar" description="Hanya pencairan dalam wilayah atau tugas Anda yang tampil.">
         @if ($readyPayments->isEmpty())
             <x-ui.empty-state title="Belum ada pencairan siap dibayar" description="Pencairan yang disetujui dan siap dibayar akan muncul di sini." />
         @else

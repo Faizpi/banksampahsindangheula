@@ -56,8 +56,8 @@ final class AuditLogResource extends Resource
                 DatePicker::make('start')->label('Mulai tanggal'),
                 DatePicker::make('end')->label('Sampai tanggal'),
                 Select::make('action')->label('Aksi')->options(fn (): array => AuditLog::query()->select('action')->distinct()->orderBy('action')->pluck('action', 'action')->all())->searchable(),
-                Select::make('actor_id')->label('Actor')->options(fn (): array => User::query()->orderBy('name')->pluck('name', 'id')->all())->searchable(),
-                TextInput::make('correlation_id')->label('Correlation ID')->placeholder('UUID korelasi'),
+                Select::make('actor_id')->label('Pelaku')->options(fn (): array => User::query()->orderBy('name')->pluck('name', 'id')->all())->searchable(),
+                TextInput::make('correlation_id')->label('ID korelasi')->placeholder('UUID korelasi'),
             ])->query(static function (Builder $query, array $data): Builder {
                 return $query
                     ->when($data['action'] ?? null, static fn (Builder $query, string $action): Builder => $query->where('action', $action))

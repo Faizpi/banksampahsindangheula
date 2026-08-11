@@ -92,8 +92,8 @@ final class SessionInventoryResource extends Resource
                         && auth()->user()->can('view', $record->user)
                         && auth()->user()->can('revokeSession', $record->user))
                     ->requiresConfirmation()
-                    ->modalHeading('Akhiri sesi pengguna')
-                    ->modalDescription('Sesi yang dipilih akan diakhiri. Tindakan ini tidak dapat dibatalkan.')
+                    ->modalHeading(fn (DatabaseSession $record): string => "Akhiri sesi {$record->user->name}?")
+                    ->modalDescription('Pengguna akan keluar dari perangkat ini dan harus masuk kembali untuk menggunakannya.')
                     ->modalSubmitActionLabel('Akhiri sesi')
                     ->action(function (DatabaseSession $record): void {
                         app(RevokeDatabaseSession::class)->handle(

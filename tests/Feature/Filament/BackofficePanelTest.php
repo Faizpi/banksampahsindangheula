@@ -154,11 +154,11 @@ final class BackofficePanelTest extends TestCase
         $this->actingAs($admin->fresh());
 
         self::assertSame(
-            ['Nasabah', 'Verifikasi Warga', 'Pengguna', 'Bantuan Kata Sandi', 'Sesi Pengguna', 'Role', 'Permission'],
+            ['Nasabah', 'Verifikasi Warga', 'Pengguna', 'Bantuan Kata Sandi', 'Sesi Pengguna', 'Peran', 'Izin'],
             $this->navigationLabelsForGroup($panel, 'Identitas & Akses'),
         );
         self::assertSame(
-            ['Setoran dan Koreksi', 'Mutasi saldo', 'Hold Saldo', 'Pencairan', 'Penukaran Sembako'],
+            ['Setoran dan Koreksi', 'Mutasi saldo', 'Dana ditahan', 'Pencairan', 'Penukaran Sembako'],
             $this->navigationLabelsForGroup($panel, 'Transaksi & Saldo'),
         );
         self::assertSame(

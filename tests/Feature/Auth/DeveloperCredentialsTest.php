@@ -58,7 +58,7 @@ final class DeveloperCredentialsTest extends TestCase
             ->assertOk()
             ->assertSee('Laporan Setoran')
             ->assertSee('Filter laporan')
-            ->assertSee('Tidak ada data untuk filter ini.')
+            ->assertSee('Tidak ada hasil')
             ->assertSee('0.000');
     }
 

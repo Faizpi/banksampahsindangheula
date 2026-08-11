@@ -64,7 +64,7 @@ final class PickupRequestResource extends Resource
             ->recordTitleAttribute('request_number')
             ->columns([
                 TextColumn::make('request_number')->label('Nomor')->searchable()->sortable(),
-                TextColumn::make('customer.name')->label('Warga')->searchable(),
+                TextColumn::make('customer.name')->label('Nasabah')->searchable(),
                 TextColumn::make('serviceArea.name')->label('Area')->searchable(),
                 TextColumn::make('selected_date')->label('Tanggal')->date('d M Y')->sortable(),
                 TextColumn::make('status')->label('Status')->formatStateUsing(fn (PickupStatus|string $state): string => StatusLabel::for($state))->badge(),
@@ -91,24 +91,24 @@ final class PickupRequestResource extends Resource
             ])
             ->recordActions([
                 Action::make('inspect')
-                    ->label('Detail review')
+                    ->label('Tinjau penjemputan')
                     ->icon(Heroicon::OutlinedEye)
-                    ->modalHeading('Detail review penjemputan')
+                    ->modalHeading('Tinjau penjemputan')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->schema([
-                        TextInput::make('customer')->label('Warga')->disabled(),
+                        TextInput::make('customer')->label('Nasabah')->disabled(),
                         TextInput::make('area')->label('Area pelayanan')->disabled(),
-                        TextInput::make('capacity')->label('Kapasitas tanggal')->disabled(),
+                        TextInput::make('capacity')->label('Kapasitas hari tersebut')->disabled(),
                         TextInput::make('status')->label('Status')->disabled(),
                         Textarea::make('items')->label('Jenis dan perkiraan')->disabled()->rows(5),
                         Textarea::make('notes')->label('Catatan akses')->disabled()->rows(3),
-                        Textarea::make('evidence')->label('Foto/evidence')->disabled()->rows(3),
-                        Textarea::make('timeline')->label('Timeline')->disabled()->rows(6),
+                        Textarea::make('evidence')->label('Bukti foto')->disabled()->rows(3),
+                        Textarea::make('timeline')->label('Riwayat status')->disabled()->rows(6),
                     ])
                     ->fillForm(fn (PickupRequest $record): array => self::inspectionData($record)),
                 Action::make('accept')
-                    ->label('Terima')
+                    ->label('Terima pengajuan')
                     ->icon(Heroicon::OutlinedCheckCircle)
                     ->color('success')
                     ->visible(fn (PickupRequest $record): bool => $record->status->value === 'menunggu_pemeriksaan')

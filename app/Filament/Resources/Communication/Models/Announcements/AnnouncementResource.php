@@ -68,7 +68,7 @@ final class AnnouncementResource extends Resource
             TextColumn::make('title')->label('Judul')->searchable(),
             TextColumn::make('audience')->label('Audiens')->badge(),
             TextColumn::make('publish_start')->label('Mulai')->dateTime('d M Y H:i')->sortable(),
-            TextColumn::make('publish_end')->label('Berakhir')->dateTime('d M Y H:i')->placeholder('Tidak dibatasi'),
+            TextColumn::make('publish_end')->label('Berakhir')->dateTime('d M Y H:i')->placeholder('Tanpa batas'),
             TextColumn::make('status')->label('Status')->badge(),
         ])->recordActions([
             EditAction::make()->visible(fn (Announcement $record): bool => in_array($record->status->value, ['draf', 'nonaktif'], true))->using(fn (Announcement $record, array $data): Announcement => self::service()->update(self::actor(), $record, (string) $data['title'], (string) $data['body'], (string) $data['audience'], (string) $data['publish_start'], $data['publish_end'] ?? null, array_map('intval', $data['rt_ids'] ?? []), (int) $data['priority'])),

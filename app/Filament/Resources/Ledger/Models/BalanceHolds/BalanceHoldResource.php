@@ -32,11 +32,11 @@ final class BalanceHoldResource extends Resource
 
     protected static ?int $navigationSort = 30;
 
-    protected static ?string $navigationLabel = 'Hold Saldo';
+    protected static ?string $navigationLabel = 'Dana ditahan';
 
-    protected static ?string $modelLabel = 'hold saldo';
+    protected static ?string $modelLabel = 'dana ditahan';
 
-    protected static ?string $pluralModelLabel = 'hold saldo';
+    protected static ?string $pluralModelLabel = 'dana ditahan';
 
     public static function canViewAny(): bool
     {
@@ -48,8 +48,8 @@ final class BalanceHoldResource extends Resource
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
-            Textarea::make('hold_number')->label('Nomor hold')->disabled(),
-            Textarea::make('source_key')->label('Sumber idempotensi')->disabled(),
+            Textarea::make('hold_number')->label('Nomor dana ditahan')->disabled(),
+            Textarea::make('source_key')->label('Referensi sumber')->disabled(),
         ]);
     }
 
@@ -75,13 +75,13 @@ final class BalanceHoldResource extends Resource
             ])
             ->recordActions([
                 Action::make('inspect')
-                    ->label('Periksa')
+                    ->label('Lihat dana ditahan')
                     ->icon(Heroicon::OutlinedEye)
-                    ->modalHeading('Detail hold dan sumber')
+                    ->modalHeading('Detail dana ditahan dan sumber')
                     ->modalSubmitAction(false)
                     ->modalCancelActionLabel('Tutup')
                     ->schema([
-                        Textarea::make('source')->label('Sumber hold')->disabled()->rows(4),
+                        Textarea::make('source')->label('Sumber penahanan')->disabled()->rows(4),
                         Textarea::make('account')->label('Rekening dan status')->disabled()->rows(3),
                     ])
                     ->fillForm(fn (BalanceHold $record): array => [

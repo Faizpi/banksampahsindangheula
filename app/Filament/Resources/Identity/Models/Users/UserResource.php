@@ -81,7 +81,7 @@ final class UserResource extends Resource
                 TextColumn::make('name')->label('Nama')->searchable()->sortable(),
                 TextColumn::make('status')->label('Status')->badge(),
                 TextColumn::make('customerProfile.customer_number')->label('Nomor nasabah')->placeholder('Belum terbit')->toggleable(),
-                TextColumn::make('roles.name')->label('Role')->badge()->separator(','),
+                TextColumn::make('roles.name')->label('Peran')->badge()->separator(','),
             ])
             ->recordActions([
                 ViewAction::make()->label('Lihat')->authorize('manageView')->schema([
@@ -91,19 +91,22 @@ final class UserResource extends Resource
                 ]),
                 EditAction::make()->label('Ubah')->authorize('manageUpdate')->using(fn (User $record, array $data): User => app(ManageUsers::class)->update(self::actor(), $record, $data)),
                 Action::make('assignRoles')
-                    ->label('Atur role')
+                    ->label('Atur peran')
                     ->icon(Heroicon::OutlinedUserGroup)
                     ->authorize(fn (User $record): bool => auth()->user() instanceof User && auth()->user()->can('manageUpdate', $record) && app(PermissionChecker::class)->allows(auth()->user(), 'role.manage'))
                     ->schema([
-                        Select::make('role_ids')->label('Role')->options(fn (): array => Role::query()->orderBy('name')->pluck('name', 'id')->all())->multiple()->preload()->required(),
-                        Textarea::make('reason')->label('Alasan assignment')->required()->minLength(10)->maxLength(1000)->rows(3),
+                        Select::make('role_ids')->label('Peran')->options(fn (): array => Role::query()->orderBy('name')->pluck('name', 'id')->all())->multiple()->preload()->required(),
+                        Textarea::make('reason')->label('Alasan perubahan peran')->required()->minLength(10)->maxLength(1000)->rows(3),
                     ])
                     ->fillForm(fn (User $record): array => ['role_ids' => $record->roles()->pluck('roles.id')->all()])
                     ->requiresConfirmation()
+                    ->modalHeading(fn (User $record): string => "Atur peran {$record->name}?")
+                    ->modalDescription('Peran menentukan izin yang tersedia bagi pengguna ini. Perubahan akan dicatat pada audit log.')
+                    ->modalSubmitActionLabel('Simpan peran')
                     ->action(fn (User $record, array $data): User => app(ManageRoles::class)->assignRoles(self::actor(), $record, array_map('intval', $data['role_ids']), (string) $data['reason']))
-                    ->successNotificationTitle('Role pengguna diperbarui.'),
-                Action::make('activate')->label('Aktifkan')->icon(Heroicon::OutlinedCheckCircle)->color('success')->authorize('activate')->visible(fn (User $record): bool => $record->status === UserStatus::Inactive)->requiresConfirmation()->action(fn (User $record): User => app(ManageUsers::class)->activate(self::actor(), $record))->successNotificationTitle('Pengguna diaktifkan.'),
-                Action::make('deactivate')->label('Nonaktifkan')->icon(Heroicon::OutlinedNoSymbol)->color('danger')->authorize('deactivate')->visible(fn (User $record): bool => $record->status === UserStatus::Active)->requiresConfirmation()->schema([Textarea::make('reason')->label('Alasan')->required()->minLength(10)->maxLength(1000)->rows(3)])->action(fn (User $record, array $data): User => app(ManageUsers::class)->deactivate(self::actor(), $record, (string) $data['reason']))->successNotificationTitle('Pengguna dinonaktifkan.'),
+                    ->successNotificationTitle('Peran pengguna diperbarui.'),
+                Action::make('activate')->label('Aktifkan pengguna')->icon(Heroicon::OutlinedCheckCircle)->color('success')->authorize('activate')->visible(fn (User $record): bool => $record->status === UserStatus::Inactive)->requiresConfirmation()->modalHeading(fn (User $record): string => "Aktifkan pengguna {$record->name}?")->modalDescription('Pengguna dapat masuk kembali dan menggunakan izin yang masih dimilikinya.')->modalSubmitActionLabel('Aktifkan pengguna')->action(fn (User $record): User => app(ManageUsers::class)->activate(self::actor(), $record))->successNotificationTitle('Pengguna diaktifkan.'),
+                Action::make('deactivate')->label('Nonaktifkan pengguna')->icon(Heroicon::OutlinedNoSymbol)->color('danger')->authorize('deactivate')->visible(fn (User $record): bool => $record->status === UserStatus::Active)->requiresConfirmation()->modalHeading(fn (User $record): string => "Nonaktifkan pengguna {$record->name}?")->modalDescription('Pengguna tidak dapat masuk atau menjalankan tugas baru. Riwayat dan data transaksi tetap tersimpan.')->modalSubmitActionLabel('Nonaktifkan pengguna')->schema([Textarea::make('reason')->label('Alasan')->required()->minLength(10)->maxLength(1000)->rows(3)])->action(fn (User $record, array $data): User => app(ManageUsers::class)->deactivate(self::actor(), $record, (string) $data['reason']))->successNotificationTitle('Pengguna dinonaktifkan.'),
             ]);
     }
 

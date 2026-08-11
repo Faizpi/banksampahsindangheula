@@ -9,7 +9,7 @@
             <p class="text-label font-semibold text-harvest-gold">Bendahara</p>
             <h1 id="withdrawal-payments-title" class="mt-2 text-h1 font-bold text-deep-green">Pembayaran Pencairan</h1>
             <p class="mt-3 text-body text-text-secondary">
-                Pembayaran hanya untuk Bendahara atau petugas yang ditugaskan sebagai payer. Pilih pencairan yang ditugaskan kepada Anda; verifikasi penerima dan bukti wajib sebelum saldo keluar.
+                Pembayaran hanya untuk Bendahara atau petugas yang ditugaskan. Pilih pencairan yang menjadi tugas Anda; verifikasi penerima dan bukti wajib sebelum saldo keluar.
             </p>
         </div>
         <x-ui.mascot variant="12" bubble="Bayar tepat waktu!" bubblePosition="top" class="h-28 w-auto shrink-0" />
@@ -33,7 +33,7 @@
                             · {{ $withdrawal->pickup_location }}
                         @endif
                     </p>
-                    <p class="text-body-sm text-text-secondary">Hold saldo: <strong class="text-deep-green">Rp {{ number_format($withdrawal->balanceHold?->amount ?? $withdrawal->amount, 0, ',', '.') }}</strong></p>
+                    <p class="text-body-sm text-text-secondary">Dana ditahan: <strong class="text-deep-green">Rp {{ number_format($withdrawal->balanceHold?->amount ?? $withdrawal->amount, 0, ',', '.') }}</strong></p>
                 </div>
                 <button type="button" wire:click="select({{ $withdrawal->id }})"
                     class="inline-flex min-h-touch shrink-0 items-center justify-center gap-2 rounded-xl bg-harvest-gold px-5 text-label font-bold text-deep-green shadow-xs transition hover:opacity-90">
@@ -112,7 +112,7 @@
                 @if ($showPaymentReview)
                     <div class="rounded-md border-2 border-harvest-gold bg-warning-bg p-4" role="alert">
                         <h3 class="text-title font-bold text-deep-green">Konfirmasi pembayaran final</h3>
-                        <p class="mt-1 text-body-sm text-text-primary">Pembayaran akan mengubah hold menjadi saldo keluar dan tidak dapat diulang. Pastikan penerima, nominal, dan bukti sudah benar.</p>
+                        <p class="mt-1 text-body-sm text-text-primary">Pembayaran akan mengubah dana ditahan menjadi saldo keluar dan tidak dapat diulang. Pastikan penerima, nominal, dan bukti sudah benar.</p>
                         <div class="mt-4 flex flex-col gap-3 sm:flex-row">
                             <x-ui.button type="button" variant="secondary" wire:click="cancelPaymentReview">Ubah data</x-ui.button>
                             <x-ui.button type="button" wire:click="pay" wire:loading.attr="disabled" wire:target="pay">

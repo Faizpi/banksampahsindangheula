@@ -39,7 +39,7 @@ final class GroceryRedemptionResource extends Resource
     {
         return $schema->components([
             Textarea::make('request_number')->label('Nomor')->disabled(),
-            Textarea::make('package_snapshot')->label('Snapshot paket')->disabled(),
+            Textarea::make('package_snapshot')->label('Rekaman paket saat penukaran')->disabled(),
         ]);
     }
 

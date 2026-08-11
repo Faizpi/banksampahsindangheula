@@ -9,7 +9,7 @@
                 <div>
                     <p class="text-sm font-semibold text-primary-200">Administrasi sistem</p>
                     <h2 id="technical-control-title" class="mt-1 text-2xl font-bold">Kontrol teknis sistem</h2>
-                    <p class="mt-2 max-w-2xl text-sm text-primary-100">Kelola pengaturan, pemeliharaan, cadangan, verifikasi pemulihan, dan retensi audit sesuai kewenangan.</p>
+                    <p class="mt-2 max-w-2xl text-sm text-primary-100">Kelola pengaturan, pemeliharaan, cadangan, verifikasi pemulihan, dan retensi audit sesuai izin.</p>
                 </div>
                 <dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:text-right">
                     <div><dt class="text-primary-200">Lingkungan</dt><dd class="font-bold">{{ app()->environment() }}</dd></div>
@@ -44,16 +44,40 @@
         @if ($canManageSettings)
             <section id="settings" class="scroll-mt-32 rounded-xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="settings-title">
                 <h2 id="settings-title" class="text-lg font-semibold text-gray-950">Pengaturan</h2><p class="mt-1 text-sm text-gray-600">Rahasia aplikasi, kata sandi, token, dan kredensial tetap berada di lingkungan deployment.</p>
-                <form wire:submit="saveSettings" class="mt-4 grid gap-4 sm:grid-cols-2"><label class="block text-sm font-medium text-gray-800">Ambang antrean pekerjaan<input wire:model="settings.queue_backlog_threshold" type="number" min="1" max="8760" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"></label><label class="block text-sm font-medium text-gray-800">Usia maksimum cadangan terverifikasi (jam)<input wire:model="settings.backup_max_age_hours" type="number" min="1" max="8760" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"></label><div class="sm:col-span-2"><button type="submit" class="min-h-11 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2">Simpan pengaturan</button></div></form>
+                <form wire:submit="saveSettings" class="mt-4 grid gap-4 sm:grid-cols-2">
+                    <label class="block text-sm font-medium text-gray-800">
+                        Ambang antrean pekerjaan
+                        <input wire:model="settings.queue_backlog_threshold" type="number" min="1" max="8760" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm">
+                    </label>
+                    <label class="block text-sm font-medium text-gray-800">
+                        Usia maksimum cadangan terverifikasi (jam)
+                        <input wire:model="settings.backup_max_age_hours" type="number" min="1" max="8760" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm">
+                    </label>
+                    <div class="sm:col-span-2">
+                        <button type="submit" class="min-h-11 rounded-lg bg-emerald-700 px-4 text-sm font-semibold text-white hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2">Simpan pengaturan</button>
+                    </div>
+                </form>
             </section>
         @endif
 
         @if ($canManageMaintenance)
-            <section id="maintenance" class="scroll-mt-32 rounded-xl border border-warning-200 bg-warning-50 p-5 shadow-sm" aria-labelledby="maintenance-title"><h2 id="maintenance-title" class="text-lg font-semibold text-gray-950">Pemeliharaan</h2><p class="mt-1 text-sm text-gray-700">Status saat ini: <strong>{{ $maintenanceEnabled ? 'aktif' : 'nonaktif' }}</strong>. Pengguna dapat kehilangan akses selama pemeliharaan.</p><form wire:submit="toggleMaintenance" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"><label class="block flex-1 text-sm font-medium text-gray-800">Alasan perubahan<textarea wire:model="maintenanceReason" required minlength="10" maxlength="1000" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm"></textarea></label><button type="submit" wire:confirm="{{ $maintenanceEnabled ? 'Nonaktifkan pemeliharaan untuk seluruh aplikasi?' : 'Aktifkan pemeliharaan untuk seluruh aplikasi?' }} Pastikan alasan dan rencana pemulihan sudah siap." class="min-h-11 rounded-lg {{ $maintenanceEnabled ? 'bg-red-700 hover:bg-red-800' : 'bg-emerald-700 hover:bg-emerald-800' }} px-4 text-sm font-semibold text-white">{{ $maintenanceEnabled ? 'Nonaktifkan pemeliharaan' : 'Aktifkan pemeliharaan' }}</button></form></section>
+            <details id="maintenance" class="scroll-mt-32 rounded-xl border border-warning-200 bg-warning-50 p-5 shadow-sm">
+                <summary class="cursor-pointer list-none text-lg font-semibold text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Pemeliharaan <span class="ml-2 text-sm font-normal text-gray-700">Buka untuk mengubah status aplikasi.</span></summary>
+                <div class="mt-4">
+                    <p class="text-sm text-gray-700">Status saat ini: <strong>{{ $maintenanceEnabled ? 'aktif' : 'nonaktif' }}</strong>. Pengguna dapat kehilangan akses selama pemeliharaan.</p>
+                    <form wire:submit="toggleMaintenance" class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <label class="block flex-1 text-sm font-medium text-gray-800">
+                            Alasan perubahan
+                            <textarea wire:model="maintenanceReason" required minlength="10" maxlength="1000" rows="3" class="mt-1 block w-full rounded-lg border-gray-300 text-sm shadow-sm"></textarea>
+                        </label>
+                        <button type="submit" wire:confirm="{{ $maintenanceEnabled ? 'Nonaktifkan pemeliharaan untuk seluruh aplikasi?' : 'Aktifkan pemeliharaan untuk seluruh aplikasi?' }} Pekerjaan operasional dapat terganggu selama perubahan ini." class="min-h-11 rounded-lg {{ $maintenanceEnabled ? 'bg-red-700 hover:bg-red-800' : 'bg-emerald-700 hover:bg-emerald-800' }} px-4 text-sm font-semibold text-white">{{ $maintenanceEnabled ? 'Nonaktifkan pemeliharaan' : 'Aktifkan pemeliharaan' }}</button>
+                    </form>
+                </div>
+            </details>
         @endif
 
         @if ($canRunBackup)
-            <section id="backup" class="scroll-mt-32 rounded-xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="backup-title"><h2 id="backup-title" class="text-lg font-semibold text-gray-950">Cadangan</h2><p class="mt-1 text-sm text-gray-600">Catat pasangan lokasi, checksum, ukuran, status, dan retensi. Berkas cadangan dibuat melalui SOP/deployment.</p><form wire:submit="recordBackupMetadata" class="mt-4 grid gap-4 sm:grid-cols-2">
+            <section id="backup" class="scroll-mt-32 rounded-xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="backup-title"><h2 id="backup-title" class="text-lg font-semibold text-gray-950">Cadangan</h2><p class="mt-1 text-sm text-gray-600">Catat lokasi, checksum, ukuran, status, dan masa simpan. Berkas cadangan dibuat melalui prosedur penerapan.</p><form wire:submit="recordBackupMetadata" class="mt-4 grid gap-4 sm:grid-cols-2">
                 <label class="block text-sm font-medium text-gray-800">Lokasi database<input id="backup-database-alias" wire:model="backupDatabaseAlias" placeholder="Contoh: backup-db-20260811" required class="mt-1 min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"><span class="mt-1 block text-xs font-normal text-gray-500">Alias lokasi, bukan path rahasia.</span></label>
                 <label class="block text-sm font-medium text-gray-800">Lokasi media<input id="backup-media-alias" wire:model="backupMediaAlias" placeholder="Contoh: backup-media-20260811" required class="mt-1 min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"><span class="mt-1 block text-xs font-normal text-gray-500">Alias lokasi, bukan path rahasia.</span></label>
                 <label class="block text-sm font-medium text-gray-800">Checksum database (SHA-256)<input wire:model="backupDatabaseSha256" placeholder="64 karakter heksadesimal" required minlength="64" maxlength="64" class="mt-1 min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"></label>
@@ -67,17 +91,36 @@
         @endif
 
         @if ($canRestoreBackup)
-            <section id="restore" class="scroll-mt-32 rounded-xl border border-info-200 bg-info-50 p-5 shadow-sm" aria-labelledby="restore-title"><h2 id="restore-title" class="text-lg font-semibold text-gray-950">Verifikasi pemulihan</h2><p class="mt-1 text-sm text-gray-700">Lakukan pada lingkungan terisolasi. Formulir ini hanya mencatat bukti dan hasil, bukan menjalankan pemulihan.</p><form wire:submit="recordRestoreVerification" class="mt-4 grid gap-4 sm:grid-cols-2">
+            <details id="restore" class="scroll-mt-32 rounded-xl border border-info-200 bg-info-50 p-5 shadow-sm">
+                <summary class="cursor-pointer list-none text-lg font-semibold text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Verifikasi pemulihan <span class="ml-2 text-sm font-normal text-gray-700">Buka untuk mencatat hasil pemeriksaan.</span></summary>
+                <div class="mt-4"><p class="text-sm text-gray-700">Lakukan pada lingkungan terisolasi. Formulir ini hanya mencatat bukti dan hasil, bukan menjalankan pemulihan.</p><form wire:submit="recordRestoreVerification" class="mt-4 grid gap-4 sm:grid-cols-2">
                 <label class="block text-sm font-medium text-gray-800">ID cadangan<input wire:model="restoreBackupId" placeholder="Contoh: 123" required inputmode="numeric" class="mt-1 min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"></label>
                 <label class="block text-sm font-medium text-gray-800">Alias lingkungan verifikasi<input wire:model="restoreTargetAlias" placeholder="Contoh: verify-2026-08-11" required class="mt-1 min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"></label>
                 <label class="block text-sm font-medium text-gray-800">Referensi bukti verifikasi<input wire:model="restoreEvidenceReference" placeholder="43 karakter alfanumerik" required minlength="43" maxlength="43" class="mt-1 min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"></label>
                 <label class="block text-sm font-medium text-gray-800">Hasil verifikasi<select wire:model="restoreResult" required class="mt-1 min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"><option value="">Pilih hasil</option><option value="passed">Lulus</option><option value="failed">Gagal</option></select></label>
                 <div class="sm:col-span-2"><button type="submit" wire:confirm="Catat hasil verifikasi pemulihan untuk cadangan dan lingkungan yang dipilih?" class="min-h-11 rounded-lg bg-sky-700 px-4 text-sm font-semibold text-white hover:bg-sky-800">Simpan hasil verifikasi</button></div>
-            </form></section>
+            </form></div>
+            </details>
         @endif
 
         @if ($canExecuteRetention)
-            <section id="retention" class="scroll-mt-32 rounded-xl border border-danger-200 bg-danger-50 p-5 shadow-sm" aria-labelledby="retention-title"><h2 id="retention-title" class="text-lg font-semibold text-gray-950">Retensi audit</h2><p class="mt-1 text-sm text-gray-700">Jalankan preview terlebih dahulu. Bukti operasional yang dilindungi tidak ikut dihapus.</p><div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end"><label class="block flex-1 text-sm font-medium text-gray-800">Hapus sebelum tanggal<input wire:model="retentionBefore" type="date" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm"></label><button wire:click="previewRetention" type="button" class="min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-800 hover:bg-gray-50">Preview</button><button wire:click="executeRetention" type="button" wire:confirm="Jalankan retensi audit berdasarkan preview terbaru? Data yang memenuhi batas akan dihapus dan tidak dapat dipulihkan dari aplikasi." class="min-h-11 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800">Jalankan retensi</button></div>@if ($retentionResult !== '')<p class="mt-3 text-sm text-gray-700" role="status">{{ $retentionResult }}</p>@endif</section>
+            <details id="retention" class="scroll-mt-32 rounded-xl border border-danger-200 bg-danger-50 p-5 shadow-sm">
+                <summary class="cursor-pointer list-none text-lg font-semibold text-gray-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Retensi audit <span class="ml-2 text-sm font-normal text-gray-700">Buka untuk meninjau dan menghapus catatan lama.</span></summary>
+                <div class="mt-4">
+                    <p class="text-sm text-gray-700">Jalankan pratinjau terlebih dahulu. Bukti operasional yang dilindungi tidak ikut dihapus.</p>
+                    <div class="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <label class="block flex-1 text-sm font-medium text-gray-800">
+                            Hapus sebelum tanggal
+                            <input wire:model="retentionBefore" type="date" required class="mt-1 block min-h-11 w-full rounded-lg border-gray-300 text-sm shadow-sm">
+                        </label>
+                        <button wire:click="previewRetention" type="button" class="min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-semibold text-gray-800 hover:bg-gray-50">Pratinjau</button>
+                        <button wire:click="executeRetention" type="button" wire:confirm="Jalankan retensi audit berdasarkan pratinjau terbaru? Data yang memenuhi batas akan dihapus dan tidak dapat dipulihkan dari aplikasi." class="min-h-11 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800">Jalankan retensi</button>
+                    </div>
+                    @if ($retentionResult !== '')
+                        <p class="mt-3 text-sm text-gray-700" role="status">{{ $retentionResult }}</p>
+                    @endif
+                </div>
+            </details>
         @endif
 
         @if ($canViewBackups)

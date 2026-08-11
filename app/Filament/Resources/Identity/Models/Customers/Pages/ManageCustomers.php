@@ -17,7 +17,7 @@ final class ManageCustomers extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Nasabah Baru')->using(fn (array $data): User => app(ManageUsers::class)->createCustomer(auth()->user(), [
+            CreateAction::make()->label('Nasabah baru')->using(fn (array $data): User => app(ManageUsers::class)->createCustomer(auth()->user(), [
                 'name' => $data['name'],
                 'phone' => $data['phone'],
                 'email' => $data['email'] ?? null,

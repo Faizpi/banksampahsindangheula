@@ -63,7 +63,13 @@ final class LedgerEntryResource extends Resource
                 TextColumn::make('entry_number')->label('Nomor')->searchable()->sortable(),
                 TextColumn::make('account.user.name')->label('Nasabah')->searchable(),
                 TextColumn::make('direction')->label('Arah')->badge(),
-                TextColumn::make('kind')->label('Jenis')->badge(),
+                TextColumn::make('kind')->label('Jenis')->formatStateUsing(fn (string $state): string => match ($state) {
+                    LedgerEntry::KIND_DEPOSIT => 'Setoran',
+                    LedgerEntry::KIND_CORRECTION => 'Koreksi',
+                    LedgerEntry::KIND_REVERSAL => 'Pembalikan',
+                    LedgerEntry::KIND_ADJUSTMENT => 'Penyesuaian',
+                    default => $state,
+                })->badge(),
                 TextColumn::make('amount')->label('Nominal')->money('IDR')->sortable(),
                 TextColumn::make('balance_after')->label('Saldo setelah')->money('IDR'),
                 TextColumn::make('effective_at')->label('Waktu efektif')->dateTime('d M Y H:i')->sortable(),
@@ -76,7 +82,7 @@ final class LedgerEntryResource extends Resource
                 SelectFilter::make('kind')->options([
                     LedgerEntry::KIND_DEPOSIT => 'Setoran',
                     LedgerEntry::KIND_CORRECTION => 'Koreksi',
-                    LedgerEntry::KIND_REVERSAL => 'Reversal',
+                    LedgerEntry::KIND_REVERSAL => 'Pembalikan',
                 ]),
             ])
             ->headerActions([
@@ -88,7 +94,7 @@ final class LedgerEntryResource extends Resource
                         Select::make('owner_id')->label('Nasabah')->options(fn (): array => User::query()->where('status', 'aktif')->orderBy('name')->pluck('name', 'id')->all())->searchable()->required(),
                         TextInput::make('delta')->label('Dampak saldo (Rp)')->numeric()->integer()->rule('not_in:0')->required(),
                         Textarea::make('reason')->label('Alasan')->minLength(10)->maxLength(1000)->required(),
-                        TextInput::make('idempotency_key')->label('Idempotency key')->default(fn (): string => 'ledger-adjust-'.str()->uuid())->required(),
+                        TextInput::make('idempotency_key')->label('Kunci pencegah duplikasi')->default(fn (): string => 'ledger-adjust-'.str()->uuid())->required(),
                     ])
                     ->action(function (array $data): void {
                         app(LedgerService::class)->adjust(self::actor(), User::query()->findOrFail((int) $data['owner_id']), (int) $data['delta'], (string) $data['reason'], (string) $data['idempotency_key']);

@@ -6,7 +6,7 @@
     {{-- Page Header --}}
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <p class="text-label font-semibold text-forest-600">Laporan operasional</p>
+            <p class="text-label font-semibold text-forest-600">Laporan transaksi</p>
             <h1 id="reports-title" class="mt-1 text-h1 font-bold text-deep-green">Laporan {{ $reportTypes[$reportType] }}</h1>
             <p class="mt-2 text-body text-text-secondary">Pilih periode, lihat ringkasan, lalu unduh Excel.</p>
         </div>
@@ -56,7 +56,7 @@
             @endif
             <x-ui.select wire:model="serviceAreaId" name="serviceAreaId" label="Area pelayanan (opsional)" :options="$serviceAreas->all()"><option value="">Semua area</option></x-ui.select>
             <x-ui.select wire:model="status" name="status" label="Status (opsional)" :options="$statusOptions"><option value="">Semua status</option></x-ui.select>
-            <x-ui.input wire:model="search" name="search" label="Cari nomor" hint="Nomor transaksi." />
+            <x-ui.input wire:model="search" name="search" label="Nomor transaksi" placeholder="Contoh: STR-2026-001" />
             <x-ui.button type="submit" wire:loading.attr="disabled" class="lg:self-end">
                 <span wire:loading.remove>Terapkan</span>
                 <span wire:loading>Memuat...</span>
@@ -75,7 +75,7 @@
         </x-ui.button>
     </x-ui.panel>
 
-    <x-ui.panel title="Hasil laporan" description="Read-only. Data mengikuti scope dan filter yang diterapkan.">
+    <x-ui.panel title="Hasil laporan" description="Data hanya dapat dilihat dan mengikuti cakupan akses serta filter yang dipilih.">
         <div class="grid gap-3 md:hidden">
             @forelse ($rows as $row)
                 <article class="rounded-md border border-border bg-warm-canvas p-4">
@@ -83,7 +83,7 @@
                     <dl class="mt-3 grid gap-2 text-body-sm"><div><dt class="text-text-secondary">Waktu</dt><dd class="font-semibold text-deep-green">{{ $row['date'] }}</dd></div><div><dt class="text-text-secondary">Subjek</dt><dd class="font-semibold text-deep-green">{{ $row['subject_id'] }}</dd></div><div><dt class="text-text-secondary">Nilai</dt><dd class="amount-tabular font-semibold text-deep-green">{{ $row['amount'] === '' ? '—' : 'Rp '.number_format((int) $row['amount'], 0, ',', '.') }}</dd></div></dl>
                 </article>
             @empty
-                <x-ui.empty-state title="Belum ada data" description="Tidak ada data untuk filter ini." />
+                <x-ui.empty-state kind="no-results" title="Tidak ada hasil" description="Ubah periode atau hapus filter untuk melihat data lain." />
             @endforelse
         </div>
         <div class="hidden overflow-x-auto md:block">
@@ -107,7 +107,7 @@
                             <td class="px-3 py-2 text-right amount-tabular">{{ $row['amount'] === '' ? '—' : 'Rp '.number_format((int) $row['amount'], 0, ',', '.') }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-3 py-6 text-center text-text-secondary">Tidak ada data untuk filter ini.</td></tr>
+                        <tr><td colspan="5" class="px-3 py-6 text-center text-text-secondary">Tidak ada hasil. Ubah periode atau hapus filter.</td></tr>
                     @endforelse
                 </tbody>
             </table>

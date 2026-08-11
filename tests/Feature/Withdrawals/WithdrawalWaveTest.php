@@ -213,7 +213,7 @@ final class WithdrawalWaveTest extends TestCase
 
         Livewire::actingAs($petugas)
             ->test(WithdrawalPayments::class)
-            ->assertSee('Bendahara atau petugas yang ditugaskan sebagai payer');
+            ->assertSee('Pembayaran hanya untuk Bendahara atau petugas yang ditugaskan.');
 
         $this->expectException(AuthorizationException::class);
         $service->pay($petugas, $withdrawal, 'kartu_nasabah', (string) $customer->customerProfile?->customer_number, UploadedFile::fake()->image('unassigned.png'), 'w6-role-boundary-payment-0001');

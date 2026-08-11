@@ -25,11 +25,11 @@ final class PermissionResource extends Resource
 
     protected static ?int $navigationSort = 70;
 
-    protected static ?string $navigationLabel = 'Permission';
+    protected static ?string $navigationLabel = 'Izin';
 
-    protected static ?string $modelLabel = 'permission';
+    protected static ?string $modelLabel = 'izin';
 
-    protected static ?string $pluralModelLabel = 'permission';
+    protected static ?string $pluralModelLabel = 'izin';
 
     protected static ?string $recordTitleAttribute = 'name';
 
@@ -45,7 +45,7 @@ final class PermissionResource extends Resource
             ->columns([
                 TextColumn::make('name')->label('Nama')->searchable()->sortable(),
                 TextColumn::make('description')->label('Deskripsi')->limit(80)->searchable(),
-                TextColumn::make('roles_count')->label('Role')->counts('roles')->sortable(),
+                TextColumn::make('roles_count')->label('Peran')->counts('roles')->sortable(),
             ]);
     }
 

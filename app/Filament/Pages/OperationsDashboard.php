@@ -114,7 +114,7 @@ final class OperationsDashboard extends Page
     public function toggleMaintenance(): void
     {
         if (trim($this->maintenanceReason) === '') {
-            $this->maintenanceReason = 'Perubahan status maintenance dari kontrol teknis.';
+            throw ValidationException::withMessages(['maintenanceReason' => 'Alasan perubahan wajib diisi.']);
         }
         app(OperationalSettingsService::class)->setMaintenance($this->actor(), ! $this->maintenanceEnabled, $this->maintenanceReason);
         $this->maintenanceEnabled = app()->maintenanceMode()->active();
@@ -126,7 +126,7 @@ final class OperationsDashboard extends Page
         $preview = app(AuditRetentionService::class)->preview($this->actor(), $this->retentionBefore);
         $this->retentionPreviewBefore = $this->retentionBefore;
         $this->retentionPreviewedAt = now()->toIso8601String();
-        $this->retentionResult = sprintf('Kandidat hapus: %d; dilindungi: %d.', $preview->deletableCount, $preview->protectedCount);
+        $this->retentionResult = sprintf('Akan dihapus: %d; dilindungi: %d.', $preview->deletableCount, $preview->protectedCount);
     }
 
     public function executeRetention(): void
@@ -164,7 +164,7 @@ final class OperationsDashboard extends Page
             correlationId: $this->correlationId(),
         ));
 
-        session()->flash('operations_notice', 'Metadata backup tercatat. Dump database dan penyalinan media tetap dijalankan melalui SOP/deployment. ID: '.$backup->getKey());
+        session()->flash('operations_notice', 'Metadata cadangan tercatat. Penyalinan database dan media tetap dijalankan melalui prosedur penerapan. ID: '.$backup->getKey());
         $this->resetBackupFields();
     }
 
@@ -188,7 +188,7 @@ final class OperationsDashboard extends Page
             correlationId: $this->correlationId(),
         );
 
-        session()->flash('operations_notice', 'Hasil verifikasi restore tercatat. Aplikasi tidak menjalankan restore atau menyentuh artifact.');
+        session()->flash('operations_notice', 'Hasil verifikasi pemulihan tercatat. Aplikasi tidak menjalankan pemulihan atau menyentuh berkas cadangan.');
         $this->restoreBackupId = '';
         $this->restoreTargetAlias = '';
         $this->restoreEvidenceReference = '';
