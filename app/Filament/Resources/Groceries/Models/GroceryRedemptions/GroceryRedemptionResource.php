@@ -50,7 +50,6 @@ final class GroceryRedemptionResource extends Resource
             TextColumn::make('customer.name')->label('Warga')->searchable(),
             TextColumn::make('package.name')->label('Paket')->searchable(),
             TextColumn::make('value_snapshot')->label('Nilai')->money('IDR'),
-            TextColumn::make('source_type')->label('Sumber')->badge(),
             TextColumn::make('status')->label('Status')->badge(),
             TextColumn::make('approver.name')->label('Approver')->placeholder('Belum diputuskan'),
         ])->recordActions([

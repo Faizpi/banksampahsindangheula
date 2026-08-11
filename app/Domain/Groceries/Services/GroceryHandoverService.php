@@ -6,7 +6,6 @@ namespace App\Domain\Groceries\Services;
 
 use App\Authorization\PermissionChecker;
 use App\Domain\AuditReconciliation\Services\AuditLogger;
-use App\Domain\Groceries\Enums\GrocerySource;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryRedemption;
 use App\Domain\Identity\Queries\VisibleUsers;
@@ -82,7 +81,7 @@ final readonly class GroceryHandoverService
                 }
                 $old = $locked->status;
                 $media->forceFill(['attachable_type' => GroceryRedemption::class, 'attachable_id' => $locked->id])->save();
-                $entry = $locked->source_type === GrocerySource::Balance ? $this->ledger->convertHold($locked->balanceHold()->firstOrFail(), 'grocery:'.$locked->id.':handover') : null;
+                $entry = $this->ledger->convertHold($locked->balanceHold()->firstOrFail(), 'grocery:'.$locked->id.':handover');
                 $locked->forceFill([
                     'status' => GroceryStatus::Completed,
                     'handover_actor_id' => $actor->id,
@@ -90,10 +89,10 @@ final readonly class GroceryHandoverService
                     'recipient_verification' => $verification,
                     'recipient_reference' => $reference,
                     'proof_media_id' => $media->id,
-                    'receipt_ledger_entry_id' => $entry?->id,
+                    'receipt_ledger_entry_id' => $entry->id,
                 ])->save();
                 $locked->statusHistory()->create(['old_status' => $old->value, 'new_status' => GroceryStatus::Completed->value, 'actor_id' => $actor->id, 'reason' => 'Penerima diverifikasi dan paket diserahkan.', 'occurred_at' => now()]);
-                $this->auditLogger->record($actor, 'grocery.handed_over', $locked, ['status' => $old->value], ['status' => GroceryStatus::Completed->value, 'ledger_entry_id' => $entry?->id, 'proof_media_id' => $media->id], $this->correlationId());
+                $this->auditLogger->record($actor, 'grocery.handed_over', $locked, ['status' => $old->value], ['status' => GroceryStatus::Completed->value, 'ledger_entry_id' => $entry->id, 'proof_media_id' => $media->id], $this->correlationId());
                 $key->forceFill(['status' => 'succeeded', 'result_type' => GroceryRedemption::class, 'result_id' => $locked->id])->save();
                 $this->notify($locked);
 

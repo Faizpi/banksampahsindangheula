@@ -26,10 +26,6 @@
                 <dd class="mt-0.5 amount-tabular font-bold text-deep-green">Rp{{ number_format($redemption->value_snapshot, 0, ',', '.') }}</dd>
             </div>
             <div class="rounded-lg bg-warm-canvas px-3 py-2">
-                <dt class="text-caption font-medium text-text-secondary">Sumber</dt>
-                <dd class="mt-0.5 font-semibold text-deep-green">{{ $redemption->source_type->value === 'saldo' ? 'Saldo warga' : 'Bantuan gratis' }}</dd>
-            </div>
-            <div class="rounded-lg bg-warm-canvas px-3 py-2">
                 <dt class="text-caption font-medium text-text-secondary">Status</dt>
                 <dd class="mt-0.5 font-semibold text-deep-green">{{ ucwords(str_replace('_', ' ', $redemption->status->value)) }}</dd>
             </div>
