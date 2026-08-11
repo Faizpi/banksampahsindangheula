@@ -15,7 +15,6 @@ use App\Domain\CustomersRegions\Models\Rt;
 use App\Domain\CustomersRegions\Models\Rw;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Deposits\Models\Deposit;
-use App\Domain\Groceries\Enums\GrocerySource;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryPackage;
 use App\Domain\Groceries\Models\GroceryRedemption;
@@ -137,7 +136,7 @@ final class Wave9ContractsTest extends TestCase
         GroceryRedemption::query()->create([
             'request_number' => 'GRC-W9-DATE', 'customer_id' => $actor->id, 'requested_by_id' => $actor->id,
             'grocery_package_id' => $package->id, 'value_snapshot' => 20_000, 'package_snapshot' => ['code' => 'W9-PACKAGE'],
-            'source_type' => GrocerySource::FreeAid, 'status' => GroceryStatus::Completed, 'handed_over_at' => $groceryAt,
+            'status' => GroceryStatus::Completed, 'handed_over_at' => $groceryAt,
         ]);
         $dusun = Dusun::query()->create(['code' => 'W9-DS', 'name' => 'Dusun W9', 'is_active' => true]);
         $rw = Rw::query()->create(['dusun_id' => $dusun->id, 'code' => 'W9-RW', 'name' => 'RW W9', 'is_active' => true]);

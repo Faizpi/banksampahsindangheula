@@ -6,6 +6,8 @@ namespace Tests\Feature\Dashboard;
 
 use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
+use App\Domain\Withdrawals\Enums\WithdrawalStatus;
+use App\Domain\Withdrawals\Models\WithdrawalRequest;
 use App\Http\Middleware\EnsureSessionIsFresh;
 use App\Http\Middleware\RequirePermission;
 use App\Livewire\Citizen\Dashboard;
@@ -53,6 +55,32 @@ final class RoleDashboardTest extends TestCase
         $this->actingAs($actor);
 
         Livewire::test(Dashboard::class)->assertForbidden();
+    }
+
+    public function test_citizen_dashboard_excludes_paid_withdrawals_from_active_requests(): void
+    {
+        $citizen = User::factory()->create(['name' => 'Siti Aman']);
+        $this->grant($citizen, 'warga', 'profile.view');
+        WithdrawalRequest::query()->create([
+            'request_number' => 'WDR-DASHBOARD-AKTIF',
+            'customer_id' => $citizen->id,
+            'requested_by_id' => $citizen->id,
+            'amount' => 12_345,
+            'status' => WithdrawalStatus::PendingVerification,
+        ]);
+        WithdrawalRequest::query()->create([
+            'request_number' => 'WDR-DASHBOARD-DIBAYAR',
+            'customer_id' => $citizen->id,
+            'requested_by_id' => $citizen->id,
+            'amount' => 54_321,
+            'status' => WithdrawalStatus::Paid,
+        ]);
+
+        $this->actingAs($citizen)
+            ->get(route('citizen.dashboard'))
+            ->assertOk()
+            ->assertSee('Rp12.345')
+            ->assertDontSee('Rp54.321');
     }
 
     public function test_officer_dashboard_renders_a_safe_task_empty_state_without_listing_visible_users(): void

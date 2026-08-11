@@ -5,11 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire\Officer;
 
 use App\Authorization\PermissionChecker;
-use App\Domain\Groceries\Enums\GrocerySource;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryRedemption;
 use App\Domain\Groceries\Services\GroceryService;
-use App\Domain\Identity\Queries\VisibleUsers;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
@@ -32,19 +30,12 @@ final class GroceryTasks extends Component
 
     public string $idempotencyKey = '';
 
-    public string $freeAidCustomerId = '';
-
-    public string $freeAidPackageId = '';
-
-    public string $freeAidIdempotencyKey = '';
-
     public function mount(PermissionChecker $permissions): void
     {
         /** @var User|null $actor */
         $actor = auth()->user();
         abort_unless($actor instanceof User && ($permissions->allows($actor, 'grocery.prepare') || $permissions->allows($actor, 'grocery.handover')), 403);
         $this->idempotencyKey = (string) str()->uuid();
-        $this->freeAidIdempotencyKey = (string) str()->uuid();
     }
 
     public function prepare(int $redemptionId, GroceryService $service): void
@@ -73,24 +64,6 @@ final class GroceryTasks extends Component
         $this->idempotencyKey = (string) str()->uuid();
     }
 
-    public function createFreeAid(GroceryService $service): void
-    {
-        /** @var User $actor */
-        $actor = auth()->user();
-        $this->validate([
-            'freeAidCustomerId' => ['required', 'integer', 'min:1'],
-            'freeAidPackageId' => ['required', 'integer', 'min:1'],
-        ]);
-        $service->request($actor, [
-            'customer_id' => (int) $this->freeAidCustomerId,
-            'package_id' => (int) $this->freeAidPackageId,
-            'source_type' => GrocerySource::FreeAid->value,
-        ], $this->freeAidIdempotencyKey);
-        session()->flash('success', 'Bantuan gratis berhasil dicatat tanpa hold dan tanpa saldo keluar.');
-        $this->reset(['freeAidCustomerId', 'freeAidPackageId']);
-        $this->freeAidIdempotencyKey = (string) str()->uuid();
-    }
-
     public function handover(GroceryService $service): void
     {
         /** @var User $actor */
@@ -106,37 +79,23 @@ final class GroceryTasks extends Component
             return;
         }
         $service->handover($actor, $this->redemption((int) $this->selectedRedemptionId), $this->recipientVerification, $this->recipientReference, $this->proof, $this->idempotencyKey);
-        session()->flash('success', 'Handover tercatat dan saldo keluar dibuat bila sumbernya saldo.');
+        session()->flash('success', 'Handover tercatat dan saldo warga berhasil dikurangi.');
         $this->reset(['selectedRedemptionId', 'recipientReference', 'proof']);
         $this->idempotencyKey = (string) str()->uuid();
     }
 
-    public function render(GroceryService $service, PermissionChecker $permissions, VisibleUsers $visibleUsers): View
+    public function render(GroceryService $service, PermissionChecker $permissions): View
     {
         /** @var User $actor */
         $actor = auth()->user();
-        $customers = $visibleUsers->queryFor($actor)
-            ->where('users.id', '<>', $actor->id)
-            ->whereHas('customerProfile')
-            ->orderBy('name')
-            ->get(['users.id', 'users.name']);
-
         $canPrepare = $permissions->allows($actor, 'grocery.prepare');
         $canHandover = $permissions->allows($actor, 'grocery.handover');
-        $canCreateFreeAid = $permissions->allows($actor, 'grocery.request')
-            && $permissions->allows($actor, 'grocery.package.view');
         $redemptions = $permissions->allows($actor, 'grocery.view')
             ? $service->visibleFor($actor)->whereIn('status', [GroceryStatus::Approved, GroceryStatus::Preparing, GroceryStatus::ReadyForPickup])->latest()->get()
             : ($canHandover ? $service->readyForHandover($actor)->latest()->get() : collect());
-        $packageOptions = $canCreateFreeAid
-            ? $service->activePackages($actor)->get()->pluck('name', 'id')->all()
-            : [];
 
         return view('livewire.officer.grocery-tasks', [
             'redemptions' => $redemptions,
-            'customerOptions' => $customers->pluck('name', 'id')->all(),
-            'packageOptions' => $packageOptions,
-            'canCreateFreeAid' => $canCreateFreeAid,
             'canPrepare' => $canPrepare,
             'canHandover' => $canHandover,
         ]);

@@ -12,7 +12,6 @@ use App\Domain\CustomersRegions\Models\Rw;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Deposits\Models\Deposit;
 use App\Domain\Deposits\Models\DepositItem;
-use App\Domain\Groceries\Enums\GrocerySource;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryPackage;
 use App\Domain\Groceries\Models\GroceryRedemption;
@@ -251,7 +250,6 @@ final class ReportSemanticsTest extends TestCase
             'grocery_package_id' => $package->id,
             'value_snapshot' => $value,
             'package_snapshot' => ['code' => $package->code, 'value' => $value],
-            'source_type' => GrocerySource::FreeAid,
             'status' => GroceryStatus::Completed,
             'handed_over_at' => '2026-08-01 12:00:00',
         ]);

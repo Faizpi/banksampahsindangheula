@@ -19,24 +19,6 @@
         <x-ui.success-state title="Berhasil" :description="session('success')" />
     @endif
 
-    {{-- Free Aid Form --}}
-    @if ($canCreateFreeAid)
-        <x-ui.panel title="Catat bantuan gratis" description="Bantuan gratis tidak membuat hold dan tidak menghasilkan saldo keluar. Persetujuan dan handover tetap mengikuti state machine.">
-            <div class="grid gap-4 md:grid-cols-2">
-                <x-ui.select wire:model="freeAidCustomerId" label="Warga penerima" name="freeAidCustomerId"
-                    :options="$customerOptions"
-                    :error="$errors->first('freeAidCustomerId')" />
-                <x-ui.select wire:model="freeAidPackageId" label="Paket" name="freeAidPackageId"
-                    :options="$packageOptions"
-                    :error="$errors->first('freeAidPackageId')" />
-                <x-ui.button type="button" wire:click="createFreeAid" wire:loading.attr="disabled" class="md:col-span-2 md:justify-self-start">
-                    <span wire:loading.remove>Catat Bantuan Gratis</span>
-                    <span wire:loading>Memproses...</span>
-                </x-ui.button>
-            </div>
-        </x-ui.panel>
-    @endif
-
     {{-- Redemption Tasks --}}
     @forelse ($redemptions as $redemption)
         <x-ui.panel :title="$redemption->request_number" :description="$redemption->customer?->name ?? 'Warga'">
@@ -54,6 +36,10 @@
                     <div class="rounded-lg bg-warm-canvas px-3 py-2">
                         <dt class="text-caption font-medium text-text-secondary">Status</dt>
                         <dd class="mt-0.5 font-semibold text-deep-green">{{ str_replace('_', ' ', ucfirst($redemption->status->value)) }}</dd>
+                    </div>
+                    <div class="rounded-lg bg-warm-canvas px-3 py-2 sm:col-span-3">
+                        <dt class="text-caption font-medium text-text-secondary">Isi paket</dt>
+                        <dd class="mt-0.5 whitespace-pre-line font-semibold text-deep-green">{{ $redemption->package_snapshot['contents'] ?? $redemption->package?->contents ?? 'Tidak tersedia' }}</dd>
                     </div>
                 </dl>
 

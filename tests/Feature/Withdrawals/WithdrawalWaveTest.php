@@ -20,6 +20,8 @@ use App\Domain\Notifications\Events\NotificationRequested;
 use App\Domain\Withdrawals\Enums\WithdrawalStatus;
 use App\Domain\Withdrawals\Models\WithdrawalRequest;
 use App\Domain\Withdrawals\Services\WithdrawalService;
+use App\Livewire\Citizen\WithdrawalRequestForm;
+use App\Livewire\Citizen\WithdrawalShow;
 use App\Livewire\Treasurer\WithdrawalPayments;
 use App\Models\User;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -82,6 +84,28 @@ final class WithdrawalWaveTest extends TestCase
         $service->request($customer, $payload + ['amount' => 10_000], 'w6-conflict-key-0001');
         $this->expectException(ValidationException::class);
         $service->request($customer, $payload + ['amount' => 11_000], 'w6-conflict-key-0001');
+    }
+
+    public function test_citizen_withdrawal_form_blocks_amount_above_available_balance_before_request(): void
+    {
+        [$customer] = $this->context();
+        $this->grant($customer, ['withdrawal.request']);
+        $this->credit($customer, 20_000);
+
+        Livewire::actingAs($customer)
+            ->test(WithdrawalRequestForm::class)
+            ->assertSee('Saldo tersedia')
+            ->assertSee('Rp20.000')
+            ->assertSeeHtml('wire:model.live.debounce.300ms="amount"')
+            ->set('amount', '30000')
+            ->assertHasErrors(['amount'])
+            ->assertSee('Nominal melebihi saldo tersedia.')
+            ->set('pickupLocation', 'Balai warga')
+            ->call('submit')
+            ->assertHasErrors(['amount']);
+
+        self::assertDatabaseCount('withdrawal_requests', 0);
+        self::assertDatabaseCount('balance_holds', 0);
     }
 
     public function test_lane_a_requested_amount_is_immutable_after_creation(): void
@@ -288,6 +312,28 @@ final class WithdrawalWaveTest extends TestCase
 
         $this->expectException(AuthorizationException::class);
         $service->cancel($customer, $approved, 'Warga mencoba membatalkan setelah persetujuan.');
+    }
+
+    public function test_citizen_withdrawal_page_only_shows_the_cancel_button_while_pending_verification(): void
+    {
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view', 'withdrawal.cancel']);
+        $this->credit($customer, 80_000);
+        $approver = User::factory()->create();
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $service = app(WithdrawalService::class);
+        $pending = $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-cancel-button-pending-0001');
+        $approved = $service->approve($approver, $pending, true);
+
+        Livewire::actingAs($customer)
+            ->test(WithdrawalShow::class, ['withdrawal' => $approved])
+            ->assertDontSee('Batalkan Pengajuan');
+
+        $secondPending = $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-cancel-button-second-0001');
+
+        Livewire::actingAs($customer)
+            ->test(WithdrawalShow::class, ['withdrawal' => $secondPending])
+            ->assertSee('Batalkan Pengajuan');
     }
 
     public function test_lane_d_cancel_and_expiry_release_hold_once_and_never_create_balance_out(): void

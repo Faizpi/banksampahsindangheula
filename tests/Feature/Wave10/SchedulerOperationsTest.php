@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use App\Domain\AuditReconciliation\Models\AuditLog;
-use App\Domain\Groceries\Enums\GrocerySource;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryPackage;
 use App\Domain\Groceries\Models\GroceryRedemption;
@@ -234,7 +233,6 @@ function w10ExpiredGrocery(): GroceryRedemption
         'grocery_package_id' => $package->id,
         'value_snapshot' => $package->value,
         'package_snapshot' => ['code' => $package->code, 'name' => $package->name, 'contents' => $package->contents, 'value' => $package->value],
-        'source_type' => GrocerySource::Balance,
         'status' => GroceryStatus::ReadyForPickup,
         'expires_at' => now()->subMinute(),
     ]);

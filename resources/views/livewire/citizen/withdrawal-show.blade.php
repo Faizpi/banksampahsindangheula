@@ -53,7 +53,7 @@
         ])->all()" />
     </x-ui.panel>
 
-    @if (in_array($withdrawal->status->value, ['menunggu_verifikasi', 'disetujui', 'siap_diambil'], true))
+    @if ($withdrawal->status->value === 'menunggu_verifikasi')
         <button type="button" wire:click="cancel"
             wire:confirm="Batalkan pengajuan pencairan ini? Hold akan dilepas."
             class="inline-flex min-h-touch items-center justify-center rounded-xl border-2 border-terracotta px-5 text-label font-bold text-terracotta transition hover:bg-danger-bg">

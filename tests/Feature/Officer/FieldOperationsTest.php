@@ -207,7 +207,6 @@ final class FieldOperationsTest extends TestCase
             'grocery_package_id' => $package->id,
             'value_snapshot' => $package->value,
             'package_snapshot' => ['name' => $package->name, 'value' => $package->value],
-            'source_type' => 'bantuan_gratis',
             'status' => GroceryStatus::Approved,
         ]);
 

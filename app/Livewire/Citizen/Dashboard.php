@@ -10,6 +10,7 @@ use App\Domain\Ledger\Models\BalanceHold;
 use App\Domain\Ledger\Models\LedgerAccount;
 use App\Domain\Ledger\Models\LedgerEntry;
 use App\Domain\Pickups\Models\PickupRequest;
+use App\Domain\Withdrawals\Enums\WithdrawalStatus;
 use App\Domain\Withdrawals\Models\WithdrawalRequest;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
@@ -67,7 +68,12 @@ final class Dashboard extends Component
         // Active withdrawal requests
         $activeWithdrawals = WithdrawalRequest::query()
             ->where('customer_id', $actor->id)
-            ->whereNotIn('status', ['dibayar', 'ditolak', 'dibatalkan'])
+            ->whereNotIn('status', [
+                WithdrawalStatus::Paid->value,
+                WithdrawalStatus::Rejected->value,
+                WithdrawalStatus::Cancelled->value,
+                WithdrawalStatus::Expired->value,
+            ])
             ->latest()
             ->take(3)
             ->get();
