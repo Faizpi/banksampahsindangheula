@@ -64,6 +64,23 @@ final class FieldOperationsTest extends TestCase
         self::assertDatabaseCount('deposits', 0);
     }
 
+    public function test_pickup_task_exposes_placeholders_and_photo_capture_controls(): void
+    {
+        $officer = $this->userWith('pickup.view', 'pickup.execute', 'pickup.complete');
+        $this->wasteContext();
+        $pickup = $this->scheduledPickup($officer);
+        $this->actingAs($officer);
+
+        Livewire::test(PickupTask::class, ['pickup' => $pickup])
+            ->call('begin')
+            ->call('markPickedUp')
+            ->assertSee('Pilih jenis sampah')
+            ->assertSee('Pilih kondisi')
+            ->assertSee('Ambil dari kamera')
+            ->assertSee('Pilih dari galeri')
+            ->assertSee('wire:model="evidence"', escape: false);
+    }
+
     public function test_pickup_task_rejects_invalid_actual_items_before_financial_service(): void
     {
         $officer = $this->userWith('pickup.view', 'pickup.execute', 'pickup.complete');
@@ -76,7 +93,9 @@ final class FieldOperationsTest extends TestCase
             ->call('markPickedUp')
             ->set('actualItems', [['waste_type_id' => '', 'condition_id' => '', 'weight_kg' => 'not-a-weight']])
             ->call('complete')
-            ->assertHasErrors(['actualItems.0.waste_type_id', 'actualItems.0.condition_id', 'actualItems.0.weight_kg']);
+            ->assertHasErrors(['actualItems.0.waste_type_id', 'actualItems.0.condition_id', 'actualItems.0.weight_kg'])
+            ->assertSee('Jenis sampah wajib dipilih.')
+            ->assertSee('Kondisi sampah wajib dipilih.');
 
         self::assertSame(PickupStatus::PickedUp, $pickup->fresh()->status);
         self::assertDatabaseCount('deposits', 0);

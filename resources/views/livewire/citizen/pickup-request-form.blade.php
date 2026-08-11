@@ -88,7 +88,7 @@
         @if ($step === 1)
             <x-ui.panel title="Lokasi dan tanggal layanan" description="Pilih area aktif dan tanggal yang masih tersedia.">
                 <div class="grid gap-4 md:grid-cols-2">
-                    <x-ui.select wire:model="serviceAreaId" label="Area pelayanan" name="serviceAreaId" :options="$areas->pluck('name', 'id')->all()" :error="$errors->first('serviceAreaId')" />
+                    <x-ui.select wire:model="serviceAreaId" label="Area pelayanan" name="serviceAreaId" placeholder="Pilih area pelayanan" :options="$areas->pluck('name', 'id')->all()" :error="$errors->first('serviceAreaId')" />
                     <x-ui.input wire:model="selectedDate" label="Tanggal pilihan" name="selectedDate" type="date" :error="$errors->first('selectedDate')" />
                     <x-ui.textarea wire:model="address" label="Alamat penjemputan" name="address" rows="4" class="md:col-span-2" :error="$errors->first('address')" />
                     <x-ui.textarea wire:model="notes" label="Catatan akses (opsional)" name="notes" rows="3" class="md:col-span-2"
@@ -103,7 +103,7 @@
                 <div class="grid gap-3">
                     @foreach ($items as $index => $item)
                         <div wire:key="pickup-item-{{ $index }}" class="grid gap-3 rounded-md border border-border bg-warm-canvas p-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
-                            <x-ui.select wire:model="items.{{ $index }}.waste_type_id" label="Jenis sampah" name="items.{{ $index }}.waste_type_id"
+                            <x-ui.select wire:model="items.{{ $index }}.waste_type_id" label="Jenis sampah" name="items.{{ $index }}.waste_type_id" placeholder="Pilih jenis sampah"
                                 :options="$types->pluck('name', 'id')->all()" :error="$errors->first('items.'.$index.'.waste_type_id')" />
                             <x-ui.input wire:model="items.{{ $index }}.estimated_weight_kg" label="Perkiraan berat (kg)" name="items.{{ $index }}.estimated_weight_kg" inputmode="decimal"
                                 :error="$errors->first('items.'.$index.'.estimated_weight_kg')" />

@@ -17,11 +17,11 @@
     {{-- Calculator Form --}}
     <x-ui.panel title="Hitung estimasi" description="Pilih jenis, kondisi, dan masukkan perkiraan berat Anda.">
         <form wire:submit="calculate" class="grid gap-5">
-            <x-ui.select wire:model="wasteTypeId" label="Jenis sampah" name="wasteTypeId"
+            <x-ui.select wire:model="wasteTypeId" label="Jenis sampah" name="wasteTypeId" placeholder="Pilih jenis sampah"
                 :options="$types->pluck('name', 'id')->all()"
                 :error="$errors->first('wasteTypeId')" />
 
-            <x-ui.select wire:model="conditionId" label="Kondisi" name="conditionId"
+            <x-ui.select wire:model="conditionId" label="Kondisi" name="conditionId" placeholder="Pilih kondisi"
                 :options="$conditions->pluck('name', 'id')->all()"
                 :error="$errors->first('conditionId')" />
 

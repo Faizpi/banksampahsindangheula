@@ -314,43 +314,68 @@ final readonly class PickupService
     /**
      * @param  list<array<string, mixed>|DepositItemInput>  $actualItems
      */
-    public function complete(User $actor, PickupRequest $pickup, array $actualItems, string $idempotencyKey): PickupRequest
+    public function complete(User $actor, PickupRequest $pickup, array $actualItems, string $idempotencyKey, ?UploadedFile $evidence = null): PickupRequest
     {
         $this->authorize($actor, 'pickup.complete');
         $this->assertRecordScope($actor, $pickup, true);
         $this->validateIdempotencyKey($idempotencyKey);
+        $this->assertCompletionEvidence($pickup, $evidence);
         $normalized = array_map(static fn (array|DepositItemInput $item): DepositItemInput => $item instanceof DepositItemInput ? $item : DepositItemInput::fromArray($item), $actualItems);
         if ($normalized === []) {
             throw ValidationException::withMessages(['items' => 'Minimal satu hasil timbang diperlukan.']);
         }
-        $payloadHash = hash('sha256', json_encode(['pickup' => $pickup->id, 'items' => array_map(static fn (DepositItemInput $item): array => [$item->wasteTypeId, $item->conditionId, $item->weightKg], $normalized)], JSON_THROW_ON_ERROR));
+        $evidenceChecksum = $evidence === null ? null : hash_file('sha256', $evidence->getRealPath());
+        if ($evidence !== null && ! is_string($evidenceChecksum)) {
+            throw ValidationException::withMessages(['evidence' => 'Bukti foto penjemputan tidak dapat dibaca.']);
+        }
+        $payloadHash = hash('sha256', json_encode([
+            'pickup' => $pickup->id,
+            'items' => array_map(static fn (DepositItemInput $item): array => [$item->wasteTypeId, $item->conditionId, $item->weightKg], $normalized),
+            'evidence_checksum' => $evidenceChecksum,
+        ], JSON_THROW_ON_ERROR));
+        $media = null;
 
-        return DB::transaction(function () use ($actor, $pickup, $normalized, $idempotencyKey, $payloadHash): PickupRequest {
-            $existingKey = IdempotencyKey::query()->where('actor_id', $actor->id)->where('scope', self::IDEMPOTENCY_COMPLETE_SCOPE)->where('key', $idempotencyKey)->lockForUpdate()->first();
-            if ($existingKey !== null) {
-                $this->assertSamePayload($existingKey, $payloadHash);
+        try {
+            return DB::transaction(function () use ($actor, $pickup, $normalized, $idempotencyKey, $payloadHash, $evidence, &$media): PickupRequest {
+                $existingKey = IdempotencyKey::query()->where('actor_id', $actor->id)->where('scope', self::IDEMPOTENCY_COMPLETE_SCOPE)->where('key', $idempotencyKey)->lockForUpdate()->first();
+                if ($existingKey !== null) {
+                    $this->assertSamePayload($existingKey, $payloadHash);
 
-                return PickupRequest::query()->findOrFail($existingKey->result_id);
+                    return PickupRequest::query()->findOrFail($existingKey->result_id);
+                }
+                $key = IdempotencyKey::query()->create(['actor_id' => $actor->id, 'scope' => self::IDEMPOTENCY_COMPLETE_SCOPE, 'key' => $idempotencyKey, 'payload_hash' => $payloadHash, 'status' => 'processing']);
+                $locked = $this->lockPickup($pickup);
+                $this->assertTransition($locked, PickupStatus::Completed);
+                if ($locked->status !== PickupStatus::PickedUp) {
+                    throw ValidationException::withMessages(['status' => 'Penjemputan harus berstatus dijemput sebelum diselesaikan.']);
+                }
+                if ($evidence !== null) {
+                    $media = $this->mediaStore->handlePhoto($evidence, $actor);
+                    $media->forceFill([
+                        'attachable_type' => PickupRequest::class,
+                        'attachable_id' => $locked->id,
+                    ])->save();
+                }
+                $customer = $locked->customer()->firstOrFail();
+                $deposit = $this->deposits->createDraft($actor, $customer, 'penjemputan', $locked->address);
+                $deposit->forceFill(['pickup_request_id' => $locked->id])->save();
+                $deposit = $this->deposits->finalize($actor, $deposit, 'pickup-'.$locked->id.'-'.$idempotencyKey, array_map(static fn (DepositItemInput $item): array => ['waste_type_id' => $item->wasteTypeId, 'condition_id' => $item->conditionId, 'weight_kg' => $item->weightKg], $normalized));
+                $oldStatus = $locked->status;
+                $locked->forceFill(['status' => PickupStatus::Completed, 'deposit_id' => $deposit->id, 'completed_at' => now()])->save();
+                $this->recordStatus($locked, $actor, $oldStatus, PickupStatus::Completed, 'Penimbangan aktual dan setoran final berhasil.');
+                $this->auditLogger->record($actor, 'pickup.completed', $locked, ['status' => $oldStatus->value], ['status' => PickupStatus::Completed->value, 'deposit_id' => $deposit->id, 'actual_weight_kg' => $deposit->total_weight_kg], $this->correlationId());
+                $key->forceFill(['status' => 'succeeded', 'result_type' => PickupRequest::class, 'result_id' => $locked->id])->save();
+                $this->notifyStatus($locked, 'Penjemputan selesai', 'Penjemputan '.$locked->request_number.' selesai dan setoran telah dibuat.', 'pickup.completed');
+
+                return $locked->fresh(['items', 'media', 'deposit']);
+            });
+        } catch (Throwable $exception) {
+            if ($media instanceof Media) {
+                $this->deleteStoredMedia($media);
             }
-            $key = IdempotencyKey::query()->create(['actor_id' => $actor->id, 'scope' => self::IDEMPOTENCY_COMPLETE_SCOPE, 'key' => $idempotencyKey, 'payload_hash' => $payloadHash, 'status' => 'processing']);
-            $locked = $this->lockPickup($pickup);
-            $this->assertTransition($locked, PickupStatus::Completed);
-            if ($locked->status !== PickupStatus::PickedUp) {
-                throw ValidationException::withMessages(['status' => 'Penjemputan harus berstatus dijemput sebelum diselesaikan.']);
-            }
-            $customer = $locked->customer()->firstOrFail();
-            $deposit = $this->deposits->createDraft($actor, $customer, 'penjemputan', $locked->address);
-            $deposit->forceFill(['pickup_request_id' => $locked->id])->save();
-            $deposit = $this->deposits->finalize($actor, $deposit, 'pickup-'.$locked->id.'-'.$idempotencyKey, array_map(static fn (DepositItemInput $item): array => ['waste_type_id' => $item->wasteTypeId, 'condition_id' => $item->conditionId, 'weight_kg' => $item->weightKg], $normalized));
-            $oldStatus = $locked->status;
-            $locked->forceFill(['status' => PickupStatus::Completed, 'deposit_id' => $deposit->id, 'completed_at' => now()])->save();
-            $this->recordStatus($locked, $actor, $oldStatus, PickupStatus::Completed, 'Penimbangan aktual dan setoran final berhasil.');
-            $this->auditLogger->record($actor, 'pickup.completed', $locked, ['status' => $oldStatus->value], ['status' => PickupStatus::Completed->value, 'deposit_id' => $deposit->id, 'actual_weight_kg' => $deposit->total_weight_kg], $this->correlationId());
-            $key->forceFill(['status' => 'succeeded', 'result_type' => PickupRequest::class, 'result_id' => $locked->id])->save();
-            $this->notifyStatus($locked, 'Penjemputan selesai', 'Penjemputan '.$locked->request_number.' selesai dan setoran telah dibuat.', 'pickup.completed');
 
-            return $locked->fresh(['items', 'media', 'deposit']);
-        });
+            throw $exception;
+        }
     }
 
     public function cancel(User $actor, PickupRequest $pickup, ?string $reason = null): PickupRequest
@@ -539,6 +564,13 @@ final readonly class PickupService
     {
         if (count($photos) < 1 || count($photos) > 2) {
             throw ValidationException::withMessages(['photos' => 'Unggah minimal satu dan maksimal dua foto.']);
+        }
+    }
+
+    private function assertCompletionEvidence(PickupRequest $pickup, ?UploadedFile $evidence): void
+    {
+        if ($evidence === null && ! $pickup->media()->exists()) {
+            throw ValidationException::withMessages(['evidence' => 'Tambahkan bukti foto penjemputan melalui kamera atau galeri sebelum menyelesaikan tugas.']);
         }
     }
 

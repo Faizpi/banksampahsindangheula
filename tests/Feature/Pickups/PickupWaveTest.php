@@ -237,12 +237,14 @@ final class PickupWaveTest extends TestCase
         $pickup = $service->schedule($admin, $service->review($admin, $pickup, true), $staff);
         $pickup = $service->begin($staff, $pickup);
         $pickup = $service->markPickedUp($staff, $pickup);
-        $completed = $service->complete($staff, $pickup, [['waste_type_id' => $type->id, 'condition_id' => $condition->id, 'weight_kg' => '1.250']], 'w5-complete-key-0001');
-        $retry = $service->complete($staff, $pickup, [['waste_type_id' => $type->id, 'condition_id' => $condition->id, 'weight_kg' => '1.250']], 'w5-complete-key-0001');
+        $evidence = UploadedFile::fake()->image('pickup-evidence.jpg');
+        $completed = $service->complete($staff, $pickup, [['waste_type_id' => $type->id, 'condition_id' => $condition->id, 'weight_kg' => '1.250']], 'w5-complete-key-0001', $evidence);
+        $retry = $service->complete($staff, $pickup, [['waste_type_id' => $type->id, 'condition_id' => $condition->id, 'weight_kg' => '1.250']], 'w5-complete-key-0001', $evidence);
 
         self::assertSame(PickupStatus::Completed, $completed->status);
         self::assertSame('1.250', (string) $completed->deposit->total_weight_kg);
         self::assertSame($completed->deposit_id, $retry->deposit_id);
+        self::assertSame(2, $completed->media()->count());
         self::assertSame(1, Deposit::query()->where('method', 'penjemputan')->count());
         self::assertSame(3_750, (int) $customer->fresh()->ledgerAccount?->availableBalance());
         self::assertSame(1, AuditLog::query()->where('action', 'pickup.completed')->count());

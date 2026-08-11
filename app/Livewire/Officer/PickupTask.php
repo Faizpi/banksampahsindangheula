@@ -13,14 +13,18 @@ use App\Domain\WasteMaster\Models\WasteType;
 use App\Domain\WasteMaster\Services\ResolveWastePrice;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Throwable;
 
 #[Layout('layouts.officer')]
 final class PickupTask extends Component
 {
+    use WithFileUploads;
+
     public PickupRequest $pickup;
 
     /** @var list<array{waste_type_id: string, condition_id: string, weight_kg: string}> */
@@ -29,6 +33,8 @@ final class PickupTask extends Component
     public string $idempotencyKey = '';
 
     public string $failureReason = '';
+
+    public ?UploadedFile $evidence = null;
 
     public bool $failureDialogOpen = false;
 
@@ -85,20 +91,49 @@ final class PickupTask extends Component
         /** @var User $actor */
         $actor = auth()->user();
         $this->assertAssigned($actor);
-        $this->validate([
-            'actualItems' => ['required', 'array', 'min:1'],
-            'actualItems.*.waste_type_id' => ['required', 'integer', 'min:1', 'exists:waste_types,id'],
-            'actualItems.*.condition_id' => ['required', 'integer', 'min:1', 'exists:waste_conditions,id'],
-            'actualItems.*.weight_kg' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
-        ]);
-        if (! $this->pickup->media()->exists()) {
-            $this->addError('evidence', 'Bukti foto penjemputan wajib tersedia sebelum tugas diselesaikan.');
+        $this->validate($this->completionRules(), $this->completionMessages());
+        if ($this->evidence === null && ! $this->pickup->media()->exists()) {
+            $this->addError('evidence', 'Tambahkan bukti foto penjemputan melalui kamera atau galeri sebelum menyelesaikan tugas.');
 
             return;
         }
 
-        $this->pickup = $service->complete($actor, $this->pickup, array_map(static fn (array $item): DepositItemInput => DepositItemInput::fromArray($item), $this->actualItems), $this->idempotencyKey);
+        $this->pickup = $service->complete($actor, $this->pickup, array_map(static fn (array $item): DepositItemInput => DepositItemInput::fromArray($item), $this->actualItems), $this->idempotencyKey, $this->evidence);
+        $this->evidence = null;
         session()->flash('success', 'Penjemputan selesai dan setoran aktual telah dibuat.');
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function completionRules(): array
+    {
+        return [
+            'actualItems' => ['required', 'array', 'min:1'],
+            'actualItems.*.waste_type_id' => ['required', 'integer', 'min:1', 'exists:waste_types,id'],
+            'actualItems.*.condition_id' => ['required', 'integer', 'min:1', 'exists:waste_conditions,id'],
+            'actualItems.*.weight_kg' => ['required', 'numeric', 'gt:0', 'decimal:0,3'],
+            'evidence' => ['nullable', 'file', 'max:1024', 'mimes:jpg,jpeg,png'],
+        ];
+    }
+
+    /** @return array<string, string> */
+    private function completionMessages(): array
+    {
+        return [
+            'actualItems.required' => 'Minimal satu detail hasil timbang harus diisi.',
+            'actualItems.*.waste_type_id.required' => 'Jenis sampah wajib dipilih.',
+            'actualItems.*.waste_type_id.integer' => 'Jenis sampah yang dipilih tidak valid.',
+            'actualItems.*.waste_type_id.exists' => 'Jenis sampah yang dipilih sudah tidak tersedia.',
+            'actualItems.*.condition_id.required' => 'Kondisi sampah wajib dipilih.',
+            'actualItems.*.condition_id.integer' => 'Kondisi sampah yang dipilih tidak valid.',
+            'actualItems.*.condition_id.exists' => 'Kondisi sampah yang dipilih sudah tidak tersedia.',
+            'actualItems.*.weight_kg.required' => 'Berat aktual wajib diisi.',
+            'actualItems.*.weight_kg.numeric' => 'Berat aktual harus berupa angka.',
+            'actualItems.*.weight_kg.gt' => 'Berat aktual harus lebih dari 0 kg.',
+            'actualItems.*.weight_kg.decimal' => 'Berat aktual maksimal tiga angka di belakang koma.',
+            'evidence.file' => 'Bukti foto penjemputan tidak dapat dibaca.',
+            'evidence.max' => 'Ukuran bukti foto maksimal 1 MB.',
+            'evidence.mimes' => 'Bukti foto harus berupa JPG, JPEG, atau PNG.',
+        ];
     }
 
     public function render(): View
