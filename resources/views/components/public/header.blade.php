@@ -16,8 +16,8 @@
 @endphp
 
 <header @class([
-    'absolute inset-x-0 top-0 z-sticky px-3 pt-3 sm:px-5' => $isHome,
-    'public-hero-grid sticky top-0 z-sticky bg-surface px-3 pt-3 sm:px-5' => ! $isHome,
+    'sticky top-0 z-sticky -mb-[4.75rem] px-3 pt-3 sm:px-5' => $isHome,
+    'sticky top-0 z-sticky px-3 pt-3 sm:px-5' => ! $isHome,
 ])>
     <div class="public-container flex min-h-16 items-center justify-between gap-3 rounded-full border border-border/90 bg-surface/95 px-3 shadow-sm backdrop-blur sm:px-4">
         <a href="{{ route('home') }}" class="flex min-h-touch shrink-0 items-center gap-2 rounded-md focus-visible:outline-offset-4" aria-label="Bank Sampah Digital Sindangheula, beranda">
