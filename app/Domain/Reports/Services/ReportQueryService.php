@@ -145,7 +145,7 @@ final readonly class ReportQueryService
         }
         $this->authorize($actor, 'report.view');
         $this->validateFilters($filters, 'occurred_at', 'desc', 25, $type);
-        $deposits = $this->depositQuery($actor, $filters)->with('items.wasteType')->get();
+        $deposits = $this->depositQuery($actor, $filters)->with(['items.wasteType', 'correction'])->get();
 
         return $this->metricService->calculate(new EloquentCollection($deposits->all()));
     }
@@ -250,7 +250,7 @@ final readonly class ReportQueryService
                 'participant_count' => $records->pluck('customer_id')->filter()->unique()->count(),
                 'participation_count' => $records->count(),
                 'collected_weight_kg' => number_format((float) $records->sum('total_weight_kg'), 3, '.', ''),
-                'collected_value' => (int) $records->sum('total_value'),
+                'collected_value' => $records->sum(static fn (Deposit $deposit): int => $deposit->effectiveTotalValue()),
             ],
         };
     }
@@ -266,7 +266,7 @@ final readonly class ReportQueryService
         $value = 0;
         $plastic = 0.0;
         foreach ($deposits as $deposit) {
-            $value += (int) $deposit->total_value;
+            $value += $deposit->effectiveTotalValue();
             foreach ($deposit->items as $item) {
                 $itemWeight = (float) $item->weight_kg;
                 $weight += $itemWeight;
@@ -294,7 +294,7 @@ final readonly class ReportQueryService
      */
     private function depositQuery(User $actor, array $filters): Builder
     {
-        $query = Deposit::query()->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED]);
+        $query = Deposit::query()->with('correction')->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED]);
         $this->applyRecordScope($actor, ReportType::Deposits, $query);
         $this->applyFilters($query, ReportType::Deposits, $filters);
 
@@ -308,7 +308,7 @@ final readonly class ReportQueryService
     private function scopedQuery(User $actor, ReportType $type, array $filters): Builder
     {
         $query = match ($type) {
-            ReportType::Deposits, ReportType::Participation => Deposit::query()->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED]),
+            ReportType::Deposits, ReportType::Participation => Deposit::query()->with('correction')->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED]),
             ReportType::Withdrawals => WithdrawalRequest::query()->whereNotNull('paid_at'),
             ReportType::Groceries => GroceryRedemption::query()->whereNotNull('handed_over_at'),
             ReportType::Pickups => PickupRequest::query()->whereNotNull('completed_at'),
@@ -444,6 +444,10 @@ final readonly class ReportQueryService
 
     private function displayAmount(Model $record, ReportType $type): int|string
     {
+        if ($record instanceof Deposit && in_array($type, [ReportType::Deposits, ReportType::Participation], true)) {
+            return $record->effectiveTotalValue();
+        }
+
         $column = match ($type) {
             ReportType::Deposits, ReportType::Participation => 'total_value',
             ReportType::Withdrawals => 'amount',

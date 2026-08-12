@@ -26,7 +26,7 @@ final class DepositHistory extends Component
     {
         /** @var User $actor */
         $actor = auth()->user();
-        $deposits = Deposit::query()->with('items')->where('customer_id', $actor->id)->latest('occurred_at')->paginate(10);
+        $deposits = Deposit::query()->with(['items', 'correction'])->where('customer_id', $actor->id)->latest('occurred_at')->paginate(10);
         $corrections = TransactionCorrection::query()->whereHas('deposit', static fn ($query) => $query->where('customer_id', $actor->id))->latest('finalized_at')->paginate(10, ['*'], 'corrections');
 
         return view('livewire.citizen.deposit-history', compact('deposits', 'corrections'));

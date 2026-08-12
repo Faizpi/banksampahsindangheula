@@ -127,7 +127,9 @@ final class DepositForm extends Component
             ? $service->finalize($actor, $this->draft, $this->idempotencyKey, $this->items, $this->evidence, $mobileService)
             : $service->finalizeAndLinkAssisted($actor, $this->draft, $this->idempotencyKey, $this->assistedServiceId, $this->items, $this->evidence, $mobileService);
         $this->evidence = null;
-        session()->flash('success', 'Setoran berhasil difinalisasi.');
+        session()->flash('success', $this->draft->isPendingReview()
+            ? 'Setoran bernilai tinggi menunggu persetujuan pemeriksa. Saldo belum ditambahkan.'
+            : 'Setoran berhasil difinalisasi.');
     }
 
     /** @return array<string, array<int, string>> */
@@ -137,7 +139,7 @@ final class DepositForm extends Component
             'items' => ['required', 'array', 'min:1'],
             'items.*.waste_type_id' => ['required', 'integer', 'min:1'],
             'items.*.condition_id' => ['required', 'integer', 'min:1'],
-            'items.*.weight_kg' => ['required', 'numeric', 'gt:0', 'regex:/^\\d+(?:\\.\\d{1,3})?$/'],
+            'items.*.weight_kg' => ['required', 'numeric', 'gt:0', 'max:'.(string) config('app.deposit_max_item_weight_kg'), 'regex:/^\\d+(?:\\.\\d{1,3})?$/'],
         ];
     }
 

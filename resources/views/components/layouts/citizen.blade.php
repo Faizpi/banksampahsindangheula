@@ -40,28 +40,28 @@
     @endphp
 
     {{-- App Header --}}
-    <header class="sticky top-0 z-sticky flex min-h-16 items-center border-b border-border bg-surface px-4 shadow-xs sm:px-5">
-        <div class="flex min-w-0 flex-1 items-center gap-3">
+    <header class="sticky top-0 z-sticky border-b border-border bg-surface shadow-xs">
+        <div class="mx-auto flex min-h-16 max-w-citizen items-center gap-3 px-4 sm:px-5">
             <div class="min-w-0 flex-1">
                 <h1 class="truncate text-title font-bold text-deep-green">{{ $title }}</h1>
                 @if ($context)
                     <p class="truncate text-caption text-text-secondary">{{ $context }}</p>
                 @endif
             </div>
-        </div>
-        <div class="flex items-center gap-1">
-            @isset($headerActions){{ $headerActions }}@endisset
-            {{-- Logout button --}}
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit"
-                    aria-label="Keluar dari akun"
-                    class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-xl text-text-secondary transition hover:bg-danger-bg hover:text-terracotta">
-                    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="m16 17 5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                    </svg>
-                </button>
-            </form>
+            <div class="flex min-h-touch shrink-0 items-center gap-1">
+                @isset($headerActions){{ $headerActions }}@endisset
+                {{-- Logout button --}}
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit"
+                        aria-label="Keluar dari akun"
+                        class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-xl text-text-secondary transition hover:bg-danger-bg hover:text-terracotta">
+                        <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="m16 17 5-5-5-5M21 12H9M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
         </div>
     </header>
 

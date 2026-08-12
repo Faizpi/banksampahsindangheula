@@ -52,6 +52,7 @@ final class Dashboard extends Component
 
         // Recent deposits (last 5)
         $recentDeposits = Deposit::query()
+            ->with('correction')
             ->where('customer_id', $actor->id)
             ->latest('occurred_at')
             ->take(5)

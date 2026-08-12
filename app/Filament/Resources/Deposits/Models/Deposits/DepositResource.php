@@ -8,6 +8,7 @@ use App\Authorization\PermissionChecker;
 use App\Domain\Corrections\Services\TransactionCorrectionService;
 use App\Domain\Deposits\Actions\RotateDepositVerificationToken;
 use App\Domain\Deposits\Models\Deposit;
+use App\Domain\Deposits\Services\DepositReviewService;
 use App\Domain\Ledger\Models\LedgerEntry;
 use App\Filament\Resources\Deposits\Models\Deposits\Pages\ManageDeposits;
 use App\Models\User;
@@ -61,7 +62,7 @@ final class DepositResource extends Resource
                 TextInput::make('staff.name')->label('Petugas')->disabled(),
                 TextInput::make('status')->label('Status')->disabled(),
                 TextInput::make('total_weight_kg')->label('Berat total (kg)')->disabled(),
-                TextInput::make('total_value')->label('Nilai total')->disabled(),
+                TextInput::make('effective_total_value')->label('Nilai akhir')->disabled(),
                 Textarea::make('items')->label('Rincian saat transaksi')->disabled()->rows(8),
                 Textarea::make('ledgerEntries')->label('Riwayat mutasi saldo')->disabled()->rows(5),
                 Textarea::make('media')->label('Bukti')->disabled()->rows(3),
@@ -77,15 +78,17 @@ final class DepositResource extends Resource
                 TextColumn::make('deposit_number')->label('Nomor')->searchable()->sortable(),
                 TextColumn::make('customer.name')->label('Nasabah')->searchable(),
                 TextColumn::make('occurred_at')->label('Waktu')->dateTime('d M Y H:i')->sortable(),
-                TextColumn::make('total_value')->label('Nilai')->money('IDR')->sortable(),
+                TextColumn::make('effective_total_value')->label('Nilai akhir')->state(fn (Deposit $record): int => $record->effectiveTotalValue())->money('IDR'),
                 TextColumn::make('total_weight_kg')->label('Berat (kg)')->sortable(),
                 TextColumn::make('status')->label('Status')->badge(),
             ])
             ->filters([
                 SelectFilter::make('status')->options([
+                    Deposit::STATUS_PENDING_REVIEW => 'Menunggu persetujuan',
                     Deposit::STATUS_FINAL => 'Final',
                     Deposit::STATUS_CORRECTED => 'Dikoreksi',
                     Deposit::STATUS_REVERSED => 'Dibalik',
+                    Deposit::STATUS_REJECTED => 'Ditolak',
                 ]),
             ])
             ->recordActions([
@@ -116,6 +119,34 @@ final class DepositResource extends Resource
                     ])
                     ->action(fn (Deposit $record, array $data): Deposit => self::verificationRotation()->handle(self::actor(), $record, (string) $data['reason']))
                     ->successNotificationTitle('QR verifikasi setoran dirotasi.'),
+                Action::make('approveHighValue')
+                    ->label('Setujui nilai tinggi')
+                    ->icon(Heroicon::OutlinedCheckCircle)
+                    ->color('success')
+                    ->visible(fn (Deposit $record): bool => self::reviewService()->canReview(self::actor(), $record))
+                    ->authorize(fn (Deposit $record): bool => self::reviewService()->canReview(self::actor(), $record))
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Deposit $record): string => "Setujui setoran {$record->deposit_number}?")
+                    ->modalDescription('Saldo warga akan ditambahkan hanya setelah pemeriksaan kedua ini dicatat.')
+                    ->schema([
+                        Textarea::make('reason')->label('Catatan pemeriksaan')->required()->minLength(10)->maxLength(1000)->rows(4),
+                    ])
+                    ->action(fn (Deposit $record, array $data): Deposit => self::reviewService()->approve(self::actor(), $record, (string) $data['reason'], self::reviewIdempotencyKey()))
+                    ->successNotificationTitle('Setoran bernilai tinggi disetujui dan saldo ditambahkan.'),
+                Action::make('rejectHighValue')
+                    ->label('Tolak nilai tinggi')
+                    ->icon(Heroicon::OutlinedXCircle)
+                    ->color('danger')
+                    ->visible(fn (Deposit $record): bool => self::reviewService()->canReview(self::actor(), $record))
+                    ->authorize(fn (Deposit $record): bool => self::reviewService()->canReview(self::actor(), $record))
+                    ->requiresConfirmation()
+                    ->modalHeading(fn (Deposit $record): string => "Tolak setoran {$record->deposit_number}?")
+                    ->modalDescription('Setoran tidak akan mengubah saldo. Catatan pemeriksaan wajib ditulis.')
+                    ->schema([
+                        Textarea::make('reason')->label('Alasan penolakan')->required()->minLength(10)->maxLength(1000)->rows(4),
+                    ])
+                    ->action(fn (Deposit $record, array $data): Deposit => self::reviewService()->reject(self::actor(), $record, (string) $data['reason'], self::reviewIdempotencyKey()))
+                    ->successNotificationTitle('Setoran bernilai tinggi ditolak.'),
                 Action::make('correct')
                     ->label('Koreksi')
                     ->icon(Heroicon::OutlinedPencilSquare)
@@ -211,6 +242,11 @@ final class DepositResource extends Resource
         return app(RotateDepositVerificationToken::class);
     }
 
+    private static function reviewService(): DepositReviewService
+    {
+        return app(DepositReviewService::class);
+    }
+
     private static function actor(): User
     {
         /** @var User $actor */
@@ -222,6 +258,11 @@ final class DepositResource extends Resource
     private static function idempotencyKey(): string
     {
         return 'filament-correction-'.Str::lower(Str::random(24));
+    }
+
+    private static function reviewIdempotencyKey(): string
+    {
+        return 'filament-deposit-review-'.Str::lower(Str::random(24));
     }
 
     private static function uploadedFile(mixed $value): ?UploadedFile

@@ -133,12 +133,12 @@ final readonly class MobileServiceService
         if (! $this->permissions->allows($actor, 'mobile-service.operate') || ! $this->canOperate($actor, $service)) {
             throw new AuthorizationException('Rekap layanan keliling berada di luar scope petugas.');
         }
-        $query = Deposit::query()->where('mobile_service_id', $service->id)->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED]);
+        $deposits = Deposit::query()->with('correction')->where('mobile_service_id', $service->id)->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED])->get();
 
         return [
-            'transaction_count' => (clone $query)->count(),
-            'total_weight_kg' => number_format((float) (clone $query)->sum('total_weight_kg'), 3, '.', ''),
-            'total_value' => (int) (clone $query)->sum('total_value'),
+            'transaction_count' => $deposits->count(),
+            'total_weight_kg' => number_format((float) $deposits->sum('total_weight_kg'), 3, '.', ''),
+            'total_value' => $deposits->sum(static fn (Deposit $deposit): int => $deposit->effectiveTotalValue()),
         ];
     }
 

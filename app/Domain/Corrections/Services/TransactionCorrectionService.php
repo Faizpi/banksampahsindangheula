@@ -143,8 +143,8 @@ final readonly class TransactionCorrectionService
         }
 
         $query = Deposit::query()
-            ->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED, Deposit::STATUS_REVERSED])
-            ->with(['customer', 'staff', 'items', 'media', 'ledgerEntries']);
+            ->whereIn('status', [Deposit::STATUS_PENDING_REVIEW, Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED, Deposit::STATUS_REVERSED, Deposit::STATUS_REJECTED])
+            ->with(['customer', 'staff', 'reviewer', 'items', 'media', 'ledgerEntries', 'correction']);
         if ($this->permissions->allows($actor, 'user.view.all')) {
             return $query;
         }

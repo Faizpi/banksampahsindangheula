@@ -6,6 +6,7 @@ namespace App\Domain\Reports\Services;
 
 use App\Authorization\PermissionChecker;
 use App\Domain\AuditReconciliation\Services\AuditLogger;
+use App\Domain\Deposits\Models\Deposit;
 use App\Domain\Platform\Enums\MediaVisibility;
 use App\Domain\Platform\Models\Media;
 use App\Domain\Reports\Enums\ReportExportStatus;
@@ -309,6 +310,10 @@ final readonly class ReportExportService
 
     private function valueFor(Model $record, string $column): mixed
     {
+        if ($record instanceof Deposit && $column === 'total_value') {
+            return $record->effectiveTotalValue();
+        }
+
         $value = $record->getAttribute($column);
         if ($value instanceof BackedEnum) {
             return $value->value;

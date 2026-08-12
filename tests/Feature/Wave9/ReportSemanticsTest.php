@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Wave9;
 
+use App\Domain\Corrections\Models\TransactionCorrection;
 use App\Domain\CustomersRegions\Models\Dusun;
 use App\Domain\CustomersRegions\Models\Rt;
 use App\Domain\CustomersRegions\Models\Rw;
@@ -124,6 +125,25 @@ final class ReportSemanticsTest extends TestCase
             'total_amount' => 101_000,
         ], $reports->summary($actor, 'withdrawals', $period));
         self::assertCount(100, $reports->records($actor, 'withdrawals', $period));
+    }
+
+    public function test_deposit_reports_use_the_effective_value_after_an_official_correction(): void
+    {
+        $actor = $this->userWith('report.view', 'user.view.all');
+        $condition = WasteCondition::factory()->create();
+        $type = WasteType::factory()->create();
+        $deposit = $this->seedDeposit($actor, $actor, 10_000, 'DEP-CORRECTED-REPORT', '1.000', $type, $condition);
+        TransactionCorrection::query()->create([
+            'correction_number' => 'COR-CORRECTED-REPORT', 'deposit_id' => $deposit->id, 'reason' => 'Nilai timbang sudah diverifikasi ulang.',
+            'before_values' => ['total_value' => 10_000], 'after_values' => ['total_value' => 7_000], 'delta_value' => -3_000,
+            'status' => 'final', 'created_by' => $actor->id, 'finalized_at' => '2026-08-01 12:00:00',
+        ]);
+        $deposit->forceFill(['status' => Deposit::STATUS_CORRECTED])->save();
+
+        $reports = app(ReportQueryService::class);
+        $period = ['start' => '2026-08-01', 'end' => '2026-08-02'];
+        self::assertSame(7_000, $reports->aggregate($actor, $period, 'deposits')['total_value']);
+        self::assertSame(7_000, $reports->displayRows($actor, 'deposits', $period)[0]['amount']);
     }
 
     public function test_treasurer_report_uses_the_summary_contract_labels_for_each_type(): void

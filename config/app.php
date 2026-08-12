@@ -79,6 +79,13 @@ return [
 
     'withdrawal_minimum_amount' => (int) env('WITHDRAWAL_MINIMUM_AMOUNT', 10_000),
 
+    // Financial guardrails. Values are evaluated server-side, never only in the form.
+    'deposit_max_item_weight_kg' => (string) env('DEPOSIT_MAX_ITEM_WEIGHT_KG', '50'),
+
+    'deposit_max_total_weight_kg' => (string) env('DEPOSIT_MAX_TOTAL_WEIGHT_KG', '100'),
+
+    'deposit_review_threshold' => (int) env('DEPOSIT_REVIEW_THRESHOLD', 250_000),
+
     'grocery_expiry_days' => (int) env('GROCERY_EXPIRY_DAYS', 7),
 
     'statistics_privacy_threshold' => (int) env('STATISTICS_PRIVACY_THRESHOLD', 5),

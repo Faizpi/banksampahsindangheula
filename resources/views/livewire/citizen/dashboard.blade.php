@@ -145,7 +145,7 @@
                             <p class="text-label font-semibold text-deep-green">{{ $deposit->deposit_number }}</p>
                             <p class="mt-0.5 text-caption text-text-secondary">{{ $deposit->occurred_at?->translatedFormat('d M Y') }}</p>
                         </div>
-                        <p class="amount-tabular text-label font-bold text-deep-green">Rp{{ number_format((int)($deposit->total_value ?? 0), 0, ',', '.') }}</p>
+                        <p class="amount-tabular text-label font-bold text-deep-green">Rp{{ number_format($deposit->effectiveTotalValue(), 0, ',', '.') }}</p>
                     </a>
                 @endforeach
             </div>

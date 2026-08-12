@@ -37,7 +37,7 @@
         </dl>
     </x-ui.panel>
 
-    <x-ui.panel title="Item saat transaksi" description="Perubahan harga master tidak mengubah bukti ini.">
+    <x-ui.panel title="Item saat transaksi" :description="$receipt['is_corrected'] ? 'Rincian ini adalah snapshot transaksi asli. Nilai akhir di atas mengikuti koreksi resmi.' : 'Perubahan harga master tidak mengubah bukti ini.'">
         <div class="divide-y divide-border">
             @foreach ($deposit->items as $item)
                 <div class="flex flex-wrap items-center justify-between gap-3 py-4 first:pt-0 last:pb-0">
