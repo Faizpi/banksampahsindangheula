@@ -1,8 +1,8 @@
 <x-filament-panels::page>
-    <section class="rounded-xl border border-primary-200 bg-primary-950 p-5 text-white shadow-sm sm:p-6" aria-labelledby="technical-health-title">
-        <p class="text-sm font-semibold text-primary-200">Kontrol teknis</p>
-        <h2 id="technical-health-title" class="mt-1 text-2xl font-bold">Health sistem</h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-primary-100">Ringkasan kondisi aplikasi tanpa menampilkan path, payload, checksum, atau rahasia.</p>
+    <section class="backoffice-page-intro" aria-labelledby="technical-health-title">
+        <p class="text-sm font-semibold text-forest-700">Kontrol teknis</p>
+        <h2 id="technical-health-title" class="mt-1 text-2xl font-bold text-deep-green">Health sistem</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">Ringkasan kondisi aplikasi tanpa menampilkan path, payload, checksum, atau rahasia.</p>
     </section>
 
     @if ($health === [])

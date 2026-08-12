@@ -1,8 +1,8 @@
 <x-filament-panels::page>
-    <section class="rounded-xl border border-primary-200 bg-primary-950 p-5 text-white shadow-sm sm:p-6" aria-labelledby="waste-catalog-title">
-        <p class="text-sm font-semibold text-primary-200">Data master</p>
-        <h2 id="waste-catalog-title" class="mt-1 text-2xl font-bold">Katalog Sampah</h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-primary-100">Kelola kategori, jenis, kondisi, satuan, dan harga dari satu area yang mudah ditemukan.</p>
+    <section class="backoffice-page-intro" aria-labelledby="waste-catalog-title">
+        <p class="text-sm font-semibold text-forest-700">Data master</p>
+        <h2 id="waste-catalog-title" class="mt-1 text-2xl font-bold text-deep-green">Katalog Sampah</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">Kelola kategori, jenis, kondisi, satuan, dan harga dari satu area yang mudah ditemukan.</p>
     </section>
 
     <nav class="mt-6 overflow-x-auto border-b border-gray-200" aria-label="Bagian katalog sampah">

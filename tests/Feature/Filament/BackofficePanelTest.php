@@ -163,6 +163,29 @@ final class BackofficePanelTest extends TestCase
         $this->get('/backoffice/technical-audit-retention-page')->assertOk()->assertSee('Retensi audit');
     }
 
+    public function test_backoffice_hubs_use_the_shared_light_intro_surface(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        $superadmin = User::factory()->create();
+        $superadmin->roles()->attach(Role::query()->where('name', 'superadmin')->sole());
+
+        $this->actingAs($superadmin->fresh());
+
+        foreach ([
+            '/backoffice/directory',
+            '/backoffice/regions',
+            '/backoffice/waste-catalog',
+            '/backoffice/reports',
+            '/backoffice/work-queue-dashboard',
+            '/backoffice/operations-dashboard',
+            '/backoffice/technical-health-page',
+        ] as $uri) {
+            $this->get($uri)
+                ->assertOk()
+                ->assertSee('backoffice-page-intro');
+        }
+    }
+
     public function test_admin_and_superadmin_can_open_the_permission_gated_report_page(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);

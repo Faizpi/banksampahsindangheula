@@ -60,6 +60,12 @@
     --text-caption--font-weight: 500;
 }
 
+@layer components {
+    .backoffice-page-intro {
+        @apply rounded-xl border border-border bg-warm-canvas p-5 sm:p-6;
+    }
+}
+
 /* Override Filament simple-page container to allow wide login layout */
 .fi-simple-page {
     max-width: 58rem !important;

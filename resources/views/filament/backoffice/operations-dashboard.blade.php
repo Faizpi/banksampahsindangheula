@@ -1,8 +1,8 @@
 <x-filament-panels::page>
-    <section class="rounded-xl border border-primary-200 bg-primary-950 p-5 text-white shadow-sm sm:p-6" aria-labelledby="technical-overview-title">
-        <p class="text-sm font-semibold text-primary-200">Administrasi sistem</p>
-        <h2 id="technical-overview-title" class="mt-1 text-2xl font-bold">Kontrol teknis</h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-primary-100">Pilih satu area kerja. Kontrol berisiko tidak lagi ditumpuk dalam satu halaman panjang.</p>
+    <section class="backoffice-page-intro" aria-labelledby="technical-overview-title">
+        <p class="text-sm font-semibold text-forest-700">Administrasi sistem</p>
+        <h2 id="technical-overview-title" class="mt-1 text-2xl font-bold text-deep-green">Kontrol teknis</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">Pilih satu area kerja. Kontrol berisiko tidak lagi ditumpuk dalam satu halaman panjang.</p>
     </section>
 
     <nav class="mt-6 overflow-x-auto border-b border-gray-200" aria-label="Bagian kontrol teknis">

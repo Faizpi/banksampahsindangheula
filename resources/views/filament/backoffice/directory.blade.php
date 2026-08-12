@@ -1,8 +1,8 @@
 <x-filament-panels::page>
-    <section class="rounded-xl border border-primary-200 bg-primary-950 p-5 text-white shadow-sm sm:p-6" aria-labelledby="directory-title">
-        <p class="text-sm font-semibold text-primary-200">Data identitas</p>
-        <h2 id="directory-title" class="mt-1 text-2xl font-bold">Satu pintu untuk warga dan pengguna</h2>
-        <p class="mt-2 max-w-2xl text-sm text-primary-100">Pilih sudut pandang yang sesuai. Data tetap memakai izin dan alur kerja masing-masing, tanpa menampilkan dua menu yang membingungkan.</p>
+    <section class="backoffice-page-intro" aria-labelledby="directory-title">
+        <p class="text-sm font-semibold text-forest-700">Data identitas</p>
+        <h2 id="directory-title" class="mt-1 text-2xl font-bold text-deep-green">Satu pintu untuk warga dan pengguna</h2>
+        <p class="mt-2 max-w-2xl text-sm text-text-secondary">Pilih sudut pandang yang sesuai. Data tetap memakai izin dan alur kerja masing-masing, tanpa menampilkan dua menu yang membingungkan.</p>
     </section>
 
     <nav class="mt-6 overflow-x-auto border-b border-gray-200" aria-label="Bagian direktori">

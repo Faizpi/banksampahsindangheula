@@ -1,13 +1,13 @@
 <x-filament-panels::page>
     <div class="space-y-6">
-        <section class="rounded-xl border border-primary-200 bg-primary-950 p-5 text-white shadow-sm sm:p-6" aria-labelledby="work-queue-heading">
+        <section class="backoffice-page-intro" aria-labelledby="work-queue-heading">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <p class="text-sm font-semibold text-primary-200">Admin operasional</p>
-                    <h2 id="work-queue-heading" class="mt-1 text-2xl font-bold">Pusat perhatian hari ini</h2>
-                    <p class="mt-2 max-w-2xl text-sm text-primary-100">Prioritaskan antrean yang memengaruhi layanan warga dan saldo.</p>
+                    <p class="text-sm font-semibold text-forest-700">Admin operasional</p>
+                    <h2 id="work-queue-heading" class="mt-1 text-2xl font-bold text-deep-green">Pusat perhatian hari ini</h2>
+                    <p class="mt-2 max-w-2xl text-sm text-text-secondary">Prioritaskan antrean yang memengaruhi layanan warga dan saldo.</p>
                 </div>
-                <dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:text-right"><div><dt class="text-primary-200">Lingkungan</dt><dd class="font-bold">{{ $environment }}</dd></div><div><dt class="text-primary-200">Area aktif</dt><dd class="font-bold">{{ $activeAreas ?? 'Tidak tersedia' }}</dd></div></dl>
+                <dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:text-right"><div><dt class="text-text-secondary">Lingkungan</dt><dd class="font-bold text-deep-green">{{ $environment }}</dd></div><div><dt class="text-text-secondary">Area aktif</dt><dd class="font-bold text-deep-green">{{ $activeAreas ?? 'Tidak tersedia' }}</dd></div></dl>
             </div>
             @if ($maintenanceEnabled)
                 <p class="mt-5 rounded-lg border border-warning-300 bg-warning-100 px-3 py-2 text-sm font-semibold text-warning-950">Pemeliharaan aktif. Pastikan pekerjaan yang sedang berjalan aman sebelum melanjutkan.</p>

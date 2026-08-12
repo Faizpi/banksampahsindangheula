@@ -1,8 +1,8 @@
 <x-filament-panels::page>
-    <section class="rounded-xl border border-primary-200 bg-primary-950 p-5 text-white shadow-sm sm:p-6" aria-labelledby="regions-title">
-        <p class="text-sm font-semibold text-primary-200">Data master</p>
-        <h2 id="regions-title" class="mt-1 text-2xl font-bold">Wilayah</h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-primary-100">Kelola struktur area, dusun, RW, dan RT dari satu pintu agar penugasan dan cakupan layanan tetap konsisten.</p>
+    <section class="backoffice-page-intro" aria-labelledby="regions-title">
+        <p class="text-sm font-semibold text-forest-700">Data master</p>
+        <h2 id="regions-title" class="mt-1 text-2xl font-bold text-deep-green">Wilayah</h2>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">Kelola struktur area, dusun, RW, dan RT dari satu pintu agar penugasan dan cakupan layanan tetap konsisten.</p>
     </section>
 
     <nav class="mt-6 overflow-x-auto border-b border-gray-200" aria-label="Bagian wilayah">
