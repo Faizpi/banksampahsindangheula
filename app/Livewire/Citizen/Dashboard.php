@@ -89,7 +89,6 @@ final class Dashboard extends Component
             'recentDeposits' => $recentDeposits,
             'activePickups' => $activePickups,
             'activeWithdrawals' => $activeWithdrawals,
-            'customerCardHref' => route('citizen.customer-card'),
             'groceryHref' => route('citizen.grocery.create'),
         ]);
     }
