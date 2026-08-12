@@ -3,7 +3,7 @@ import '@fontsource-variable/plus-jakarta-sans';
 // Livewire 4 provides the application's Alpine.js instance.
 // Do not import or start Alpine.js from this bundle.
 
-const OFFLINE_ACTION_MESSAGE = 'Koneksi diperlukan untuk melanjutkan tindakan ini.';
+const OFFLINE_ACTION_MESSAGE = 'Koneksi diperlukan untuk mengirim perubahan ini.';
 const PUBLIC_CACHE_PREFIX = 'bank-sampah-public-';
 const PUBLIC_NAV_GROUP_SELECTOR = '[data-public-nav-group]';
 const PUBLIC_NAV_TRIGGER_SELECTOR = '[data-public-nav-trigger]';
@@ -342,13 +342,10 @@ document.addEventListener('public:offline-action-blocked', (event) => {
 
     const liveRegions = document.querySelectorAll('[data-public-offline-status]');
 
-    if (liveRegions.length === 0) {
-        return;
-    }
-
     liveRegions.forEach((liveRegion) => {
         liveRegion.textContent = event.detail.message;
     });
+
     event.preventDefault();
 });
 
