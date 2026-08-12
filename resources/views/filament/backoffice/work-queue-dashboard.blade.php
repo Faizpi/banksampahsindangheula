@@ -41,9 +41,25 @@
             @endif
         </section>
 
-        <details class="rounded-xl border border-primary-100 bg-primary-50 p-5">
-            <summary class="cursor-pointer list-none text-lg font-bold text-primary-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Panduan pemeriksaan yang aman</summary>
-            <ol class="mt-3 grid gap-3 text-sm text-primary-950 sm:grid-cols-3"><li><strong>1. Konteks.</strong> Periksa warga, wilayah, bukti, dan riwayat.</li><li><strong>2. Dampak.</strong> Pastikan kapasitas, saldo, dana ditahan, dan batas waktu sesuai.</li><li><strong>3. Keputusan.</strong> Setujui atau tolak, lalu catat alasannya.</li></ol>
+        <details class="group rounded-xl border border-primary-100 bg-primary-50 p-5">
+            <summary class="flex min-h-11 cursor-pointer list-none items-center justify-between gap-4 rounded-md text-lg font-bold text-primary-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">
+                <span>Panduan pemeriksaan yang aman</span>
+                <svg data-disclosure-chevron viewBox="0 0 24 24" class="size-5 shrink-0 text-primary-700 transition-transform group-open:rotate-180 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
+            <ol class="mt-5 grid list-none gap-x-6 gap-y-4 text-sm text-primary-950 sm:grid-cols-3">
+                <li class="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-3">
+                    <span aria-hidden="true" class="flex size-7 items-center justify-center rounded-sm bg-surface text-caption font-bold text-primary-800">1</span>
+                    <div><p class="font-bold">Konteks</p><p class="mt-1 leading-6">Periksa warga, wilayah, bukti, dan riwayat.</p></div>
+                </li>
+                <li class="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-3">
+                    <span aria-hidden="true" class="flex size-7 items-center justify-center rounded-sm bg-surface text-caption font-bold text-primary-800">2</span>
+                    <div><p class="font-bold">Dampak</p><p class="mt-1 leading-6">Pastikan kapasitas, saldo, dana ditahan, dan batas waktu sesuai.</p></div>
+                </li>
+                <li class="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-3">
+                    <span aria-hidden="true" class="flex size-7 items-center justify-center rounded-sm bg-surface text-caption font-bold text-primary-800">3</span>
+                    <div><p class="font-bold">Keputusan</p><p class="mt-1 leading-6">Setujui atau tolak, lalu catat alasannya.</p></div>
+                </li>
+            </ol>
         </details>
     </div>
 </x-filament-panels::page>

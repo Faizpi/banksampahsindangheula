@@ -38,7 +38,26 @@
             @if ($backups->isEmpty())
                 <p class="mt-3 text-sm text-gray-600">Belum ada metadata cadangan yang dapat ditampilkan.</p>
             @else
-                <div class="mt-4 space-y-3">@foreach ($backups as $backup)<details class="rounded-lg border border-gray-200 p-4"><summary class="cursor-pointer list-none"><span class="font-medium">Cadangan #{{ $backup->id }}</span><span class="ml-2 text-sm text-gray-600">{{ \App\Support\StatusLabel::for($backup->status) }}</span><span class="mt-1 block text-xs text-gray-500">{{ $backup->created_at?->setTimezone('Asia/Jakarta')->format('d M Y H:i') ?? 'Tanggal tidak tersedia' }}</span></summary><dl class="mt-3 grid gap-2 text-sm sm:grid-cols-2"><div><dt class="text-gray-600">Basis data</dt><dd>{{ $backup->database_location_alias }} · {{ $backup->humanSize($backup->database_size_bytes) }}</dd></div><div><dt class="text-gray-600">Media</dt><dd>{{ $backup->media_location_alias }} · {{ $backup->humanSize($backup->media_size_bytes) }}</dd></div><div><dt class="text-gray-600">Pemulihan</dt><dd>{{ $backup->restore_verification_result?->value ? \App\Support\StatusLabel::for($backup->restore_verification_result) : 'Belum diuji' }}</dd></div><div><dt class="text-gray-600">Retensi</dt><dd>{{ $backup->retention_until->setTimezone('Asia/Jakarta')->format('d M Y H:i') }}</dd></div></dl></details>@endforeach</div>
+                <div class="mt-4 space-y-3">
+                    @foreach ($backups as $backup)
+                        <details class="group rounded-lg border border-gray-200 p-4">
+                            <summary class="flex min-h-11 cursor-pointer list-none items-start justify-between gap-4 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">
+                                <span class="min-w-0">
+                                    <span class="block font-semibold text-gray-950">Cadangan #{{ $backup->id }}</span>
+                                    <span class="mt-1 block text-sm text-gray-600">{{ \App\Support\StatusLabel::for($backup->status) }}</span>
+                                    <span class="mt-1 block text-xs text-gray-500">Dibuat {{ $backup->created_at?->setTimezone('Asia/Jakarta')->format('d M Y H:i') ?? 'tanggal tidak tersedia' }}</span>
+                                </span>
+                                <svg data-disclosure-chevron viewBox="0 0 24 24" class="mt-2 size-5 shrink-0 text-primary-700 transition-transform group-open:rotate-180 motion-reduce:transition-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                            </summary>
+                            <dl class="mt-4 grid gap-3 border-t border-gray-200 pt-4 text-sm sm:grid-cols-2">
+                                <div><dt class="text-gray-600">Basis data</dt><dd class="mt-1 text-gray-950">{{ $backup->database_location_alias }} · {{ $backup->humanSize($backup->database_size_bytes) }}</dd></div>
+                                <div><dt class="text-gray-600">Media</dt><dd class="mt-1 text-gray-950">{{ $backup->media_location_alias }} · {{ $backup->humanSize($backup->media_size_bytes) }}</dd></div>
+                                <div><dt class="text-gray-600">Pemulihan</dt><dd class="mt-1 text-gray-950">{{ $backup->restore_verification_result?->value ? \App\Support\StatusLabel::for($backup->restore_verification_result) : 'Belum diuji' }}</dd></div>
+                                <div><dt class="text-gray-600">Retensi</dt><dd class="mt-1 text-gray-950">{{ $backup->retention_until->setTimezone('Asia/Jakarta')->format('d M Y H:i') }}</dd></div>
+                            </dl>
+                        </details>
+                    @endforeach
+                </div>
             @endif
         </section>
     @endif

@@ -263,9 +263,23 @@ final class BackofficePanelTest extends TestCase
         $this->get('/backoffice/work-queue-dashboard')
             ->assertOk()
             ->assertSee('Verifikasi warga')
+            ->assertSee('data-disclosure-chevron')
+            ->assertSee('Panduan pemeriksaan yang aman')
             ->assertDontSee('Pickup hari ini')
             ->assertDontSee('Pencairan menunggu keputusan')
             ->assertDontSee('Setoran perlu ditinjau');
+    }
+
+    public function test_backoffice_disclosures_have_visible_expansion_cues(): void
+    {
+        foreach (['work-queue-dashboard.blade.php', 'technical-backups.blade.php'] as $view) {
+            $contents = file_get_contents(resource_path('views/filament/backoffice/'.$view));
+
+            self::assertIsString($contents);
+            self::assertStringContainsString('<details class="group', $contents);
+            self::assertStringContainsString('data-disclosure-chevron', $contents);
+            self::assertStringContainsString('group-open:rotate-180', $contents);
+        }
     }
 
     public function test_every_registered_backoffice_resource_and_page_renders_for_superadmin(): void

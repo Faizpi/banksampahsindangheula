@@ -152,10 +152,19 @@
                 </dl>
                 <div class="mt-5 border-t border-border pt-4">
                     <h3 class="text-label font-bold text-deep-green">Yang terjadi setelah dikirim</h3>
-                    <ol class="mt-3 grid gap-2 text-body-sm text-text-secondary sm:grid-cols-3">
-                        <li><span class="font-bold text-forest-700">1.</span> Pengajuan diperiksa petugas.</li>
-                        <li><span class="font-bold text-forest-700">2.</span> Jadwal dikonfirmasi sesuai kapasitas.</li>
-                        <li><span class="font-bold text-forest-700">3.</span> Saldo dicatat dari timbangan aktual.</li>
+                    <ol class="mt-4 grid list-none gap-x-5 gap-y-3 text-body-sm text-text-secondary sm:grid-cols-3">
+                        <li class="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-3">
+                            <span aria-hidden="true" class="flex size-7 items-center justify-center rounded-sm bg-success-bg text-caption font-bold text-forest-700">1</span>
+                            <p class="pt-0.5 leading-5">Pengajuan diperiksa petugas.</p>
+                        </li>
+                        <li class="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-3">
+                            <span aria-hidden="true" class="flex size-7 items-center justify-center rounded-sm bg-success-bg text-caption font-bold text-forest-700">2</span>
+                            <p class="pt-0.5 leading-5">Jadwal dikonfirmasi sesuai kapasitas.</p>
+                        </li>
+                        <li class="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-3">
+                            <span aria-hidden="true" class="flex size-7 items-center justify-center rounded-sm bg-success-bg text-caption font-bold text-forest-700">3</span>
+                            <p class="pt-0.5 leading-5">Saldo dicatat dari timbangan aktual.</p>
+                        </li>
                     </ol>
                 </div>
             </x-ui.panel>
