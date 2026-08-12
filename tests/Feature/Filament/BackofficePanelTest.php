@@ -140,6 +140,18 @@ final class BackofficePanelTest extends TestCase
         );
     }
 
+    public function test_backoffice_theme_compiles_shared_actions_at_a_usable_size(): void
+    {
+        $theme = file_get_contents(resource_path('css/filament/backoffice/theme.css'));
+
+        self::assertIsString($theme);
+        self::assertStringContainsString("@source '../../../../resources/views/components/ui/**/*.blade.php';", $theme);
+        self::assertStringContainsString("@source '../../../../resources/views/livewire/treasurer/**/*.blade.php';", $theme);
+        self::assertStringContainsString('--spacing-touch: 2.75rem;', $theme);
+        self::assertStringContainsString('--spacing-admin-control: 2.5rem;', $theme);
+        self::assertStringContainsString('min-height: var(--spacing-admin-control);', $theme);
+    }
+
     public function test_consolidated_hubs_render_for_authorized_backoffice_users(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);

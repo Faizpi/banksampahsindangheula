@@ -11,7 +11,7 @@
         <section class="mt-6 rounded-xl border border-gray-200 bg-white p-5 shadow-sm" aria-labelledby="health-checks-title">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <h3 id="health-checks-title" class="text-lg font-semibold text-gray-950">Pemeriksaan aktif</h3>
-                <a href="{{ route('operations.health') }}" class="inline-flex min-h-10 items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600">Lihat detail kondisi</a>
+                <a href="{{ route('operations.health') }}" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-gray-300 px-4 text-sm font-medium text-gray-800 hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600">Lihat detail kondisi</a>
             </div>
             <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
                 @foreach ($health as $name => $check)

@@ -3,6 +3,8 @@
 
 @source '../../../../app/Filament/**/*.php';
 @source '../../../../resources/views/filament/**/*.blade.php';
+@source '../../../../resources/views/components/ui/**/*.blade.php';
+@source '../../../../resources/views/livewire/treasurer/**/*.blade.php';
 
 @theme {
     --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
@@ -58,11 +60,29 @@
     --text-caption: 0.75rem;
     --text-caption--line-height: 1.4;
     --text-caption--font-weight: 500;
+
+    /*
+     * Backoffice remains compact for dense operational work, while keeping
+     * every actionable control comfortably usable. Shared UI actions inherit
+     * the 44 px target; Filament's compact table controls retain a 40 px
+     * minimum target.
+     */
+    --spacing-touch: 2.75rem;
+    --spacing-admin-control: 2.5rem;
 }
 
 @layer components {
     .backoffice-page-intro {
         @apply rounded-xl border border-border bg-warm-canvas p-5 sm:p-6;
+    }
+
+    .fi-btn,
+    .fi-icon-btn {
+        min-height: var(--spacing-admin-control);
+    }
+
+    .fi-icon-btn {
+        min-width: var(--spacing-admin-control);
     }
 }
 
