@@ -46,7 +46,7 @@
                     </svg>
                     @if (! empty($item['badge']))<span aria-label="{{ $item['badge'] }} notifikasi" class="absolute -right-3 -top-2 min-w-5 rounded-sm bg-terracotta px-1 text-center text-caption text-white">{{ $item['badge'] }}</span>@endif
                 </span>
-                <span>{{ $item['label'] ?? '' }}</span>
+                <span class="block w-full text-center leading-tight">{{ $item['label'] ?? '' }}</span>
             </a>
         @endforeach
     </div>

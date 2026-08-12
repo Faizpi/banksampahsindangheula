@@ -43,7 +43,7 @@ final class CustomerCard extends Component
         $this->customerName = $actor->name;
         $this->customerNumber = $profile->customer_number;
         $this->maskedNumber = substr($this->customerNumber, 0, 4).'****'.substr($this->customerNumber, -2);
-        $this->serviceArea = $profile->rt?->name ?? 'Desa Sindangheula';
+        $this->serviceArea = $profile->rt->name ?? 'Desa Sindangheula';
         $encryptedToken = $profile->qr_token_encrypted;
         if (is_string($encryptedToken) && $encryptedToken !== '') {
             $this->qrImageSrc = $qrPresenter->dataUri(QrToken::fromValue($encryptedToken));

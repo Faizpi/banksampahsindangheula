@@ -62,7 +62,7 @@
                         @disabled($number >= $step)
                         @class([
                             'flex min-h-touch w-full items-center gap-3 rounded-md px-3 text-left transition',
-                            'bg-deep-green text-white' => $number === $step,
+                            'bg-forest-600 text-white' => $number === $step,
                             'bg-success-bg text-forest-700' => $number < $step,
                             'text-text-secondary disabled:cursor-default' => $number > $step,
                         ])
