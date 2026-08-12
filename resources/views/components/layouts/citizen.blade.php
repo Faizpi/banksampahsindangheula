@@ -15,7 +15,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
 </head>
-<body class="min-h-dvh bg-warm-canvas text-body text-text-primary antialiased">
+<body class="min-h-dvh overflow-x-clip bg-warm-canvas text-body text-text-primary antialiased">
     <a href="#konten-utama" class="fixed left-4 top-4 z-toast -translate-y-24 rounded-md bg-deep-green px-4 py-3 font-semibold text-white transition-transform duration-180 focus:translate-y-0">
         Lewati ke konten utama
     </a>
@@ -67,12 +67,12 @@
 
     {{-- Main Content --}}
     <main id="konten-utama" tabindex="-1"
-        class="mx-auto grid min-h-[calc(100dvh-4rem)] w-full max-w-citizen content-start gap-6 px-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-6 sm:px-5 md:pb-24 md:pt-8">
-        @isset($balance)<section data-slot-balance>{{ $balance }}</section>@endisset
-        @isset($quickActions)<section data-slot-quick-actions>{{ $quickActions }}</section>@endisset
-        @isset($activeRequests)<section data-slot-active-requests>{{ $activeRequests }}</section>@endisset
-        @isset($recentHistory)<section data-slot-recent-history>{{ $recentHistory }}</section>@endisset
-        @isset($contextualInformation)<section data-slot-contextual-information>{{ $contextualInformation }}</section>@endisset
+        class="mx-auto grid min-h-[calc(100dvh-4rem)] w-full max-w-citizen grid-cols-1 content-start gap-6 px-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-6 sm:px-5 md:pb-24 md:pt-8">
+        @isset($balance)<section class="min-w-0" data-slot-balance>{{ $balance }}</section>@endisset
+        @isset($quickActions)<section class="min-w-0" data-slot-quick-actions>{{ $quickActions }}</section>@endisset
+        @isset($activeRequests)<section class="min-w-0" data-slot-active-requests>{{ $activeRequests }}</section>@endisset
+        @isset($recentHistory)<section class="min-w-0" data-slot-recent-history>{{ $recentHistory }}</section>@endisset
+        @isset($contextualInformation)<section class="min-w-0" data-slot-contextual-information>{{ $contextualInformation }}</section>@endisset
         {{ $slot }}
     </main>
 
