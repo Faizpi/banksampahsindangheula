@@ -9,7 +9,7 @@
         @else
             <div class="mb-4 flex flex-col gap-1 border-b border-border pb-4 sm:flex-row sm:items-baseline sm:justify-between">
                 <p class="text-body-sm text-text-secondary"><strong class="text-deep-green">{{ $readyPayments->count() }}</strong> antrean aktif</p>
-                <p class="amount-tabular text-title font-bold text-harvest-gold">Rp {{ number_format($readyPaymentTotal, 0, ',', '.') }}</p>
+                <p class="amount-tabular text-title font-bold text-deep-green">Rp {{ number_format($readyPaymentTotal, 0, ',', '.') }}</p>
             </div>
             <div class="grid gap-3">
                 @foreach ($readyPayments as $withdrawal)
@@ -25,28 +25,24 @@
 </x-slot:todayTasks>
 
 <div class="grid gap-6">
-
-{{-- Header + Mascot --}}
 <section aria-labelledby="treasurer-dashboard-title" class="rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <div class="flex items-center gap-2">
                 <img src="{{ asset('images/landing/mascot-3.png') }}" alt="" class="size-7 object-contain" aria-hidden="true">
-                <span class="text-caption font-semibold text-harvest-gold uppercase tracking-wide">Bendahara Bank Sampah</span>
+                <span class="text-caption font-semibold text-forest-600 uppercase tracking-wide">Bendahara Bank Sampah</span>
             </div>
-            <h1 id="treasurer-dashboard-title" class="mt-2 text-h2 font-bold text-deep-green">Selamat bertugas!</h1>
-            <p class="mt-1.5 text-body-sm text-text-secondary">
-                {{ now()->translatedFormat('l, d F Y') }} — Pembayaran dan laporan sesuai akses Anda.
-            </p>
+            <h2 id="treasurer-dashboard-title" class="mt-2 text-h2 font-bold text-deep-green">Ringkas keuangan hari ini</h2>
+            <p class="mt-1.5 text-body-sm text-text-secondary">Selesaikan pencairan yang siap dibayar, lalu periksa laporan sesuai akses Anda.</p>
         </div>
         <x-ui.mascot variant="12" bubble="Rekap keuangan hari ini!" bubblePosition="top" class="h-24 w-auto shrink-0 sm:h-28" animate />
     </div>
 </section>
 
-{{-- Quick Links --}}
 <section aria-labelledby="treasurer-actions-title">
-    <h2 id="treasurer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Tindakan cepat</h2>
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <h2 id="treasurer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Aksi cepat</h2>
+    <div class="grid grid-cols-2 gap-3">
+        @if ($canPay)
         <a href="{{ route('treasurer.withdrawal.payments') }}"
             class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-harvest-gold hover:shadow-sm">
             <div class="flex size-11 items-center justify-center rounded-xl bg-warning-bg text-harvest-gold transition-colors group-hover:bg-harvest-gold group-hover:text-white">
@@ -54,9 +50,11 @@
                     <rect width="20" height="14" x="2" y="5" rx="2"/><path d="M2 10h20"/>
                 </svg>
             </div>
-            <span class="text-caption font-semibold text-deep-green">Proses Pembayaran</span>
+            <span class="text-caption font-semibold text-deep-green">Bayar pencairan</span>
         </a>
+        @endif
 
+        @if ($canViewReports)
         <a href="{{ route('treasurer.reports') }}"
             class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-sm">
             <div class="flex size-11 items-center justify-center rounded-xl bg-success-bg text-forest-600 transition-colors group-hover:bg-forest-600 group-hover:text-white">
@@ -66,47 +64,9 @@
             </div>
             <span class="text-caption font-semibold text-deep-green">Laporan &amp; Ekspor</span>
         </a>
-
-        <a href="{{ route('profile.password') }}"
-            class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-sm">
-            <div class="flex size-11 items-center justify-center rounded-xl bg-disabled-bg text-text-secondary transition-colors group-hover:bg-warm-canvas">
-                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
-                </svg>
-            </div>
-            <span class="text-caption font-semibold text-deep-green">Profil Akun</span>
-        </a>
-
-        @if ($canViewStatistics)
-            <a href="{{ route('statistics.internal') }}"
-                class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-sky-blue hover:shadow-sm">
-                <div class="flex size-11 items-center justify-center rounded-xl bg-info-bg text-sky-blue transition-colors group-hover:bg-sky-blue group-hover:text-white">
-                    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/></svg>
-                </div>
-                <span class="text-caption font-semibold text-deep-green">Statistik Internal</span>
-            </a>
         @endif
-    </div>
-</section>
 
-{{-- Panduan --}}
-<section>
-    <x-ui.panel>
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <x-ui.mascot variant="5" class="mx-auto h-20 w-auto sm:mx-0 sm:shrink-0" />
-            <div>
-                <p class="text-label font-semibold text-harvest-gold">Alur Pembayaran</p>
-                <h2 class="mt-1 text-title font-bold text-deep-green">Verifikasi → Konfirmasi → Bukti</h2>
-                <p class="mt-1.5 text-body-sm text-text-secondary">
-                    Pastikan identitas penerima dan nominal sesuai sebelum pembayaran final. Bukti tersimpan otomatis untuk laporan.
-                </p>
-                <a href="{{ route('treasurer.withdrawal.payments') }}" class="mt-3 inline-flex min-h-touch items-center gap-2 rounded-xl bg-harvest-gold px-5 text-label font-bold text-deep-green transition hover:opacity-90">
-                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    Lihat Pencairan
-                </a>
-            </div>
-        </div>
-    </x-ui.panel>
+    </div>
 </section>
 
 </div>{{-- /grid gap-6 (Livewire single root) --}}

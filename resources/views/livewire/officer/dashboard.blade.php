@@ -52,15 +52,49 @@
 </x-slot:todayTasks>
 
 <div class="grid gap-6">
-<section aria-labelledby="officer-metrics-title" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-    <h2 id="officer-metrics-title" class="sr-only">Ringkasan operasional</h2>
-    @foreach ($metrics as $metric)
-        <div class="rounded-xl border border-border bg-surface p-4 shadow-xs">
-            <p class="text-caption font-semibold text-text-secondary">{{ $metric['label'] }}</p>
-            <p class="mt-2 text-h2 font-bold tabular-nums {{ $metric['tone'] }}">{{ $metric['value'] }}</p>
+    <section aria-labelledby="officer-dashboard-title" class="rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <div class="flex items-center gap-2">
+                    <img src="{{ asset('images/landing/mascot-3.png') }}" alt="" class="size-7 object-contain" aria-hidden="true">
+                    <span class="text-caption font-semibold text-forest-600 uppercase tracking-wide">Petugas Bank Sampah</span>
+                </div>
+                <h2 id="officer-dashboard-title" class="mt-2 text-h2 font-bold text-deep-green">Siap menjalankan tugas?</h2>
+                <p class="mt-1.5 text-body-sm text-text-secondary">Pantau tugas yang ditugaskan kepada Anda, lalu lanjutkan setoran atau layanan keliling.</p>
+            </div>
+            <x-ui.mascot variant="11" bubble="Siap membantu warga!" bubblePosition="top" class="h-24 w-auto shrink-0 sm:h-28" animate />
         </div>
-    @endforeach
-</section>
+    </section>
+
+    <section aria-labelledby="officer-actions-title">
+        <h2 id="officer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Aksi cepat</h2>
+        <div class="grid grid-cols-2 gap-3">
+            @if ($canIdentifyCustomers)
+            <a href="{{ $identificationHref }}"
+                class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-sm">
+                <div class="flex size-11 items-center justify-center rounded-xl bg-success-bg text-forest-600 transition-colors group-hover:bg-forest-600 group-hover:text-white">
+                    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                    </svg>
+                </div>
+                <span class="text-caption font-semibold text-deep-green">Mulai setoran</span>
+            </a>
+            @endif
+
+            @if ($canAccessMobileServices)
+            <a href="{{ route('officer.mobile-services') }}"
+                class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-sky-blue hover:shadow-sm">
+                <div class="flex size-11 items-center justify-center rounded-xl bg-info-bg text-sky-blue transition-colors group-hover:bg-sky-blue group-hover:text-white">
+                    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>
+                    </svg>
+                </div>
+                <span class="text-caption font-semibold text-deep-green">Layanan keliling</span>
+            </a>
+            @endif
+
+        </div>
+    </section>
 
 @if ($canViewPickups || $canViewDeposits || $canShowGroceryTasks || $canViewMobileServices)
 <section aria-labelledby="officer-queues-title" class="grid gap-4 lg:grid-cols-2">
@@ -159,108 +193,4 @@
 </section>
 @endif
 
-{{-- Header + Mascot --}}
-<section aria-labelledby="officer-dashboard-title" class="rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <div class="flex items-center gap-2">
-                <img src="{{ asset('images/landing/mascot-3.png') }}" alt="" class="size-7 object-contain" aria-hidden="true">
-                <span class="text-caption font-semibold text-forest-600 uppercase tracking-wide">Petugas Bank Sampah</span>
-            </div>
-            <h1 id="officer-dashboard-title" class="mt-2 text-h2 font-bold text-deep-green">Selamat bertugas!</h1>
-            <p class="mt-1.5 text-body-sm text-text-secondary">
-                {{ now()->translatedFormat('l, d F Y') }} — Hanya data dalam cakupan Anda yang tampil.
-            </p>
-        </div>
-        <x-ui.mascot variant="11" bubble="Siap membantu warga!" bubblePosition="top" class="h-24 w-auto shrink-0 sm:h-28" animate />
-    </div>
-</section>
-
-{{-- Quick Actions --}}
-<section aria-labelledby="officer-actions-title">
-    <h2 id="officer-actions-title" class="mb-3 text-label font-bold text-text-secondary">Tindakan cepat</h2>
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        @if ($canIdentifyCustomers)
-        <a href="{{ $identificationHref }}"
-            class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-forest-600 hover:shadow-sm">
-            <div class="flex size-11 items-center justify-center rounded-xl bg-success-bg text-forest-600 transition-colors group-hover:bg-forest-600 group-hover:text-white">
-                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
-                </svg>
-            </div>
-            <span class="text-caption font-semibold text-deep-green">Identifikasi Warga</span>
-        </a>
-        @endif
-
-        @if ($canAccessMobileServices)
-        <a href="{{ route('officer.mobile-services') }}"
-            class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-sky-blue hover:shadow-sm">
-            <div class="flex size-11 items-center justify-center rounded-xl bg-info-bg text-sky-blue transition-colors group-hover:bg-sky-blue group-hover:text-white">
-                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/>
-                </svg>
-            </div>
-            <span class="text-caption font-semibold text-deep-green">Jadwal Keliling</span>
-        </a>
-        @endif
-
-        @if ($canAccessGroceryTasks)
-        <a href="{{ $groceryTasksHref }}"
-            class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-harvest-gold hover:shadow-sm">
-            <div class="flex size-11 items-center justify-center rounded-xl bg-warning-bg text-harvest-gold transition-colors group-hover:bg-harvest-gold group-hover:text-white">
-                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/>
-                </svg>
-            </div>
-            <span class="text-caption font-semibold text-deep-green">Tugas sembako</span>
-        </a>
-        @endif
-
-        @if ($canViewStatistics)
-            <a href="{{ $statisticsHref }}"
-                class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-sky-blue hover:shadow-sm">
-                <div class="flex size-11 items-center justify-center rounded-xl bg-info-bg text-sky-blue transition-colors group-hover:bg-sky-blue group-hover:text-white">
-                    <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 3-4 3 2 5-7"/></svg>
-                </div>
-                <span class="text-caption font-semibold text-deep-green">Statistik Internal</span>
-            </a>
-        @endif
-
-        @if ($canViewProfile)
-        <a href="{{ route('profile.password') }}"
-            class="group flex flex-col items-center gap-2.5 rounded-xl border border-border bg-surface p-4 text-center shadow-xs transition duration-200 hover:-translate-y-0.5 hover:border-border hover:shadow-sm">
-            <div class="flex size-11 items-center justify-center rounded-xl bg-disabled-bg text-text-secondary transition-colors group-hover:bg-warm-canvas">
-                <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
-                </svg>
-            </div>
-            <span class="text-caption font-semibold text-deep-green">Profil Akun</span>
-        </a>
-        @endif
-    </div>
-</section>
-
-{{-- Panduan Kerja --}}
-@if ($canIdentifyCustomers)
-<section aria-labelledby="officer-guide-title">
-    <x-ui.panel>
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <x-ui.mascot variant="8" class="mx-auto h-20 w-auto sm:mx-0 sm:shrink-0" />
-            <div>
-                <p class="text-label font-semibold text-forest-600">Alur Kerja Setoran</p>
-                <h2 id="officer-guide-title" class="mt-1 text-title font-bold text-deep-green">Identifikasi → Timbang → Konfirmasi</h2>
-                <p class="mt-1.5 text-body-sm text-text-secondary">
-                    Mulai dengan identifikasi warga, lalu catat item timbang, dan akhiri dengan konfirmasi setoran untuk mencetak bukti.
-                </p>
-                <a href="{{ $identificationHref }}" class="mt-3 inline-flex min-h-touch items-center gap-2 rounded-xl bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700">
-                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    Mulai sekarang
-                </a>
-            </div>
-        </div>
-    </x-ui.panel>
-</section>
-@endif
-
 </div>{{-- /grid gap-6 (Livewire single root) --}}
-</div>

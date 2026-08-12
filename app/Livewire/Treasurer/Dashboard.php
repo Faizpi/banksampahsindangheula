@@ -27,11 +27,13 @@ final class Dashboard extends Component
         /** @var User $actor */
         $actor = auth()->user();
 
-        $canPay = app(PermissionChecker::class)->allows($actor, 'withdrawal.pay');
+        $permissions = app(PermissionChecker::class);
+        $canPay = $permissions->allows($actor, 'withdrawal.pay');
         $readyPayments = $canPay ? $withdrawals->payableFor($actor)->latest()->limit(8)->get() : collect();
 
         return view('livewire.treasurer.dashboard', [
-            'canViewStatistics' => app(PermissionChecker::class)->allows($actor, 'statistics.internal.view'),
+            'canPay' => $canPay,
+            'canViewReports' => $permissions->allows($actor, 'report.view'),
             'readyPayments' => $readyPayments,
             'readyPaymentTotal' => (int) $readyPayments->sum('amount'),
         ]);

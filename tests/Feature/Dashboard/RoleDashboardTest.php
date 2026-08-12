@@ -95,7 +95,6 @@ final class RoleDashboardTest extends TestCase
             ->assertSee('Tugas hari ini')
             ->assertSee('Belum ada tugas hari ini')
             ->assertSee('Saat ada tugas yang ditugaskan kepada Anda, tugas tersebut akan muncul di sini.')
-            ->assertSee('Selamat bertugas!')
             ->assertSee('Navigasi petugas')
             ->assertDontSee('Identifikasi Warga')
             ->assertDontSee('Tugas Sembako')
@@ -127,7 +126,7 @@ final class RoleDashboardTest extends TestCase
             ->assertSee('Belum ada pencairan siap dibayar')
             ->assertSee('Pencairan yang disetujui dan siap dibayar akan muncul di sini.')
             ->assertSee('Navigasi bendahara')
-            ->assertSee('Selamat bertugas!')
+            ->assertDontSee('Bayar pencairan')
             ->assertDontSee('Data Warga Lain');
 
         $source = file_get_contents(app_path('Livewire/Treasurer/Dashboard.php'));

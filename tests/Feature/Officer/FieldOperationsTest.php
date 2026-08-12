@@ -187,7 +187,7 @@ final class FieldOperationsTest extends TestCase
         return [$type, $condition];
     }
 
-    public function test_officer_dashboard_exposes_scoped_operational_work_and_counts(): void
+    public function test_officer_dashboard_exposes_scoped_operational_work(): void
     {
         $officer = $this->userWith(
             'user.view',
@@ -211,7 +211,7 @@ final class FieldOperationsTest extends TestCase
             'occurred_at' => now(),
             'status' => Deposit::STATUS_DRAFT,
         ]);
-        $this->mobileService($officer, MobileServiceStatus::Open);
+        $mobileService = $this->mobileService($officer, MobileServiceStatus::Open);
         $package = GroceryPackage::query()->create([
             'code' => 'PAKET-OFFICER-001',
             'name' => 'Paket Officer',
@@ -237,7 +237,7 @@ final class FieldOperationsTest extends TestCase
         $response->assertSeeText('PUP-LATE-001');
         $response->assertSeeText('DEP-DRAFT-001');
         $response->assertSeeText('GRC-OFFICER-001');
-        $response->assertSeeText('1 aktif');
+        $response->assertSeeText($mobileService->service_number);
     }
 
     private function scheduledPickup(User $officer): PickupRequest

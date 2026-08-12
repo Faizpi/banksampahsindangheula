@@ -44,15 +44,8 @@ final class Dashboard extends Component
             ->whereIn('status', $pickupStatuses);
         $todayPickupQuery = (clone $pickupScope)->whereDate('scheduled_date', $today);
         $latePickupQuery = (clone $pickupScope)->whereDate('scheduled_date', '<', $today);
-        $todayPickupCount = $canViewPickups ? (clone $todayPickupQuery)->count() : 0;
-        $latePickupCount = $canViewPickups ? (clone $latePickupQuery)->count() : 0;
         $todayPickups = $canViewPickups ? $todayPickupQuery->orderBy('scheduled_date')->orderBy('id')->limit(8)->get() : collect();
         $latePickups = $canViewPickups ? $latePickupQuery->orderBy('scheduled_date')->orderBy('id')->limit(8)->get() : collect();
-        $completedPickups = $canViewPickups ? PickupRequest::query()
-            ->where('assigned_staff_id', $actor->id)
-            ->where('status', PickupStatus::Completed)
-            ->whereDate('completed_at', $today)
-            ->count() : 0;
         $canViewDeposits = $permissions->allows($actor, 'deposit.view');
         $canResumeDeposits = $canViewDeposits && $permissions->allows($actor, 'deposit.create');
         $draftDeposits = $canViewDeposits ? Deposit::query()
@@ -78,8 +71,6 @@ final class Dashboard extends Component
             ->orderBy('starts_at')
             ->limit(8)
             ->get() : collect();
-        $activeMobileServices = $mobileServices->where('status', MobileServiceStatus::Open)->count();
-        $assignedCustomers = $todayPickups->concat($latePickups)->pluck('customer')->filter()->unique('id')->values();
         $priorityPickup = $latePickups->first() ?? $todayPickups->first();
         $priorityTask = $priorityPickup instanceof PickupRequest
             ? [
@@ -95,29 +86,11 @@ final class Dashboard extends Component
                 'status' => null,
             ] : null);
         $canShowGroceryTasks = $canViewGroceries || $canHandoverGroceries;
-        $metrics = [];
-        if ($canViewPickups) {
-            $metrics[] = ['label' => 'Pickup perlu ditangani', 'value' => $todayPickupCount + $latePickupCount, 'tone' => 'text-terracotta'];
-            $metrics[] = ['label' => 'Pickup selesai hari ini', 'value' => $completedPickups, 'tone' => 'text-forest-600'];
-            $metrics[] = ['label' => 'Nasabah dalam tugas', 'value' => $assignedCustomers->count(), 'tone' => 'text-forest-600'];
-        }
-        if ($canViewDeposits) {
-            $metrics[] = ['label' => 'Draf setoran', 'value' => $draftDeposits->count(), 'tone' => 'text-harvest-gold'];
-        }
-        if ($canShowGroceryTasks) {
-            $metrics[] = ['label' => 'Tugas sembako', 'value' => $groceryTasks->count(), 'tone' => 'text-harvest-gold'];
-        }
-        if ($canViewMobileServices) {
-            $metrics[] = ['label' => 'Layanan keliling aktif', 'value' => $activeMobileServices.' aktif', 'tone' => 'text-sky-blue'];
-        }
 
         return view('livewire.officer.dashboard', [
             'canIdentifyCustomers' => $permissions->allows($actor, 'customer.view'),
-            'canViewProfile' => $permissions->allows($actor, 'profile.view'),
             'canViewPickups' => $canViewPickups,
             'canOperatePickups' => $canOperatePickups,
-            'statisticsHref' => route('statistics.internal'),
-            'canViewStatistics' => $permissions->allows($actor, 'statistics.internal.view'),
             'canViewDeposits' => $canViewDeposits,
             'canResumeDeposits' => $canResumeDeposits,
             'canAccessGroceryTasks' => $canAccessGroceryTasks,
@@ -131,8 +104,6 @@ final class Dashboard extends Component
             'draftDeposits' => $draftDeposits,
             'groceryTasks' => $groceryTasks,
             'mobileServices' => $mobileServices,
-            'assignedCustomers' => $assignedCustomers,
-            'metrics' => $metrics,
             'priorityTask' => $priorityTask,
         ]);
     }
