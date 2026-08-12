@@ -35,7 +35,7 @@ final class CitizenVerificationResourceTest extends TestCase
 
         $this->actingAs($authorized);
         self::assertTrue(CitizenVerificationResource::canViewAny());
-        self::assertSame(['Pengguna', 'Verifikasi Warga'], $this->dataMasterNavigationLabels($panel));
+        self::assertSame(['Direktori', 'Verifikasi Warga'], $this->dataMasterNavigationLabels($panel));
 
         $this->actingAs($unprivileged);
         self::assertFalse(CitizenVerificationResource::canViewAny());
@@ -151,6 +151,10 @@ final class CitizenVerificationResourceTest extends TestCase
 
             foreach ($group->getItems() as $item) {
                 $labels[] = $item->getLabel();
+
+                foreach ($item->getChildItems() as $childItem) {
+                    $labels[] = $childItem->getLabel();
+                }
             }
 
             sort($labels);

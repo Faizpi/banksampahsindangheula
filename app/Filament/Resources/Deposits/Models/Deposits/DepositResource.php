@@ -39,7 +39,7 @@ final class DepositResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
-    protected static ?string $navigationLabel = 'Setoran dan Koreksi';
+    protected static ?string $navigationLabel = 'Setoran';
 
     protected static ?string $modelLabel = 'setoran';
 

@@ -30,6 +30,8 @@ final class RwResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?string $navigationParentItem = 'Wilayah';
+
     protected static ?int $navigationSort = 60;
 
     protected static ?string $navigationLabel = 'RW';

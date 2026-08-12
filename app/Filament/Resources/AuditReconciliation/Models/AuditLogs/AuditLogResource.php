@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\AuditReconciliation\Models\AuditLogs;
 
+use App\Authorization\PermissionChecker;
 use App\Domain\AuditReconciliation\Models\AuditLog;
 use App\Domain\AuditReconciliation\Services\AuditQueryService;
 use App\Filament\Resources\AuditReconciliation\Models\AuditLogs\Pages\ManageAuditLogs;
@@ -37,6 +38,13 @@ final class AuditLogResource extends Resource
     protected static ?string $modelLabel = 'audit log';
 
     protected static ?string $pluralModelLabel = 'audit log';
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        $actor = auth()->user();
+
+        return $actor instanceof User && app(PermissionChecker::class)->allows($actor, 'transaction.correct');
+    }
 
     public static function form(Schema $schema): Schema
     {

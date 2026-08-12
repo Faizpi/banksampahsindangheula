@@ -30,6 +30,8 @@ final class WasteUnitResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?string $navigationParentItem = 'Katalog Sampah';
+
     protected static ?int $navigationSort = 130;
 
     protected static ?string $navigationLabel = 'Satuan Sampah';

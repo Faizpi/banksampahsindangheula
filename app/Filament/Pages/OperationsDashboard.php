@@ -22,7 +22,7 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use UnitEnum;
 
-final class OperationsDashboard extends Page
+class OperationsDashboard extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedWrenchScrewdriver;
 
@@ -77,18 +77,14 @@ final class OperationsDashboard extends Page
 
     public static function canAccess(): bool
     {
-        $actor = auth()->user();
-        if (! $actor instanceof User) {
-            return false;
-        }
-
-        foreach (['system.settings.manage', 'system.maintenance', 'backup.view', 'backup.run', 'backup.restore', 'audit.retention.execute'] as $permission) {
-            if (app(PermissionChecker::class)->allows($actor, $permission)) {
-                return true;
-            }
-        }
-
-        return false;
+        return static::hasAnyTechnicalPermission([
+            'system.settings.manage',
+            'system.maintenance',
+            'backup.view',
+            'backup.run',
+            'backup.restore',
+            'audit.retention.execute',
+        ]);
     }
 
     public function mount(): void
@@ -270,5 +266,24 @@ final class OperationsDashboard extends Page
         $value = request()->attributes->get('correlation_id');
 
         return is_string($value) && Str::isUuid($value) ? $value : (string) Str::uuid();
+    }
+
+    protected static function hasTechnicalPermission(string $permission): bool
+    {
+        $actor = auth()->user();
+
+        return $actor instanceof User && app(PermissionChecker::class)->allows($actor, $permission);
+    }
+
+    /** @param list<string> $permissions */
+    protected static function hasAnyTechnicalPermission(array $permissions): bool
+    {
+        foreach ($permissions as $permission) {
+            if (static::hasTechnicalPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

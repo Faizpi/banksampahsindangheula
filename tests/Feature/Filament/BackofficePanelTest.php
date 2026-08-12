@@ -10,7 +10,13 @@ use App\Domain\Identity\Models\Role;
 use App\Domain\WasteMaster\Models\WasteCategory;
 use App\Domain\WasteMaster\Models\WastePrice;
 use App\Filament\Pages\OperationsDashboard;
+use App\Filament\Pages\Reconciliation;
 use App\Filament\Pages\Reports as ReportsPage;
+use App\Filament\Pages\TechnicalAuditRetentionPage;
+use App\Filament\Pages\TechnicalBackupsPage;
+use App\Filament\Pages\TechnicalHealthPage;
+use App\Filament\Pages\TechnicalMaintenancePage;
+use App\Filament\Pages\TechnicalSettingsPage;
 use App\Filament\Resources\AuditReconciliation\Models\AuditLogs\AuditLogResource;
 use App\Filament\Resources\Communication\Models\Announcements\AnnouncementResource;
 use App\Filament\Resources\CustomersRegions\Models\Dusuns\DusunResource;
@@ -72,17 +78,34 @@ final class BackofficePanelTest extends TestCase
             'Kontrol teknis',
             $this->navigationLabelsForGroup($panel, 'Administrasi sistem'),
         );
+        self::assertNotContains(
+            'Rekonsiliasi',
+            $this->navigationLabelsForGroup($panel, 'Pengawasan'),
+        );
 
         $this->actingAs($superadmin->fresh())->get('/backoffice/login')->assertRedirect('/backoffice');
         self::assertContains(
             'Kontrol teknis',
             $this->navigationLabelsForGroup($panel, 'Administrasi sistem'),
         );
+        self::assertSame(
+            ['Kontrol teknis', 'Health', 'Pengaturan', 'Pemeliharaan', 'Cadangan', 'Retensi audit'],
+            $this->navigationLabelsForGroup($panel, 'Administrasi sistem', includeChildren: true),
+        );
+        self::assertContains(
+            'Rekonsiliasi',
+            $this->navigationLabelsForGroup($panel, 'Pengawasan'),
+        );
     }
 
     public function test_technical_dashboard_is_discovered_and_permission_gated(): void
     {
         self::assertContains(OperationsDashboard::class, array_values(Filament::getPanel('backoffice')->getPages()));
+        self::assertContains(TechnicalHealthPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
+        self::assertContains(TechnicalSettingsPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
+        self::assertContains(TechnicalMaintenancePage::class, array_values(Filament::getPanel('backoffice')->getPages()));
+        self::assertContains(TechnicalBackupsPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
+        self::assertContains(TechnicalAuditRetentionPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
 
         $technical = User::factory()->create();
         $viewer = User::factory()->create();
@@ -93,6 +116,29 @@ final class BackofficePanelTest extends TestCase
         self::assertTrue(OperationsDashboard::canAccess());
         $this->actingAs($viewer->fresh());
         self::assertFalse(OperationsDashboard::canAccess());
+    }
+
+    public function test_consolidated_hubs_render_for_authorized_backoffice_users(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        $admin = User::factory()->create();
+        $superadmin = User::factory()->create();
+        $admin->roles()->attach(Role::query()->where('name', 'admin')->sole());
+        $superadmin->roles()->attach(Role::query()->where('name', 'superadmin')->sole());
+
+        $this->actingAs($admin->fresh());
+        $this->get('/backoffice/directory')->assertOk()->assertSee('Nasabah');
+        $this->get('/backoffice/regions')->assertOk()->assertSee('Area pelayanan');
+        $this->get('/backoffice/waste-catalog')->assertOk()->assertSee('Kategori');
+        self::assertFalse(Reconciliation::canAccess());
+
+        $this->actingAs($superadmin->fresh());
+        $this->get('/backoffice/reconciliation')->assertOk()->assertSee('Koreksi dan rekonsiliasi');
+        $this->get('/backoffice/technical-health-page')->assertOk()->assertSee('Health sistem');
+        $this->get('/backoffice/technical-settings-page')->assertOk()->assertSee('Pengaturan teknis');
+        $this->get('/backoffice/technical-maintenance-page')->assertOk()->assertSee('Pemeliharaan aplikasi');
+        $this->get('/backoffice/technical-backups-page')->assertOk()->assertSee('Cadangan dan pemulihan');
+        $this->get('/backoffice/technical-audit-retention-page')->assertOk()->assertSee('Retensi audit');
     }
 
     public function test_admin_and_superadmin_can_open_the_permission_gated_report_page(): void
@@ -179,7 +225,7 @@ final class BackofficePanelTest extends TestCase
         $this->actingAs($admin->fresh());
 
         self::assertSame(
-            ['Setoran dan Koreksi', 'Penjemputan', 'Kapasitas Penjemputan', 'Pencairan', 'Penukaran Sembako'],
+            ['Setoran', 'Penjemputan', 'Kapasitas Penjemputan', 'Pencairan', 'Penukaran Sembako'],
             $this->navigationLabelsForGroup($panel, 'Operasional'),
         );
         self::assertSame(
@@ -187,7 +233,7 @@ final class BackofficePanelTest extends TestCase
             $this->navigationLabelsForGroup($panel, 'Program'),
         );
         self::assertSame(
-            ['Laporan', 'Audit log', 'Mutasi saldo', 'Dana ditahan'],
+            ['Laporan'],
             $this->navigationLabelsForGroup($panel, 'Pengawasan'),
         );
         self::assertSame(
@@ -195,8 +241,8 @@ final class BackofficePanelTest extends TestCase
             $this->navigationLabelsForGroup($panel, 'Keamanan & Akses'),
         );
         self::assertSame(
-            ['Nasabah', 'Pengguna', 'Verifikasi Warga', 'Area Pelayanan', 'Dusun', 'RW', 'RT', 'Paket Sembako', 'Jenis Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Harga Sampah', 'Satuan Sampah'],
-            $this->navigationLabelsForGroup($panel, 'Data Master'),
+            ['Direktori', 'Verifikasi Warga', 'Wilayah', 'Dusun', 'RW', 'RT', 'Katalog Sampah', 'Jenis Sampah', 'Kondisi Sampah', 'Harga Sampah', 'Satuan Sampah', 'Paket Sembako'],
+            $this->navigationLabelsForGroup($panel, 'Data Master', includeChildren: true),
         );
         self::assertSame([], $this->navigationLabelsForGroup($panel, 'Administrasi sistem'));
     }
@@ -251,7 +297,7 @@ final class BackofficePanelTest extends TestCase
 
         self::assertTrue($regionalManager->fresh()->canAccessPanel($panel));
         $this->actingAs($regionalManager->fresh());
-        self::assertSame(['Area Pelayanan', 'Dusun', 'RT', 'RW'], $this->dataMasterNavigationLabels($panel));
+        self::assertSame(['Dusun', 'RT', 'RW', 'Wilayah'], $this->dataMasterNavigationLabels($panel));
 
         self::assertTrue($panelUserWithoutRegionalPermission->fresh()->canAccessPanel($panel));
         $this->actingAs($panelUserWithoutRegionalPermission->fresh());
@@ -268,11 +314,11 @@ final class BackofficePanelTest extends TestCase
         $panel = Filament::getPanel('backoffice');
 
         $this->actingAs($viewer->fresh());
-        self::assertSame(['Jenis Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Satuan Sampah'], $this->dataMasterNavigationLabels($panel));
+        self::assertSame(['Jenis Sampah', 'Katalog Sampah', 'Kondisi Sampah', 'Satuan Sampah'], $this->dataMasterNavigationLabels($panel));
         self::assertFalse($viewer->fresh()->can('create', WasteCategory::class));
 
         $this->actingAs($manager->fresh());
-        self::assertSame(['Jenis Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Satuan Sampah'], $this->dataMasterNavigationLabels($panel));
+        self::assertSame(['Jenis Sampah', 'Katalog Sampah', 'Kondisi Sampah', 'Satuan Sampah'], $this->dataMasterNavigationLabels($panel));
         self::assertTrue($manager->fresh()->can('create', WasteCategory::class));
     }
 
@@ -297,11 +343,11 @@ final class BackofficePanelTest extends TestCase
     /** @return list<string> */
     private function dataMasterNavigationLabels(Panel $panel): array
     {
-        return $this->navigationLabelsForGroup($panel, 'Data Master', sortLabels: true);
+        return $this->navigationLabelsForGroup($panel, 'Data Master', sortLabels: true, includeChildren: true);
     }
 
     /** @return list<string> */
-    private function navigationLabelsForGroup(Panel $panel, string $label, bool $sortLabels = false): array
+    private function navigationLabelsForGroup(Panel $panel, string $label, bool $sortLabels = false, bool $includeChildren = false): array
     {
         app()->forgetInstance(NavigationManager::class);
 
@@ -310,7 +356,17 @@ final class BackofficePanelTest extends TestCase
                 continue;
             }
 
-            $labels = $group->getItems()->map(static fn ($item): string => $item->getLabel())->all();
+            $labels = $group->getItems()->flatMap(function ($item) use ($includeChildren): array {
+                $labels = [$item->getLabel()];
+
+                if ($includeChildren) {
+                    foreach ($item->getChildItems() as $childItem) {
+                        $labels[] = $childItem->getLabel();
+                    }
+                }
+
+                return $labels;
+            })->all();
 
             if ($sortLabels) {
                 sort($labels);

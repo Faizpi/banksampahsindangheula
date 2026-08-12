@@ -48,6 +48,22 @@ final class DeveloperCredentialsTest extends TestCase
         }
     }
 
+    public function test_admin_and_superadmin_public_login_use_the_backoffice_as_their_canonical_home(): void
+    {
+        $this->seed(DeveloperUsersSeeder::class);
+
+        foreach (['admin', 'superadmin'] as $role) {
+            Livewire::test(LoginForm::class)
+                ->set('phone', $this->devUser($role)->phone)
+                ->set('password', DeveloperUsersSeeder::DEV_PASSWORD)
+                ->call('login')
+                ->assertHasNoErrors()
+                ->assertRedirect(route('filament.backoffice.home'));
+
+            app(LogoutUser::class)->handle(request());
+        }
+    }
+
     public function test_seeded_bendahara_can_render_the_empty_report_route(): void
     {
         $this->seed(DeveloperUsersSeeder::class);

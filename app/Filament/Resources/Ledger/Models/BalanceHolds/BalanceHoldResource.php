@@ -38,6 +38,13 @@ final class BalanceHoldResource extends Resource
 
     protected static ?string $pluralModelLabel = 'dana ditahan';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        $actor = auth()->user();
+
+        return $actor instanceof User && app(PermissionChecker::class)->allows($actor, 'ledger.adjust');
+    }
+
     public static function canViewAny(): bool
     {
         $actor = auth()->user();

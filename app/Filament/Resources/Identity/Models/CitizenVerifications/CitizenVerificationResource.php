@@ -33,6 +33,8 @@ final class CitizenVerificationResource extends Resource
 
     protected static ?string $navigationLabel = 'Verifikasi Warga';
 
+    protected static ?string $navigationParentItem = 'Direktori';
+
     protected static ?string $modelLabel = 'verifikasi warga';
 
     protected static ?string $pluralModelLabel = 'verifikasi warga';
