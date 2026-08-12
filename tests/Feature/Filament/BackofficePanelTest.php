@@ -120,6 +120,26 @@ final class BackofficePanelTest extends TestCase
         self::assertFalse(OperationsDashboard::canAccess());
     }
 
+    public function test_backoffice_uses_the_shared_restrained_forest_palette(): void
+    {
+        self::assertSame(
+            [
+                50 => '#F3F7F4',
+                100 => '#E2ECE6',
+                200 => '#C7D9CF',
+                300 => '#A3BEAF',
+                400 => '#729B87',
+                500 => '#477B67',
+                600 => '#185746',
+                700 => '#123D32',
+                800 => '#0F3028',
+                900 => '#0A251E',
+                950 => '#061712',
+            ],
+            Filament::getPanel('backoffice')->getColors()['primary'],
+        );
+    }
+
     public function test_consolidated_hubs_render_for_authorized_backoffice_users(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);

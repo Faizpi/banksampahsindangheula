@@ -6,17 +6,22 @@
 
 @theme {
     --font-sans: 'Plus Jakarta Sans Variable', 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif;
-    --color-primary-50: #edf8f3;
-    --color-primary-100: #d7f0e4;
-    --color-primary-200: #b3dfcb;
-    --color-primary-300: #83c8ac;
-    --color-primary-400: #4fa986;
-    --color-primary-500: #2d886a;
-    --color-primary-600: #1e6a56;
-    --color-primary-700: #185746;
-    --color-primary-800: #123d32;
-    --color-primary-900: #0f3028;
-    --color-primary-950: #071b16;
+    /*
+     * A restrained sage-to-forest range for the operational panel. It shares
+     * the public portal's forest/deep-green anchors while avoiding a bright,
+     * saturated control color across dense admin tables and forms.
+     */
+    --color-primary-50: #f3f7f4;
+    --color-primary-100: #e2ece6;
+    --color-primary-200: #c7d9cf;
+    --color-primary-300: #a3beaf;
+    --color-primary-400: #729b87;
+    --color-primary-500: #477b67;
+    --color-primary-600: #185746;
+    --color-primary-700: #123d32;
+    --color-primary-800: #0f3028;
+    --color-primary-900: #0a251e;
+    --color-primary-950: #061712;
 
     --color-forest-600: #1e6a56;
     --color-forest-700: #185746;
