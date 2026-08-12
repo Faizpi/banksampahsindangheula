@@ -5,12 +5,7 @@
     <section class="public-hero-grid relative isolate overflow-hidden border-b border-border/60 bg-surface" aria-labelledby="landing-title">
         <div class="public-container grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[1.05fr_.95fr] lg:gap-12 lg:py-20">
             <div class="relative z-10 max-w-2xl">
-                <div class="inline-flex items-center gap-2 rounded-full border border-border bg-success-bg px-4 py-1.5 text-xs font-bold text-forest-600">
-                    <x-public.icon name="circle-check" size="size-4" />
-                    <span>Transparansi untuk setiap setoran</span>
-                </div>
-
-                <h1 id="landing-title" class="mt-6 text-balance text-display font-extrabold tracking-tight text-deep-green lg:text-display-lg">
+                <h1 id="landing-title" class="text-balance text-display font-extrabold tracking-tight text-deep-green lg:text-display-lg">
                     Sampah tercatat. <span class="text-forest-600">Nilai terjaga.</span> Desa bergerak bersama.
                 </h1>
                 <p class="mt-5 max-w-xl text-body leading-relaxed text-text-secondary">

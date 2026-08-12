@@ -13,7 +13,7 @@
     $allowedIcons = ['home', 'recycle', 'grid-2x2', 'history', 'user-round', 'scan-line', 'clipboard-list', 'wallet-cards'];
 @endphp
 
-<nav aria-label="{{ $label }}" {{ $attributes->class('fixed inset-x-0 bottom-0 z-bottom-nav border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] shadow-sm') }}>
+<nav aria-label="{{ $label }}" {{ $attributes->class('fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-bottom-nav w-[calc(100%-1.5rem)] max-w-citizen -translate-x-1/2 rounded-[1.5rem] border border-border/90 bg-surface/95 p-1 shadow-sm backdrop-blur') }}>
     <div class="mx-auto grid min-h-16 max-w-citizen grid-flow-col auto-cols-fr">
         @foreach ($items as $item)
             @php
@@ -25,12 +25,11 @@
                 href="{{ $item['href'] ?? '#' }}"
                 @if ($active) aria-current="page" @endif
                 @class([
-                    'relative inline-flex min-h-touch flex-col items-center justify-center gap-1 px-2 py-2 text-caption transition duration-180 hover:bg-success-bg active:bg-warning-bg',
+                    'inline-flex min-h-touch flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 text-caption transition duration-180 focus-visible:ring-2 focus-visible:ring-focus',
                     'font-semibold text-forest-600' => $active,
-                    'text-text-secondary' => ! $active,
+                    'text-text-secondary hover:text-deep-green active:text-forest-600' => ! $active,
                 ])
             >
-                @if ($active)<span data-active-indicator class="absolute inset-x-3 top-0 h-1 rounded-sm bg-forest-600" aria-hidden="true"></span>@endif
                 <span class="relative">
                     <svg data-lucide="{{ $icon }}" viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         @switch($icon)

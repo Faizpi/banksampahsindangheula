@@ -42,7 +42,7 @@ final class OfficerShellTest extends TestCase
         self::assertStringContainsString('id="konten-utama"', $html);
         self::assertStringContainsString('tabindex="-1"', $html);
         self::assertStringContainsString('max-w-officer', $html);
-        self::assertStringContainsString('pb-[calc(4.5rem+env(safe-area-inset-bottom))]', $html);
+        self::assertStringContainsString('pb-[calc(5.75rem+env(safe-area-inset-bottom))]', $html);
         self::assertSame(1, substr_count($html, '<header'));
         self::assertSame(1, substr_count($html, '<h1'));
         self::assertSame(1, substr_count($html, '<main'));
@@ -125,7 +125,8 @@ final class OfficerShellTest extends TestCase
         self::assertStringContainsString('aria-label="'.$landmark.'"', $html);
         self::assertSame(count($destinations), substr_count($html, 'data-nav-item'));
         self::assertSame(1, substr_count($html, 'aria-current="page"'));
-        self::assertStringContainsString('pb-[env(safe-area-inset-bottom)]', $html);
+        self::assertStringContainsString('bottom-[calc(0.75rem+env(safe-area-inset-bottom))]', $html);
+        self::assertStringContainsString('rounded-[1.5rem]', $html);
         self::assertSame(count($destinations), substr_count($html, 'min-h-touch'));
 
         $lastPosition = -1;

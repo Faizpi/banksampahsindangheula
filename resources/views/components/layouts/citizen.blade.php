@@ -67,7 +67,7 @@
 
     {{-- Main Content --}}
     <main id="konten-utama" tabindex="-1"
-        class="mx-auto grid min-h-[calc(100dvh-4rem)] w-full max-w-citizen content-start gap-6 px-4 pb-[calc(4.5rem+env(safe-area-inset-bottom))] pt-6 sm:px-5 md:pb-24 md:pt-8">
+        class="mx-auto grid min-h-[calc(100dvh-4rem)] w-full max-w-citizen content-start gap-6 px-4 pb-[calc(5.75rem+env(safe-area-inset-bottom))] pt-6 sm:px-5 md:pb-24 md:pt-8">
         @isset($balance)<section data-slot-balance>{{ $balance }}</section>@endisset
         @isset($quickActions)<section data-slot-quick-actions>{{ $quickActions }}</section>@endisset
         @isset($activeRequests)<section data-slot-active-requests>{{ $activeRequests }}</section>@endisset
