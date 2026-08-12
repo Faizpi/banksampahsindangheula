@@ -4,16 +4,16 @@
 
 <x-slot:todayTasks>
     @if ($priorityTask)
-        <section class="mb-4 rounded-lg border-2 border-forest-600 bg-deep-green p-5 text-white" aria-labelledby="priority-task-title">
+        <section class="mb-4 rounded-lg border border-sky-blue/40 bg-info-bg p-5 shadow-xs" aria-labelledby="priority-task-title">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                    <p class="text-caption font-semibold text-success-bg">Fokus sekarang</p>
-                    <h2 id="priority-task-title" class="mt-1 text-h2 font-bold">{{ $priorityTask['label'] }}</h2>
-                    <p class="mt-1 text-body-sm text-white/80">{{ $priorityTask['description'] }}</p>
-                    @if ($priorityTask['status'])<p class="mt-2 text-caption font-semibold text-success-bg">Status: {{ \App\Support\StatusLabel::for($priorityTask['status']) }}</p>@endif
+                    <p class="text-caption font-semibold text-sky-blue">Fokus sekarang</p>
+                    <h2 id="priority-task-title" class="mt-1 text-h2 font-bold text-deep-green">{{ $priorityTask['label'] }}</h2>
+                    <p class="mt-1 text-body-sm text-text-secondary">{{ $priorityTask['description'] }}</p>
+                    @if ($priorityTask['status'])<p class="mt-2 text-caption font-semibold text-sky-blue">Status: {{ \App\Support\StatusLabel::for($priorityTask['status']) }}</p>@endif
                 </div>
                 @if ($priorityTask['href'])
-                    <a href="{{ $priorityTask['href'] }}" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md bg-surface px-5 text-label font-bold text-deep-green transition hover:bg-success-bg">
+                    <a href="{{ $priorityTask['href'] }}" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md border border-sky-blue bg-surface px-5 text-label font-bold text-sky-blue transition hover:bg-surface/70">
                         Buka tugas
                         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
                     </a>

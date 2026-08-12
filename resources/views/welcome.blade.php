@@ -2,7 +2,7 @@
 
 @section('content')
     {{-- Hero Section --}}
-    <section class="relative isolate overflow-hidden border-b border-border/60 bg-surface" aria-labelledby="landing-title">
+    <section class="public-hero-grid relative isolate overflow-hidden border-b border-border/60 bg-surface" aria-labelledby="landing-title">
         <div class="public-container grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[1.05fr_.95fr] lg:gap-12 lg:py-20">
             <div class="relative z-10 max-w-2xl">
                 <div class="inline-flex items-center gap-2 rounded-full border border-border bg-success-bg px-4 py-1.5 text-xs font-bold text-forest-600">
@@ -95,7 +95,7 @@
 
                     <article class="group grid gap-5 rounded-2xl border border-border bg-surface p-5 shadow-xs transition-all duration-200 hover:border-forest-600/40 hover:shadow-sm sm:grid-cols-[96px_1fr_auto] sm:items-center sm:p-6">
                         <div class="flex justify-center">
-                            <x-ui.mascot variant="7" class="h-20 w-auto" />
+                            <x-ui.mascot variant="8" class="h-20 w-auto" />
                         </div>
                         <div>
                             <h3 class="text-title font-bold text-deep-green transition-colors group-hover:text-forest-600">Penjemputan yang Terjadwal</h3>
@@ -142,7 +142,7 @@
                 <li class="relative flex flex-col items-center rounded-2xl border border-border bg-warm-canvas p-6 text-center shadow-xs sm:p-8">
                     <span class="absolute -top-3.5 rounded-full bg-forest-600 px-3.5 py-1 text-xs font-extrabold text-surface shadow-xs">Langkah 2</span>
                     <div class="mt-2 flex h-32 items-center justify-center">
-                        <x-ui.mascot variant="8" bubble="Timbang akurat!" class="h-28 w-auto" />
+                        <x-ui.mascot variant="7" bubble="Timbang akurat!" class="h-28 w-auto" />
                     </div>
                     <h3 class="mt-4 text-h3 font-bold text-deep-green">Timbang &amp; Konfirmasi</h3>
                     <p class="mt-2.5 text-body-sm leading-relaxed text-text-secondary">Petugas mencatat berat aktual per jenis dan sistem mengambil harga pasar yang berlaku.</p>

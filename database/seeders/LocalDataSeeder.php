@@ -224,7 +224,7 @@ final class LocalDataSeeder extends Seeder
             $profile = CustomerProfile::query()->firstOrNew(['user_id' => $user->id]);
             $token = $profile->qr_token_hash === null ? QrToken::generate() : null;
             $profile->forceFill([
-                'customer_number' => $profile->customer_number ?? 'CST-SH-'.str_pad((string) $number, 4, '0', STR_PAD_LEFT),
+                'customer_number' => $profile->customer_number ?? 'CST-'.str_pad((string) $number, 8, '0', STR_PAD_LEFT),
                 'rt_id' => $rts[$index % count($rts)]->id,
                 'address' => $addresses[$index % count($addresses)].', '.$rts[$index % count($rts)]->name.', Desa Sindangheula',
                 'joined_at' => today()->subDays(7 - ($index % 7)),

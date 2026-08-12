@@ -118,7 +118,7 @@ final class DeveloperUsersSeeder extends Seeder
             CustomerProfile::query()->updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'customer_number' => 'CST-SH-0001',
+                    'customer_number' => 'CST-00000001',
                     'rt_id' => $this->localRt()->id,
                     'address' => 'Kampung Sukamaju RT 01/RW 02, Sindangheula',
                     'joined_at' => now()->toDateString(),

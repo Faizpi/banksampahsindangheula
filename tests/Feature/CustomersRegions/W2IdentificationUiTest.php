@@ -21,7 +21,7 @@ final class W2IdentificationUiTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_citizen_card_shows_masked_reference_and_fallback_without_exposing_qr_token(): void
+    public function test_citizen_card_shows_printable_identity_controls_without_exposing_qr_token(): void
     {
         $citizen = User::factory()->create(['name' => 'Siti Aminah']);
         $profile = CustomerProfile::factory()->for($citizen)->create([
@@ -33,9 +33,11 @@ final class W2IdentificationUiTest extends TestCase
         Livewire::actingAs($citizen)
             ->test(CustomerCard::class)
             ->assertSee('Kartu Digital Nasabah')
+            ->assertSee('Siti Aminah')
+            ->assertSee('CST-12345678')
             ->assertSee('CST-****78')
-            ->assertSee('Nomor alternatif')
-            ->assertSee('QR Nasabah Warga')
+            ->assertSee('Simpan PNG')
+            ->assertSee('data-customer-card-preview-image', false)
             ->assertDontSee($profile->qr_token_hash)
             ->assertDontSee('token');
     }

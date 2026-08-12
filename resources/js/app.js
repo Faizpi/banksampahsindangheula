@@ -277,8 +277,314 @@ async function clearPublicCachesAfterLogout() {
     );
 }
 
+const CUSTOMER_CARD_CANVAS_WIDTH = 1600;
+const CUSTOMER_CARD_CANVAS_HEIGHT = 1009;
+
+function customerCardFromTarget(target) {
+    if (!(target instanceof Element)) {
+        return null;
+    }
+
+    const page = target.closest('[data-customer-card-page]');
+    const card = page?.querySelector('[data-customer-card-printable]');
+
+    return card instanceof HTMLElement ? card : null;
+}
+
+function customerCardStatus(card, message) {
+    const page = card.closest('[data-customer-card-page]');
+    const status = page?.querySelector('[data-customer-card-status]');
+
+    if (status instanceof HTMLElement) {
+        status.textContent = message;
+    }
+}
+
+function customerCardColor(name, fallback) {
+    const color = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+    return color === '' ? fallback : color;
+}
+
+function customerCardRoundedRectangle(context, x, y, width, height, radius, fillStyle, strokeStyle = null) {
+    context.beginPath();
+    context.roundRect(x, y, width, height, radius);
+    context.fillStyle = fillStyle;
+    context.fill();
+
+    if (strokeStyle !== null) {
+        context.strokeStyle = strokeStyle;
+        context.lineWidth = 2;
+        context.stroke();
+    }
+}
+
+function customerCardTextLines(context, text, maxWidth) {
+    const words = text.trim().split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = '';
+
+    for (const word of words) {
+        const candidate = line === '' ? word : `${line} ${word}`;
+
+        if (line !== '' && context.measureText(candidate).width > maxWidth) {
+            lines.push(line);
+            line = word;
+        } else {
+            line = candidate;
+        }
+    }
+
+    if (line !== '') {
+        lines.push(line);
+    }
+
+    return lines.length > 0 ? lines : [''];
+}
+
+function customerCardDrawText(context, text, x, y, maxWidth, lineHeight, maxLines = 2) {
+    const lines = customerCardTextLines(context, text, maxWidth).slice(0, maxLines);
+
+    lines.forEach((line, index) => context.fillText(line, x, y + (index * lineHeight), maxWidth));
+
+    return y + (lines.length * lineHeight);
+}
+
+function customerCardLoadImage(source) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+
+        image.onload = () => resolve(image);
+        image.onerror = () => reject(new Error('Kode QR tidak dapat dipersiapkan untuk PNG.'));
+        image.src = source;
+    });
+}
+
+async function customerCardCanvas(card) {
+    const canvas = document.createElement('canvas');
+    canvas.width = CUSTOMER_CARD_CANVAS_WIDTH;
+    canvas.height = CUSTOMER_CARD_CANVAS_HEIGHT;
+    const context = canvas.getContext('2d');
+
+    if (context === null) {
+        throw new Error('Browser tidak mendukung pembuatan kartu PNG.');
+    }
+
+    const forest = customerCardColor('--color-forest-600', '#1e6a56');
+    const forestDark = customerCardColor('--color-forest-700', '#185746');
+    const deepGreen = customerCardColor('--color-deep-green', '#123d32');
+    const surface = customerCardColor('--color-surface', '#ffffff');
+    const warmCanvas = customerCardColor('--color-warm-canvas', '#f6f5ef');
+    const textSecondary = customerCardColor('--color-text-secondary', '#55635d');
+    const border = customerCardColor('--color-border', '#d9e1dc');
+    const name = card.querySelector('[data-customer-card-name]')?.textContent?.trim() ?? 'Nasabah Bank Sampah';
+    const number = card.querySelector('[data-customer-card-number]')?.textContent?.trim() ?? '';
+    const area = card.querySelector('[data-customer-card-area]')?.textContent?.trim() ?? 'Desa Sindangheula';
+    const qrSource = card.querySelector('[data-customer-card-qr]')?.getAttribute('src') ?? '';
+
+    context.save();
+    context.beginPath();
+    context.roundRect(0, 0, canvas.width, canvas.height, 34);
+    context.clip();
+
+    context.fillStyle = surface;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.save();
+    context.globalAlpha = 0.08;
+    context.strokeStyle = forest;
+    context.lineWidth = 1;
+    for (let x = 0; x <= canvas.width; x += 48) {
+        context.beginPath();
+        context.moveTo(x, 0);
+        context.lineTo(x, canvas.height);
+        context.stroke();
+    }
+    for (let y = 0; y <= canvas.height; y += 48) {
+        context.beginPath();
+        context.moveTo(0, y);
+        context.lineTo(canvas.width, y);
+        context.stroke();
+    }
+    context.restore();
+
+    context.fillStyle = forest;
+    context.fillRect(0, 0, canvas.width, 164);
+    context.strokeStyle = forestDark;
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(0, 164);
+    context.lineTo(canvas.width, 164);
+    context.stroke();
+
+    context.fillStyle = surface;
+    context.font = "700 24px 'Plus Jakarta Sans', sans-serif";
+    context.fillText('KARTU NASABAH DIGITAL', 72, 82);
+    context.fillStyle = surface;
+    context.font = "700 34px 'Plus Jakarta Sans', sans-serif";
+    context.fillText('Bank Sampah Sindangheula', 72, 130);
+
+    customerCardRoundedRectangle(context, 1224, 60, 242, 56, 28, surface, border);
+    context.fillStyle = forest;
+    context.beginPath();
+    context.arc(1259, 88, 8, 0, Math.PI * 2);
+    context.fill();
+    context.font = "700 22px 'Plus Jakarta Sans', sans-serif";
+    context.fillText('AKTIF', 1281, 96);
+
+    context.fillStyle = textSecondary;
+    context.font = "600 22px 'Plus Jakarta Sans', sans-serif";
+    context.fillText('NAMA NASABAH', 72, 292);
+    context.fillStyle = deepGreen;
+    context.font = "700 62px 'Plus Jakarta Sans', sans-serif";
+    const nextNameY = customerCardDrawText(context, name, 72, 366, 800, 74);
+
+    const detailsY = Math.max(550, nextNameY + 78);
+    context.strokeStyle = border;
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(72, detailsY - 42);
+    context.lineTo(872, detailsY - 42);
+    context.stroke();
+
+    context.fillStyle = textSecondary;
+    context.font = "600 22px 'Plus Jakarta Sans', sans-serif";
+    context.fillText('NOMOR NASABAH', 72, detailsY);
+    context.fillText('WILAYAH LAYANAN', 72, detailsY + 128);
+    context.fillStyle = deepGreen;
+    context.font = "700 34px 'Plus Jakarta Sans', sans-serif";
+    context.fillText(number, 72, detailsY + 48);
+    customerCardDrawText(context, area, 72, detailsY + 176, 800, 40, 2);
+
+    customerCardRoundedRectangle(context, 1044, 222, 416, 416, 24, surface, border);
+    if (qrSource !== '') {
+        const qr = await customerCardLoadImage(qrSource);
+        context.drawImage(qr, 1068, 246, 368, 368);
+    } else {
+        context.fillStyle = warmCanvas;
+        context.fillRect(1068, 246, 368, 368);
+        context.fillStyle = textSecondary;
+        context.font = "600 26px 'Plus Jakarta Sans', sans-serif";
+        context.textAlign = 'center';
+        context.fillText('QR belum aktif', 1252, 442);
+        context.textAlign = 'left';
+    }
+
+    context.fillStyle = textSecondary;
+    context.font = "600 20px 'Plus Jakarta Sans', sans-serif";
+    context.textAlign = 'center';
+    context.fillText('PINDAI UNTUK VERIFIKASI', 1252, 688);
+    context.textAlign = 'left';
+
+    context.fillStyle = warmCanvas;
+    context.fillRect(0, 868, canvas.width, 141);
+    context.fillStyle = textSecondary;
+    context.font = "600 21px 'Plus Jakarta Sans', sans-serif";
+    context.fillText('QR tanpa data saldo · Gunakan di layanan resmi Bank Sampah Sindangheula', 72, 948);
+
+    context.restore();
+
+    return canvas;
+}
+
+async function renderCustomerCardPreview(card) {
+    const preview = card.querySelector('[data-customer-card-preview-image]');
+    const fallback = card.querySelector('[data-customer-card-preview-fallback]');
+
+    if (!(preview instanceof HTMLImageElement) || !(fallback instanceof HTMLElement)) {
+        return;
+    }
+
+    try {
+        const canvas = await customerCardCanvas(card);
+        preview.src = canvas.toDataURL('image/png');
+        preview.hidden = false;
+        fallback.hidden = true;
+        card.dataset.customerCardPreviewState = 'ready';
+    } catch (error) {
+        card.dataset.customerCardPreviewState = 'fallback';
+    }
+}
+
+function renderCustomerCardPreviews() {
+    document.querySelectorAll('[data-customer-card-printable]').forEach((card) => {
+        if (card instanceof HTMLElement && card.dataset.customerCardPreviewState !== 'ready') {
+            void renderCustomerCardPreview(card);
+        }
+    });
+}
+
+function scheduleCustomerCardPreviews() {
+    if (document.fonts?.ready) {
+        void document.fonts.ready.then(renderCustomerCardPreviews);
+        return;
+    }
+
+    renderCustomerCardPreviews();
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', scheduleCustomerCardPreviews, { once: true });
+} else {
+    scheduleCustomerCardPreviews();
+}
+
+window.addEventListener('livewire:navigated', scheduleCustomerCardPreviews);
+document.addEventListener('livewire:navigated', scheduleCustomerCardPreviews);
+window.addEventListener('load', () => window.setTimeout(scheduleCustomerCardPreviews, 250));
+
+function customerCardDownloadFilename(card) {
+    const number = card.querySelector('[data-customer-card-number]')?.textContent?.trim() ?? 'nasabah';
+    const safeNumber = number.replace(/[^A-Za-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'nasabah';
+
+    return `kartu-nasabah-${safeNumber}.png`;
+}
+
+async function downloadCustomerCardPng(button, card) {
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    customerCardStatus(card, 'Menyiapkan kartu PNG.');
+
+    try {
+        const canvas = await customerCardCanvas(card);
+        const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+
+        if (blob === null) {
+            throw new Error('Kartu PNG tidak dapat dibuat.');
+        }
+
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = customerCardDownloadFilename(card);
+        document.body.append(anchor);
+        anchor.click();
+        anchor.remove();
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+        customerCardStatus(card, 'Kartu PNG berhasil diunduh dan siap dicetak.');
+    } catch (error) {
+        customerCardStatus(card, error instanceof Error ? error.message : 'Kartu PNG tidak dapat dibuat. Coba lagi.');
+    } finally {
+        button.disabled = false;
+        button.removeAttribute('aria-busy');
+    }
+}
+
 document.addEventListener('click', (event) => {
     const target = event.target instanceof Element ? event.target : null;
+    const cardDownload = target?.closest('[data-customer-card-download]');
+
+    if (cardDownload instanceof HTMLButtonElement) {
+        const card = customerCardFromTarget(cardDownload);
+
+        if (card !== null) {
+            event.preventDefault();
+            void downloadCustomerCardPng(cardDownload, card);
+        }
+
+        return;
+    }
+
     const photoTrigger = target?.closest('[data-photo-picker-trigger]');
     const photoRemove = target?.closest('[data-photo-picker-remove]');
 

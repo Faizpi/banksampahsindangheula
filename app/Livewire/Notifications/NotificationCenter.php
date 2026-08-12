@@ -9,8 +9,10 @@ use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Gate;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 
+#[Layout('layouts.citizen')]
 final class NotificationCenter extends Component
 {
     public function markAsRead(int $notificationId): void
@@ -32,9 +34,15 @@ final class NotificationCenter extends Component
             ->get()
             ->map(fn (Notification $notification): array => $this->notificationForDisplay($actor, $notification));
 
-        return view('livewire.notifications.notification-center', [
+        $view = view('livewire.notifications.notification-center', [
             'notifications' => $notifications,
         ]);
+
+        if ($actor->roles()->whereIn('name', ['petugas', 'bendahara', 'admin', 'superadmin'])->exists()) {
+            $view->layout('layouts.officer');
+        }
+
+        return $view;
     }
 
     /** @return Builder<Notification> */
