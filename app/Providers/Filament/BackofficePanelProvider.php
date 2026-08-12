@@ -38,13 +38,12 @@ final class BackofficePanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->navigationGroups([
-                NavigationGroup::make('Identitas & Akses'),
-                NavigationGroup::make('Transaksi & Saldo'),
-                NavigationGroup::make('Operasional Lapangan'),
-                NavigationGroup::make('Program & Publikasi'),
-                NavigationGroup::make('Laporan & Audit'),
-                NavigationGroup::make('Data Master'),
-                NavigationGroup::make('Administrasi sistem'),
+                NavigationGroup::make('Operasional'),
+                NavigationGroup::make('Data Master')->collapsed(),
+                NavigationGroup::make('Program')->collapsed(),
+                NavigationGroup::make('Pengawasan')->collapsed(),
+                NavigationGroup::make('Keamanan & Akses')->collapsed(),
+                NavigationGroup::make('Administrasi sistem')->collapsed(),
             ])
             ->middleware([
                 EncryptCookies::class,

@@ -32,7 +32,7 @@ final class GroceryPackageResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
-    protected static ?int $navigationSort = 50;
+    protected static ?int $navigationSort = 80;
 
     protected static ?string $navigationLabel = 'Paket Sembako';
 

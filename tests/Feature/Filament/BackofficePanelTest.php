@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Filament;
 
+use App\Domain\Identity\Models\CustomerProfile;
 use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
 use App\Domain\WasteMaster\Models\WasteCategory;
@@ -126,22 +127,46 @@ final class BackofficePanelTest extends TestCase
             ->assertSee('Unduh Excel');
     }
 
-    public function test_backoffice_navigation_has_the_settled_taxonomy_groups_in_order(): void
+    public function test_work_queue_only_renders_queues_with_pending_work(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        $admin = User::factory()->create();
+        $admin->roles()->attach(Role::query()->where('name', 'admin')->sole());
+        $pendingCitizen = User::factory()->pendingVerification()->create();
+        CustomerProfile::factory()->for($pendingCitizen)->create();
+
+        $this->actingAs($admin->fresh());
+
+        $this->get('/backoffice/work-queue-dashboard')
+            ->assertOk()
+            ->assertSee('Verifikasi warga')
+            ->assertDontSee('Pickup hari ini')
+            ->assertDontSee('Pencairan menunggu keputusan')
+            ->assertDontSee('Setoran perlu ditinjau');
+    }
+
+    public function test_backoffice_navigation_has_the_focused_taxonomy_groups_in_order(): void
     {
         $panel = Filament::getPanel('backoffice');
 
         self::assertSame(
             [
-                'Identitas & Akses',
-                'Transaksi & Saldo',
-                'Operasional Lapangan',
-                'Program & Publikasi',
-                'Laporan & Audit',
+                'Operasional',
                 'Data Master',
+                'Program',
+                'Pengawasan',
+                'Keamanan & Akses',
                 'Administrasi sistem',
             ],
             collect($panel->getNavigationGroups())->map(static fn ($group): string => $group->getLabel())->all(),
         );
+
+        $groups = collect($panel->getNavigationGroups())->keyBy(static fn ($group): string => $group->getLabel());
+
+        self::assertFalse($groups['Operasional']->isCollapsed());
+        foreach (['Data Master', 'Program', 'Pengawasan', 'Keamanan & Akses', 'Administrasi sistem'] as $group) {
+            self::assertTrue($groups[$group]->isCollapsed());
+        }
     }
 
     public function test_admin_navigation_uses_the_stable_resource_order_for_each_group(): void
@@ -154,27 +179,23 @@ final class BackofficePanelTest extends TestCase
         $this->actingAs($admin->fresh());
 
         self::assertSame(
-            ['Nasabah', 'Verifikasi Warga', 'Pengguna', 'Bantuan Kata Sandi', 'Sesi Pengguna', 'Peran', 'Izin'],
-            $this->navigationLabelsForGroup($panel, 'Identitas & Akses'),
-        );
-        self::assertSame(
-            ['Setoran dan Koreksi', 'Mutasi saldo', 'Dana ditahan', 'Pencairan', 'Penukaran Sembako'],
-            $this->navigationLabelsForGroup($panel, 'Transaksi & Saldo'),
-        );
-        self::assertSame(
-            ['Penjemputan', 'Kapasitas Penjemputan'],
-            $this->navigationLabelsForGroup($panel, 'Operasional Lapangan'),
+            ['Setoran dan Koreksi', 'Penjemputan', 'Kapasitas Penjemputan', 'Pencairan', 'Penukaran Sembako'],
+            $this->navigationLabelsForGroup($panel, 'Operasional'),
         );
         self::assertSame(
             ['Pengumuman', 'Target Pengumpulan', 'Layanan Keliling', 'Statistik Publik'],
-            $this->navigationLabelsForGroup($panel, 'Program & Publikasi'),
+            $this->navigationLabelsForGroup($panel, 'Program'),
         );
         self::assertSame(
-            ['Laporan', 'Audit log'],
-            $this->navigationLabelsForGroup($panel, 'Laporan & Audit'),
+            ['Laporan', 'Audit log', 'Mutasi saldo', 'Dana ditahan'],
+            $this->navigationLabelsForGroup($panel, 'Pengawasan'),
         );
         self::assertSame(
-            ['Area Pelayanan', 'Dusun', 'RW', 'RT', 'Paket Sembako', 'Jenis Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Harga Sampah', 'Satuan Sampah'],
+            ['Bantuan Kata Sandi', 'Sesi Pengguna', 'Peran', 'Izin'],
+            $this->navigationLabelsForGroup($panel, 'Keamanan & Akses'),
+        );
+        self::assertSame(
+            ['Nasabah', 'Pengguna', 'Verifikasi Warga', 'Area Pelayanan', 'Dusun', 'RW', 'RT', 'Paket Sembako', 'Jenis Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Harga Sampah', 'Satuan Sampah'],
             $this->navigationLabelsForGroup($panel, 'Data Master'),
         );
         self::assertSame([], $this->navigationLabelsForGroup($panel, 'Administrasi sistem'));

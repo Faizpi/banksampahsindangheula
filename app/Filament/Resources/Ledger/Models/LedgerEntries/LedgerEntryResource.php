@@ -30,7 +30,7 @@ final class LedgerEntryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedArrowsRightLeft;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi & Saldo';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengawasan';
 
     protected static ?int $navigationSort = 20;
 

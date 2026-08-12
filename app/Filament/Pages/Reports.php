@@ -15,7 +15,7 @@ final class Reports extends Page
 {
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Laporan & Audit';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengawasan';
 
     protected static ?int $navigationSort = 10;
 

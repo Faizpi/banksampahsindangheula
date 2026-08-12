@@ -7,7 +7,6 @@ namespace App\Filament\Pages;
 use App\Authorization\PermissionChecker;
 use App\Domain\Communication\Enums\AnnouncementStatus;
 use App\Domain\Communication\Services\AnnouncementService;
-use App\Domain\Corrections\Services\TransactionCorrectionService;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Services\GroceryService;
@@ -22,7 +21,6 @@ use App\Domain\Programs\Services\TargetService;
 use App\Domain\Withdrawals\Enums\WithdrawalStatus;
 use App\Domain\Withdrawals\Services\WithdrawalService;
 use App\Filament\Resources\Communication\Models\Announcements\AnnouncementResource;
-use App\Filament\Resources\Deposits\Models\Deposits\DepositResource;
 use App\Filament\Resources\Groceries\Models\GroceryRedemptions\GroceryRedemptionResource;
 use App\Filament\Resources\Identity\Models\CitizenVerifications\CitizenVerificationResource;
 use App\Filament\Resources\MobileServices\Models\MobileServices\MobileServiceResource;
@@ -137,18 +135,6 @@ final class WorkQueueDashboard extends Page
                 'description' => 'Periksa ketersediaan dan setujui pengajuan.',
                 'cta' => 'Tinjau sembako',
                 'href' => GroceryRedemptionResource::getUrl('index'),
-            ];
-        }
-
-        if (($permissions->allows($actor, 'transaction.correct') || $permissions->allows($actor, 'transaction.reverse'))
-            && $permissions->allows($actor, 'deposit.view')) {
-            $depositQuery = app(TransactionCorrectionService::class)->visibleDeposits($actor);
-            $queues[] = [
-                'label' => 'Setoran perlu ditinjau',
-                'count' => (clone $depositQuery)->where('status', 'final')->count(),
-                'description' => 'Periksa transaksi final yang dapat dikoreksi atau dibalik.',
-                'cta' => 'Tinjau setoran',
-                'href' => DepositResource::getUrl('index'),
             ];
         }
 

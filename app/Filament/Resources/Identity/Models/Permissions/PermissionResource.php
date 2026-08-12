@@ -21,7 +21,7 @@ final class PermissionResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedKey;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Identitas & Akses';
+    protected static string|UnitEnum|null $navigationGroup = 'Keamanan & Akses';
 
     protected static ?int $navigationSort = 70;
 

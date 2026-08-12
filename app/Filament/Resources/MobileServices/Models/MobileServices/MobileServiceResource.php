@@ -36,7 +36,7 @@ final class MobileServiceResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedTruck;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Program & Publikasi';
+    protected static string|UnitEnum|null $navigationGroup = 'Program';
 
     protected static ?int $navigationSort = 30;
 

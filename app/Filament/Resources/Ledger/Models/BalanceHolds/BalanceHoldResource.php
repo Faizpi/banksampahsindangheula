@@ -28,7 +28,7 @@ final class BalanceHoldResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedLockClosed;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi & Saldo';
+    protected static string|UnitEnum|null $navigationGroup = 'Pengawasan';
 
     protected static ?int $navigationSort = 30;
 

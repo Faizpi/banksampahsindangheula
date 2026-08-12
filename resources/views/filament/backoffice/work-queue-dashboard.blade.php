@@ -17,6 +17,7 @@
         <section aria-labelledby="attention-counts-title">
             <div class="flex items-end justify-between gap-4"><div><h2 id="attention-counts-title" class="text-xl font-bold text-gray-950">Antrean yang perlu perhatian</h2><p class="mt-1 text-sm text-gray-600">Diperbarui {{ $lastUpdated }} WIB.</p></div></div>
             @php($hasPendingQueue = collect($queues)->contains(fn (array $queue): bool => $queue['count'] > 0))
+            @php($pendingQueues = collect($queues)->filter(fn (array $queue): bool => $queue['count'] > 0))
             @if (! $hasVisibleQueues)
                 <div class="mt-4 rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
                     Tidak ada antrean yang tersedia untuk peran ini.
@@ -29,7 +30,7 @@
             @endif
             @if ($hasPendingQueue)
                 <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    @foreach ($queues as $queue)
+                    @foreach ($pendingQueues as $queue)
                         <a href="{{ $queue['href'] }}" class="group rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-primary-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">
                             <div class="flex items-start justify-between gap-3"><span class="text-sm font-semibold text-gray-700">{{ $queue['label'] }}</span><strong class="text-2xl font-bold tabular-nums text-primary-800">{{ $queue['count'] }}</strong></div>
                             <p class="mt-3 text-sm leading-6 text-gray-600">{{ $queue['description'] }}</p>

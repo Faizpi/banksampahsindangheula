@@ -29,7 +29,7 @@ final class SessionInventoryResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedShieldCheck;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Identitas & Akses';
+    protected static string|UnitEnum|null $navigationGroup = 'Keamanan & Akses';
 
     protected static ?int $navigationSort = 50;
 

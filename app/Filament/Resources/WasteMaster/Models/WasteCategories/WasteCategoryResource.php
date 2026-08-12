@@ -29,7 +29,7 @@ final class WasteCategoryResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
-    protected static ?int $navigationSort = 70;
+    protected static ?int $navigationSort = 100;
 
     protected static ?string $navigationLabel = 'Kategori Sampah';
 

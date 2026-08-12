@@ -35,7 +35,7 @@ final class DepositResource extends Resource
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedReceiptPercent;
 
-    protected static string|UnitEnum|null $navigationGroup = 'Transaksi & Saldo';
+    protected static string|UnitEnum|null $navigationGroup = 'Operasional';
 
     protected static ?int $navigationSort = 10;
 

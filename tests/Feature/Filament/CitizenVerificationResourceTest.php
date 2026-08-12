@@ -143,7 +143,7 @@ final class CitizenVerificationResourceTest extends TestCase
         app()->forgetInstance(NavigationManager::class);
 
         foreach ($panel->getNavigation() as $group) {
-            if ($group->getLabel() !== 'Identitas & Akses') {
+            if ($group->getLabel() !== 'Data Master') {
                 continue;
             }
 
