@@ -205,7 +205,7 @@ Shell khusus task-first untuk smartphone lapangan, scan/nomor, setoran, pickup, 
 
 ### Admin/superadmin
 
-Filament 5 untuk back-office data-dense dan action-first. Admin dan superadmin mendapat entry point **Laporan** di grup **Laporan & Audit**; halaman memakai query scope yang sama, read-only untuk data, dan ekspor privat XLSX. Resource/action tetap memanggil application action dan policy yang sama; Filament bukan bypass domain. Tema memakai token [DESIGN.md](DESIGN.md).
+Filament 5 untuk back-office data-dense dan action-first. Admin dan superadmin mendapat entry point **Laporan** di grup **Pengawasan**; halaman memakai query scope yang sama, read-only untuk data, dan ekspor privat XLSX. Superadmin juga dapat melihat **Rekonsiliasi** pada grup ini sesuai permission. Resource/action tetap memanggil application action dan policy yang sama; Filament bukan bypass domain. Tema memakai token [DESIGN.md](DESIGN.md).
 
 ## 9. Livewire dan Alpine
 

@@ -1,6 +1,12 @@
 # Dokumentasi Bank Sampah Digital Sindangheula
 
-Dokumentasi ini menjadi kontrak pengembangan Sistem Informasi Bank Sampah Digital Desa Sindangheula setelah proposal disetujui.
+Dokumentasi ini menjelaskan kontrak produk, teknis, antarmuka, dan operasional Sistem Informasi Bank Sampah Digital Desa Sindangheula setelah proposal disetujui.
+
+## Mulai dari sini
+
+- Untuk memahami atau mengubah fitur, mulai dari [definisi produk](PRODUCT.md), [requirement](REQUIREMENTS.md), dan [aturan bisnis](BUSINESS_RULES.md).
+- Untuk implementasi atau review kode, lanjutkan ke [arsitektur](ARCHITECTURE.md), [model data](DATA_MODEL.md), [validasi](VALIDATION.md), dan [desain antarmuka](DESIGN.md).
+- Untuk rilis atau operasi, gunakan [rencana pengujian](TEST_PLAN.md), [panduan deployment](DEPLOYMENT.md), [operasi](OPERATIONS.md), serta [changelog](CHANGELOG.md). Snapshot pengujian lokal tidak menggantikan UAT, bukti deployment, atau persetujuan rilis.
 
 ## Status
 
@@ -21,8 +27,8 @@ Dokumentasi ini menjadi kontrak pengembangan Sistem Informasi Bank Sampah Digita
 
 ## Dokumen Acuan
 
-- Proposal: [`../documents/Pengajuan_Bank_Sampah_Digital_Desa_Sindangheula.pdf`](../documents/Pengajuan_Bank_Sampah_Digital_Desa_Sindangheula.pdf)
-- Flowchart: [`../documents/Kumpulan_Flowchart_Bank_Sampah_Digital_Sindangheula.pdf`](../documents/Kumpulan_Flowchart_Bank_Sampah_Digital_Sindangheula.pdf)
+- [Proposal pengajuan Bank Sampah Digital Desa Sindangheula](../documents/Pengajuan_Bank_Sampah_Digital_Desa_Sindangheula.pdf)
+- [Kumpulan flowchart Bank Sampah Digital Sindangheula](../documents/Kumpulan_Flowchart_Bank_Sampah_Digital_Sindangheula.pdf)
 
 ## Kontrak Produk dan Bisnis
 

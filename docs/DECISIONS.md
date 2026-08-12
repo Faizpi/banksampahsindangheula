@@ -24,7 +24,7 @@ Status: `Accepted`, `Superseded`, atau `Deprecated`. Semua keputusan di bawah be
 
 ### Fondasi teknis IMP-019
 
-IMP-019 menetapkan fondasi teknis back-office Filament 5 sesuai ADR ini: instalasi paket, custom theme Sindangheula Green Ledger, sidebar dengan empat kelompok, dan enforcement admission `backoffice.access` untuk `admin` dan `superadmin`. Fondasi ini tidak membuat resource bisnis, tidak mengubah policy atau permission domain, dan tidak menjadi bypass authorization. Resource, action, serta editor role/permission tetap mengikuti dependency dan audit masing-masing.
+IMP-019 menetapkan fondasi teknis back-office Filament 5 sesuai ADR ini: instalasi paket, custom theme Sindangheula Green Ledger, sidebar dengan enam kelompok, dan enforcement admission `backoffice.access` untuk `admin` dan `superadmin`. Fondasi ini tidak membuat resource bisnis, tidak mengubah policy atau permission domain, dan tidak menjadi bypass authorization. Resource, action, serta editor role/permission tetap mengikuti dependency dan audit masing-masing.
 
 ## ADR-003 — Hostinger shared hosting
 

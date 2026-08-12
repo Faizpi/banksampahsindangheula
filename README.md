@@ -157,7 +157,7 @@ composer check
 npm run build
 ```
 
-Smoke runtime lokal memakai MySQL 8.0.30 dari Laragon. Suite harian memakai SQLite `:memory:`. Validasi engine MySQL 8.0.30 disposable, pemeriksaan browser atau E2E, UAT, deployment rehearsal, dan bukti operasional mengikuti [TEST_PLAN.md](docs/TEST_PLAN.md) serta [DEPLOYMENT.md](docs/DEPLOYMENT.md). Hasil SQLite tidak dengan sendirinya membuktikan kompatibilitas MySQL production.
+Smoke runtime lokal memakai MySQL 8.0.30 dari Laragon. Suite harian memakai SQLite `:memory:`. Validasi engine MySQL 8.0.30 disposable, pemeriksaan browser atau E2E, UAT, deployment rehearsal, dan bukti operasional mengikuti [rencana pengujian](docs/TEST_PLAN.md) serta [panduan deployment](docs/DEPLOYMENT.md). Hasil SQLite tidak dengan sendirinya membuktikan kompatibilitas MySQL production. Riwayat perubahan dan snapshot verifikasi lokal dicatat di [changelog proyek](docs/CHANGELOG.md); keduanya bukan klaim kesiapan produksi.
 
 ## Dokumentasi
 
