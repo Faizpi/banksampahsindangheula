@@ -3,7 +3,7 @@
 @section('content')
     {{-- Hero Section --}}
     <section class="public-hero-grid relative isolate overflow-hidden border-b border-border/60 bg-surface" aria-labelledby="landing-title">
-        <div class="public-container grid items-center gap-10 py-12 sm:py-16 lg:grid-cols-[1.05fr_.95fr] lg:gap-12 lg:py-20">
+        <div class="public-container grid items-center gap-10 pb-12 pt-28 sm:pb-16 sm:pt-32 lg:grid-cols-[1.05fr_.95fr] lg:gap-12 lg:pb-20 lg:pt-36">
             <div class="relative z-10 max-w-2xl">
                 <h1 id="landing-title" class="text-balance text-display font-extrabold tracking-tight text-deep-green lg:text-display-lg">
                     Sampah tercatat. <span class="text-forest-600">Nilai terjaga.</span> Desa bergerak bersama.

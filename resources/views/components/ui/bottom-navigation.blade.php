@@ -13,7 +13,7 @@
     $allowedIcons = ['home', 'recycle', 'grid-2x2', 'history', 'user-round', 'scan-line', 'clipboard-list', 'wallet-cards'];
 @endphp
 
-<nav aria-label="{{ $label }}" {{ $attributes->class('fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-bottom-nav w-[calc(100%-1.5rem)] max-w-citizen -translate-x-1/2 rounded-[1.5rem] border border-border/90 bg-surface/95 p-1 shadow-sm backdrop-blur') }}>
+<nav aria-label="{{ $label }}" {{ $attributes->class('fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-bottom-nav w-[calc(100%-1.5rem)] max-w-citizen -translate-x-1/2 rounded-full border border-border/90 bg-surface/95 p-1 shadow-sm backdrop-blur') }}>
     <div class="mx-auto grid min-h-16 max-w-citizen grid-flow-col auto-cols-fr">
         @foreach ($items as $item)
             @php

@@ -126,7 +126,7 @@ final class OfficerShellTest extends TestCase
         self::assertSame(count($destinations), substr_count($html, 'data-nav-item'));
         self::assertSame(1, substr_count($html, 'aria-current="page"'));
         self::assertStringContainsString('bottom-[calc(0.75rem+env(safe-area-inset-bottom))]', $html);
-        self::assertStringContainsString('rounded-[1.5rem]', $html);
+        self::assertStringContainsString('rounded-full', $html);
         self::assertSame(count($destinations), substr_count($html, 'min-h-touch'));
 
         $lastPosition = -1;

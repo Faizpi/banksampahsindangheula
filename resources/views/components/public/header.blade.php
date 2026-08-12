@@ -15,7 +15,10 @@
     $inactiveNavClasses = 'font-semibold text-text-secondary hover:bg-success-bg hover:text-deep-green';
 @endphp
 
-<header class="public-hero-grid sticky top-0 z-sticky bg-surface px-3 pt-3 sm:px-5">
+<header @class([
+    'absolute inset-x-0 top-0 z-sticky px-3 pt-3 sm:px-5' => $isHome,
+    'public-hero-grid sticky top-0 z-sticky bg-surface px-3 pt-3 sm:px-5' => ! $isHome,
+])>
     <div class="public-container flex min-h-16 items-center justify-between gap-3 rounded-full border border-border/90 bg-surface/95 px-3 shadow-sm backdrop-blur sm:px-4">
         <a href="{{ route('home') }}" class="flex min-h-touch shrink-0 items-center gap-2 rounded-md focus-visible:outline-offset-4" aria-label="Bank Sampah Digital Sindangheula, beranda">
             <img src="{{ asset('images/landing/mascot-3.png') }}" alt="" class="size-11 shrink-0 object-contain" aria-hidden="true">

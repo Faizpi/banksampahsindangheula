@@ -42,7 +42,7 @@
 
     $items = array_map(
         static fn (string $label): array => [
-            'label' => $label,
+            'label' => $label === 'Kartu Nasabah' ? 'Kartu' : $label,
             'href' => $destinations[$label],
             'icon' => $icons[$label],
             'active' => $active === $label,

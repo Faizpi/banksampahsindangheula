@@ -26,7 +26,7 @@ final class PublicShellTest extends TestCase
         self::assertSame(1, substr_count($html, '<main'));
         self::assertSame(1, substr_count($html, '<footer'));
         self::assertSame(1, substr_count($html, '<h1'));
-        self::assertStringContainsString('public-hero-grid sticky top-0 z-sticky bg-surface', $html);
+        self::assertStringContainsString('absolute inset-x-0 top-0 z-sticky px-3 pt-3', $html);
         self::assertStringNotContainsString('Transparansi untuk setiap setoran', $html);
     }
 
