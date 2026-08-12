@@ -52,6 +52,8 @@ use Filament\Facades\Filament;
 use Filament\Navigation\NavigationManager;
 use Filament\Panel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Routing\Route as LaravelRoute;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 final class BackofficePanelTest extends TestCase
@@ -189,6 +191,31 @@ final class BackofficePanelTest extends TestCase
             ->assertDontSee('Pickup hari ini')
             ->assertDontSee('Pencairan menunggu keputusan')
             ->assertDontSee('Setoran perlu ditinjau');
+    }
+
+    public function test_every_registered_backoffice_resource_and_page_renders_for_superadmin(): void
+    {
+        $this->seed(RolesAndPermissionsSeeder::class);
+        $superadmin = User::factory()->create();
+        $superadmin->roles()->attach(Role::query()->where('name', 'superadmin')->sole());
+
+        $routes = collect(Route::getRoutes()->getRoutes())
+            ->filter(static function (LaravelRoute $route): bool {
+                $name = $route->getName() ?? '';
+
+                return in_array('GET', $route->methods(), true)
+                    && (str_starts_with($name, 'filament.backoffice.resources.')
+                        || str_starts_with($name, 'filament.backoffice.pages.'));
+            });
+
+        self::assertNotEmpty($routes);
+
+        $this->actingAs($superadmin->fresh());
+
+        foreach ($routes as $route) {
+            $this->get('/'.$route->uri())
+                ->assertOk();
+        }
     }
 
     public function test_backoffice_navigation_has_the_focused_taxonomy_groups_in_order(): void
