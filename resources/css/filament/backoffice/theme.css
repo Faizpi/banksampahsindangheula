@@ -69,6 +69,7 @@
      */
     --spacing-touch: 2.75rem;
     --spacing-admin-control: 2.5rem;
+    --spacing-form-textarea: 7.5rem;
 }
 
 @layer components {
@@ -83,6 +84,25 @@
 
     .fi-icon-btn {
         min-width: var(--spacing-admin-control);
+    }
+
+    .backoffice-form-control {
+        @apply block w-full rounded-lg border border-border bg-surface px-4 py-2 text-sm leading-6 text-text-primary shadow-xs transition duration-180 placeholder:text-text-secondary hover:border-primary-500 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:border-border disabled:bg-disabled-bg disabled:text-text-secondary;
+    }
+
+    input.backoffice-form-control,
+    select.backoffice-form-control {
+        min-height: var(--spacing-touch);
+    }
+
+    textarea.backoffice-form-control {
+        min-height: var(--spacing-form-textarea);
+        resize: vertical;
+    }
+
+    input.backoffice-form-control[type='date'],
+    input.backoffice-form-control[type='datetime-local'] {
+        padding-right: 2.75rem;
     }
 }
 

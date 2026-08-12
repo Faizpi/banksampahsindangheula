@@ -150,6 +150,26 @@ final class BackofficePanelTest extends TestCase
         self::assertStringContainsString('--spacing-touch: 2.75rem;', $theme);
         self::assertStringContainsString('--spacing-admin-control: 2.5rem;', $theme);
         self::assertStringContainsString('min-height: var(--spacing-admin-control);', $theme);
+        self::assertStringContainsString('--spacing-form-textarea: 7.5rem;', $theme);
+        self::assertStringContainsString('.backoffice-form-control {', $theme);
+        self::assertStringContainsString('px-4 py-2', $theme);
+        self::assertStringContainsString("input.backoffice-form-control[type='datetime-local']", $theme);
+    }
+
+    public function test_technical_forms_use_the_spacious_shared_control_style(): void
+    {
+        foreach ([
+            'filament/backoffice/technical-settings.blade.php',
+            'filament/backoffice/technical-maintenance.blade.php',
+            'filament/backoffice/technical-backups.blade.php',
+            'filament/backoffice/technical-audit-retention.blade.php',
+        ] as $view) {
+            $contents = file_get_contents(resource_path('views/'.$view));
+
+            self::assertIsString($contents);
+            self::assertStringContainsString('mt-2 backoffice-form-control', $contents);
+            self::assertStringNotContainsString('rounded-lg border-gray-300 text-sm shadow-sm', $contents);
+        }
     }
 
     public function test_consolidated_hubs_render_for_authorized_backoffice_users(): void
