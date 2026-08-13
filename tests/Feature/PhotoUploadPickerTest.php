@@ -13,7 +13,9 @@ final class PhotoUploadPickerTest extends TestCase
         $script = (string) file_get_contents(resource_path('js/app.js'));
 
         self::assertStringContainsString('await uploadPhotoPickerFile(picker, property, file);', $script);
-        self::assertStringContainsString('component.$wire.$upload(', $script);
+        self::assertStringContainsString('return window.Livewire.find(componentId);', $script);
+        self::assertStringContainsString('wire.$upload(', $script);
+        self::assertStringContainsString('wire.$call(removeMethod, index)', $script);
         self::assertStringNotContainsString('syncPhotoPickerInput', $script);
         self::assertStringNotContainsString('photoPickerSyncing', $script);
     }
@@ -26,17 +28,20 @@ final class PhotoUploadPickerTest extends TestCase
 
         self::assertStringContainsString('wire:ignore', $citizenView);
         self::assertStringContainsString('data-photo-picker-property="photos"', $citizenView);
+        self::assertStringContainsString('wire:model="photos"', $citizenView);
         self::assertStringContainsString('data-photo-picker-remove-method="removePhoto"', $citizenView);
         self::assertStringContainsString('Total berat (kg)', $citizenView);
         self::assertStringContainsString('Jumlah wadah (opsional)', $citizenView);
-        self::assertStringContainsString('Contoh: 2 kantong atau 1 karung. Bukan pengali berat.', $citizenView);
+        self::assertStringContainsString('Jumlah wadah opsional, misalnya 2 kantong atau 1 karung, dan bukan pengali berat.', $citizenView);
 
         self::assertStringContainsString('wire:ignore', $officerView);
         self::assertStringContainsString('data-photo-picker-property="evidence"', $officerView);
+        self::assertStringContainsString('wire:model="evidence"', $officerView);
         self::assertStringContainsString('data-photo-picker-remove-method="clearEvidence"', $officerView);
 
         self::assertStringContainsString('wire:ignore', $treasurerView);
         self::assertStringContainsString('data-photo-picker-property="proof"', $treasurerView);
+        self::assertStringContainsString('wire:model="proof"', $treasurerView);
         self::assertStringContainsString('data-photo-picker-remove-method="clearProof"', $treasurerView);
     }
 

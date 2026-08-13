@@ -618,8 +618,8 @@ document.addEventListener('click', (event) => {
 
         event.preventDefault();
         const removeMethod = picker.dataset.photoPickerRemoveMethod;
-        const component = photoPickerComponent(picker);
-        if (typeof removeMethod !== 'string' || removeMethod === '' || component === null) {
+        const wire = photoPickerWire(picker);
+        if (typeof removeMethod !== 'string' || removeMethod === '' || wire === null) {
             setPhotoPickerStatus(picker, 'Foto tidak dapat dihapus. Muat ulang halaman lalu coba lagi.', true);
 
             return;
@@ -632,7 +632,7 @@ document.addEventListener('click', (event) => {
         renderPhotoPickerPreview(picker, files);
         setPhotoPickerStatus(picker, photoPickerStatusMessage(files.length, photoPickerMaxCount(picker)));
         setPhotoPickerBusy(picker, true);
-        void component.$wire.call(removeMethod, index)
+        void wire.$call(removeMethod, index)
             .catch(() => {
                 input._photoPickerFiles = previousFiles;
                 renderPhotoPickerPreview(picker, previousFiles);
@@ -781,7 +781,7 @@ function photoPickerFiles(input, picker) {
     return input._photoPickerFiles;
 }
 
-function photoPickerComponent(picker) {
+function photoPickerWire(picker) {
     const componentRoot = picker.closest('[wire\\:id]');
     const componentId = componentRoot?.getAttribute('wire:id');
 
@@ -889,13 +889,13 @@ function setPhotoPickerBusy(picker, isBusy) {
 }
 
 function uploadPhotoPickerFile(picker, property, file) {
-    const component = photoPickerComponent(picker);
-    if (component === null || typeof component.$wire?.$upload !== 'function') {
+    const wire = photoPickerWire(picker);
+    if (wire === null || typeof wire.$upload !== 'function') {
         return Promise.reject(new Error('Uploader belum siap. Muat ulang halaman lalu coba lagi.'));
     }
 
     return new Promise((resolve, reject) => {
-        component.$wire.$upload(
+        wire.$upload(
             property,
             file,
             () => resolve(),

@@ -110,18 +110,19 @@
             <x-ui.panel title="Jenis dan perkiraan" description="Isi minimal satu jenis. Berat adalah total per jenis; jumlah wadah tidak mengalikan berat.">
                 <div class="grid gap-3">
                     @foreach ($items as $index => $item)
-                        <div wire:key="pickup-item-{{ $index }}" class="grid gap-3 rounded-md border border-border bg-warm-canvas p-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end">
+                        <div wire:key="pickup-item-{{ $index }}" class="grid gap-3 rounded-md border border-border bg-warm-canvas p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] md:items-start">
                             <x-ui.select wire:model="items.{{ $index }}.waste_type_id" label="Jenis sampah" name="items.{{ $index }}.waste_type_id" placeholder="Pilih jenis sampah"
                                 :options="$types->pluck('name', 'id')->all()" :error="$errors->first('items.'.$index.'.waste_type_id')" />
                             <x-ui.input wire:model="items.{{ $index }}.estimated_weight_kg" label="Total berat (kg)" name="items.{{ $index }}.estimated_weight_kg" inputmode="decimal"
-                                hint="Total untuk jenis ini; bukan berat per wadah."
                                 :error="$errors->first('items.'.$index.'.estimated_weight_kg')" />
                             <x-ui.input wire:model="items.{{ $index }}.estimated_quantity" label="Jumlah wadah (opsional)" name="items.{{ $index }}.estimated_quantity" inputmode="numeric"
-                                hint="Contoh: 2 kantong atau 1 karung. Bukan pengali berat."
                                 :error="$errors->first('items.'.$index.'.estimated_quantity')" />
                             @if (count($items) > 1)
-                                <button type="button" wire:click="removeItem({{ $index }})" class="inline-flex min-h-touch items-center justify-center rounded-md border-2 border-terracotta px-4 text-label font-bold text-terracotta transition hover:bg-danger-bg">Hapus</button>
+                                <div class="md:pt-7">
+                                    <button type="button" wire:click="removeItem({{ $index }})" class="inline-flex min-h-touch w-full items-center justify-center rounded-md border-2 border-terracotta px-4 text-label font-bold text-terracotta transition hover:bg-danger-bg">Hapus</button>
+                                </div>
                             @endif
+                            <p class="text-body-sm text-text-secondary md:col-span-4">Isi total berat untuk jenis ini. Jumlah wadah opsional, misalnya 2 kantong atau 1 karung, dan bukan pengali berat.</p>
                         </div>
                     @endforeach
                     <button type="button" wire:click="addItem" class="inline-flex min-h-touch items-center gap-2 justify-self-start rounded-md border-2 border-forest-600 px-4 text-label font-bold text-forest-700 transition hover:bg-success-bg">
@@ -152,7 +153,7 @@
                             Pilih dari galeri
                         </button>
                     </div>
-                    <input id="pickup-photos" type="file" accept="image/jpeg,image/png" multiple data-photo-picker-input data-photo-picker-property="photos" class="block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-warm-canvas p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
+                    <input id="pickup-photos" wire:model="photos" type="file" accept="image/jpeg,image/png" multiple data-photo-picker-input data-photo-picker-property="photos" class="block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-warm-canvas p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
                     <p data-photo-picker-status class="text-body-sm text-text-secondary" aria-live="polite">Belum ada foto dipilih.</p>
                     <div data-photo-picker-preview class="grid gap-2 sm:grid-cols-2" aria-live="polite"></div>
                 </div>

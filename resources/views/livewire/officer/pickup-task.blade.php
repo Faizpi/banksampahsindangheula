@@ -115,7 +115,7 @@
                             Pilih dari galeri
                         </button>
                     </div>
-                    <input id="pickup-evidence" type="file" accept="image/jpeg,image/png" data-photo-picker-input data-photo-picker-property="evidence" class="mt-3 block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
+                    <input id="pickup-evidence" wire:model="evidence" type="file" accept="image/jpeg,image/png" data-photo-picker-input data-photo-picker-property="evidence" class="mt-3 block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
                     <p data-photo-picker-status class="mt-2 text-body-sm text-text-secondary" aria-live="polite">Belum ada foto baru dipilih.</p>
                     <div data-photo-picker-preview class="mt-2 grid gap-2" aria-live="polite"></div>
                 </div>
