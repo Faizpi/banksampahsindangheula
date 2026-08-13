@@ -87,14 +87,14 @@
                         <p class="mt-1 text-body-sm text-text-secondary">Ambil foto melalui kamera atau pilih satu foto dari galeri. Foto akan dikompres menjadi JPEG maksimal 1 MB.</p>
                     </div>
                     <div class="mt-3 flex flex-col gap-2 sm:flex-row">
-                        <button type="button" data-photo-picker-trigger="camera" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
+                        <label for="payment-proof" data-photo-picker-trigger="camera" class="inline-flex min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
                             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2Z"/><circle cx="12" cy="12.5" r="3.25"/></svg>
                             Ambil dari kamera
-                        </button>
-                        <button type="button" data-photo-picker-trigger="gallery" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
+                        </label>
+                        <label for="payment-proof" data-photo-picker-trigger="gallery" class="inline-flex min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
                             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L7 20"/></svg>
                             Pilih dari galeri
-                        </button>
+                        </label>
                     </div>
                     <input id="payment-proof" type="file" accept="image/jpeg,image/png" data-photo-picker-input data-photo-picker-property="proof" class="mt-3 block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
                     <p data-photo-picker-status class="mt-2 text-body-sm text-text-secondary" aria-live="polite">Belum ada foto dipilih.</p>

@@ -23,6 +23,8 @@ final class PhotoUploadPickerTest extends TestCase
         self::assertStringContainsString('return window.Livewire.find(componentId);', $script);
         self::assertStringContainsString('wire.$upload(', $script);
         self::assertStringContainsString('wire.$call(removeMethod, index)', $script);
+        self::assertStringContainsString('photoTrigger instanceof HTMLLabelElement || photoTrigger instanceof HTMLButtonElement', $script);
+        self::assertStringContainsString('Labels activate their associated file input natively.', $script);
         self::assertStringNotContainsString('syncPhotoPickerInput', $script);
         self::assertStringNotContainsString('photoPickerSyncing', $script);
     }
@@ -39,6 +41,8 @@ final class PhotoUploadPickerTest extends TestCase
         self::assertStringContainsString('data-photo-picker-remove-method="removePhoto"', $citizenView);
         self::assertStringContainsString('data-photo-picker-confirm-method="confirmPhotoUploads"', $citizenView);
         self::assertStringContainsString('data-photo-picker-action', $citizenView);
+        self::assertStringContainsString('<label for="pickup-photos" data-photo-picker-trigger="camera"', $citizenView);
+        self::assertStringContainsString('<label for="pickup-photos" data-photo-picker-trigger="gallery"', $citizenView);
         self::assertStringContainsString('Total berat (kg)', $citizenView);
         self::assertStringContainsString('Jumlah wadah (opsional)', $citizenView);
         self::assertStringContainsString('Jumlah wadah opsional, misalnya 2 kantong atau 1 karung, dan bukan pengali berat.', $citizenView);
@@ -48,12 +52,16 @@ final class PhotoUploadPickerTest extends TestCase
         self::assertStringNotContainsString('wire:model="evidence"', $officerView);
         self::assertStringContainsString('data-photo-picker-remove-method="clearEvidence"', $officerView);
         self::assertStringContainsString('data-photo-picker-confirm-method="confirmEvidenceUpload"', $officerView);
+        self::assertStringContainsString('<label for="pickup-evidence" data-photo-picker-trigger="camera"', $officerView);
+        self::assertStringContainsString('<label for="pickup-evidence" data-photo-picker-trigger="gallery"', $officerView);
 
         self::assertStringContainsString('wire:ignore', $treasurerView);
         self::assertStringContainsString('data-photo-picker-property="proof"', $treasurerView);
         self::assertStringNotContainsString('wire:model="proof"', $treasurerView);
         self::assertStringContainsString('data-photo-picker-remove-method="clearProof"', $treasurerView);
         self::assertStringContainsString('data-photo-picker-confirm-method="confirmProofUpload"', $treasurerView);
+        self::assertStringContainsString('<label for="payment-proof" data-photo-picker-trigger="camera"', $treasurerView);
+        self::assertStringContainsString('<label for="payment-proof" data-photo-picker-trigger="gallery"', $treasurerView);
     }
 
     public function test_no_custom_photo_picker_combines_manual_upload_with_wire_model(): void

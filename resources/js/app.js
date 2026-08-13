@@ -588,7 +588,7 @@ document.addEventListener('click', (event) => {
     const photoTrigger = target?.closest('[data-photo-picker-trigger]');
     const photoRemove = target?.closest('[data-photo-picker-remove]');
 
-    if (photoTrigger instanceof HTMLButtonElement) {
+    if (photoTrigger instanceof HTMLLabelElement || photoTrigger instanceof HTMLButtonElement) {
         const picker = photoPickerFromTarget(photoTrigger);
         const input = picker === null ? null : photoPickerInput(picker);
 
@@ -596,12 +596,20 @@ document.addEventListener('click', (event) => {
             return;
         }
 
-        event.preventDefault();
         if (photoTrigger.dataset.photoPickerTrigger === 'camera') {
             input.setAttribute('capture', 'environment');
         } else {
             input.removeAttribute('capture');
         }
+
+        // Labels activate their associated file input natively. This keeps the
+        // camera/gallery controls usable on mobile browsers that reject a
+        // programmatic input.click() from a delegated document listener.
+        if (photoTrigger instanceof HTMLLabelElement) {
+            return;
+        }
+
+        event.preventDefault();
         input.click();
 
         return;
@@ -884,6 +892,12 @@ function setPhotoPickerBusy(picker, isBusy) {
     picker.querySelectorAll('[data-photo-picker-trigger], [data-photo-picker-input]').forEach((element) => {
         if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) {
             element.disabled = isBusy;
+        }
+
+        if (element instanceof HTMLLabelElement) {
+            element.setAttribute('aria-disabled', String(isBusy));
+            element.classList.toggle('pointer-events-none', isBusy);
+            element.classList.toggle('opacity-60', isBusy);
         }
     });
 
