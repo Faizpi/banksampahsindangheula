@@ -24,6 +24,7 @@ Dokumentasi ini menjelaskan kontrak produk, teknis, antarmuka, dan operasional S
 - MySQL 8.0.30 melalui Laragon.
 - Hostinger Web Hosting Premium atau Business.
 - Pest 4.
+- Laravel Truss 1.8.3 untuk inspeksi skema development lokal.
 
 ## Dokumen Acuan
 

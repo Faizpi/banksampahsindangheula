@@ -164,3 +164,11 @@ Transisi mengikuti [BUSINESS_RULES.md](BUSINESS_RULES.md), bukan update string b
 ## 12. Data privat dan retensi
 
 Klasifikasi dan retensi rinci mengikuti [SECURITY.md](SECURITY.md) serta [OPERATIONS.md](OPERATIONS.md). Data pribadi diminimalkan; ekspor dan bukti privat; QR hanya token acak. Backup mencakup database dan media serta diuji restore. Tidak ada model data produksi paving block.
+
+## 13. Inspeksi skema development
+
+Laravel Truss v1.8.3 tersedia sebagai dependency development untuk melihat diagram relasi skema pada `/truss` ketika `APP_ENV=local`. Package ini hanya menginspeksi struktur (tabel, kolom, key, dan indeks), bukan isi baris data.
+
+- Gunakan `php artisan truss:doctor` untuk review struktur dan `php artisan truss:export --format=markdown` untuk artefak lokal bila diperlukan.
+- Hasil doctor awal adalah bahan triage, bukan quality gate: terdapat empat error primary key pada tabel penghubung dan sembilan warning heuristic yang harus ditinjau terhadap kontrak domain sebelum perubahan migration dibuat.
+- Jangan mengaktifkan `TRUSS_ENABLED` pada production. Nama tabel dan kolom tetap informasi sensitif, walaupun data baris tidak diekspos.
