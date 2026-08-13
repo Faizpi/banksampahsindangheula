@@ -190,6 +190,7 @@ $actions = [
         'description' => 'Membuat akun demo, wilayah, harga sampah, transaksi, saldo, pencairan, sembako, pengumuman, dan statistik. Hanya aktif bila APP_DEMO_MODE=true.',
         'dangerous' => true,
         'commands' => [
+            ['migrate', ['--force' => true]],
             ['db:seed', ['--class' => 'Database\\Seeders\\DeveloperUsersSeeder', '--force' => true]],
             ['db:seed', ['--class' => 'Database\\Seeders\\LocalDataSeeder', '--force' => true]],
             ['optimize:clear', []],

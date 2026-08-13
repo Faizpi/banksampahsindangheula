@@ -34,6 +34,19 @@ it('provides a confirmed data seed action for temporary production testing', fun
         ->and($console)->toContain('Database\\\\Seeders\\\\LocalDataSeeder');
 });
 
+it('migrates before seeding temporary demo data', function (): void {
+    $console = file_get_contents(base_path('public/deploy.php'));
+
+    expect($console)->not->toBeFalse();
+
+    preg_match("/'seed-demo-data'\s*=>\s*\[.*?'commands'\s*=>\s*\[(.*?)\],\s*\],/s", (string) $console, $matches);
+
+    expect($matches)->toHaveKey(1)
+        ->and(strpos($matches[1], "['migrate', ['--force' => true]]"))->not->toBeFalse()
+        ->and(strpos($matches[1], "['db:seed', ['--class' => 'Database\\\\Seeders\\\\LocalDataSeeder', '--force' => true]]"))->not->toBeFalse()
+        ->and(strpos($matches[1], "['migrate', ['--force' => true]]"))->toBeLessThan(strpos($matches[1], "['db:seed', ['--class' => 'Database\\\\Seeders\\\\LocalDataSeeder', '--force' => true]]"));
+});
+
 it('shows a bounded exception summary to the authenticated deployment operator', function (): void {
     $console = file_get_contents(base_path('public/deploy.php'));
 

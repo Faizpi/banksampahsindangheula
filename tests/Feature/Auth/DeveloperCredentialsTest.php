@@ -9,6 +9,10 @@ use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\CustomerProfile;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
+use App\Domain\WasteMaster\Models\WasteCategory;
+use App\Domain\WasteMaster\Models\WasteCondition;
+use App\Domain\WasteMaster\Models\WasteUnit;
+use App\Domain\WasteMaster\Support\WasteMasterMutationGuard;
 use App\Livewire\Auth\LoginForm;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
@@ -198,6 +202,33 @@ final class DeveloperCredentialsTest extends TestCase
         self::assertNotNull($this->devUser('petugas')->staffProfile);
         self::assertTrue($this->devUser('admin')->canAccessPanel($this->backofficePanel()));
         self::assertTrue($this->devUser('superadmin')->canAccessPanel($this->backofficePanel()));
+    }
+
+    public function test_operational_demo_seed_reactivates_existing_master_data_required_by_its_fixtures(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('app.demo_mode', true);
+        config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
+
+        $this->seed(DeveloperUsersSeeder::class);
+        [$category, $unit, $condition] = WasteMasterMutationGuard::run(fn (): array => [
+            WasteCategory::query()->create(['code' => 'PLASTIK', 'name' => 'Plastik', 'is_active' => false]),
+            WasteUnit::query()->create([
+                'code' => 'KG',
+                'name' => 'Kilogram',
+                'symbol' => 'kg',
+                'classification' => WasteUnit::CLASSIFICATION_WEIGHT,
+                'conversion_factor_to_kg' => '1.000000',
+                'is_active' => false,
+            ]),
+            WasteCondition::query()->create(['code' => 'BERSIH', 'name' => 'Bersih', 'is_active' => false]),
+        ]);
+
+        $this->seed(LocalDataSeeder::class);
+
+        self::assertTrue($category->fresh()->is_active);
+        self::assertTrue($unit->fresh()->is_active);
+        self::assertTrue($condition->fresh()->is_active);
     }
 
     public function test_public_mobile_schedule_renders_after_explicit_demo_data_is_seeded(): void

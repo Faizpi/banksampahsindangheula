@@ -250,15 +250,24 @@ final class LocalDataSeeder extends Seeder
         foreach ($categoryDefinitions as $definition) {
             $category = WasteCategory::query()->where('code', $definition['code'])->first();
             $category ??= $manager->createCategory($admin, $definition['code'], $definition['name']);
+            if (! $category->is_active) {
+                $manager->activate($admin, $category);
+            }
             $categories[$definition['code']] = $category;
         }
 
         $unit = WasteUnit::query()->where('code', 'KG')->first();
         $unit ??= $manager->createUnit($admin, 'KG', 'Kilogram', 'kg', WasteUnit::CLASSIFICATION_WEIGHT, '1.000000');
+        if (! $unit->is_active) {
+            $manager->activate($admin, $unit);
+        }
         $conditions = [];
         foreach ([['code' => 'BERSIH', 'name' => 'Bersih'], ['code' => 'CAMPUR', 'name' => 'Campur']] as $definition) {
             $condition = WasteCondition::query()->where('code', $definition['code'])->first();
             $condition ??= $manager->createCondition($admin, $definition['code'], $definition['name'], 'Kondisi material untuk pencatatan setoran.');
+            if (! $condition->is_active) {
+                $manager->activate($admin, $condition);
+            }
             $conditions[$definition['code']] = $condition;
         }
 
