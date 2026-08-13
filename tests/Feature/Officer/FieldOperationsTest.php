@@ -78,7 +78,8 @@ final class FieldOperationsTest extends TestCase
             ->assertSee('Pilih kondisi')
             ->assertSee('Ambil dari kamera')
             ->assertSee('Pilih dari galeri')
-            ->assertSee('wire:model="evidence"', escape: false);
+            ->assertSee('data-photo-picker-property="evidence"', escape: false)
+            ->assertDontSee('wire:model="evidence"', escape: false);
     }
 
     public function test_pickup_task_rejects_invalid_actual_items_before_financial_service(): void

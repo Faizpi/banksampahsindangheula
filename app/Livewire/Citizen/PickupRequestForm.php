@@ -73,6 +73,11 @@ final class PickupRequestForm extends Component
         $this->resetErrorBag('photos');
     }
 
+    public function updatedPhotos(): void
+    {
+        $this->resetErrorBag('photos');
+    }
+
     public function nextStep(): void
     {
         $valid = match ($this->step) {
