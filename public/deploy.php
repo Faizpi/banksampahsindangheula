@@ -168,6 +168,19 @@ $actions = [
             ['db:seed', ['--class' => 'Database\\Seeders\\DatabaseSeeder', '--force' => true]],
         ],
     ],
+    'seed-demo-data' => [
+        'label' => 'Isi data uji lengkap',
+        'description' => 'Membuat akun demo, wilayah, harga sampah, transaksi, saldo, pencairan, sembako, pengumuman, dan statistik. Hanya aktif bila APP_DEMO_MODE=true.',
+        'dangerous' => true,
+        'commands' => [
+            ['db:seed', ['--class' => 'Database\\Seeders\\DeveloperUsersSeeder', '--force' => true]],
+            ['db:seed', ['--class' => 'Database\\Seeders\\LocalDataSeeder', '--force' => true]],
+            ['optimize:clear', []],
+            ['config:cache', []],
+            ['route:cache', []],
+            ['view:cache', []],
+        ],
+    ],
     'rebuild-cache' => [
         'label' => 'Bangun ulang cache',
         'description' => 'Gunakan setelah perubahan konfigurasi, route, atau view tanpa migration database.',
@@ -201,6 +214,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
     } elseif ($selectedAction === 'fresh-release' && (string) ($_POST['confirm_reset'] ?? '') !== 'RESET DATABASE') {
         http_response_code(422);
         $message = ['error', 'Konfirmasi reset belum benar. Ketik tepat: RESET DATABASE.'];
+    } elseif ($selectedAction === 'seed-demo-data' && (string) ($_POST['confirm_reset'] ?? '') !== 'SEED DATA UJI') {
+        http_response_code(422);
+        $message = ['error', 'Konfirmasi data uji belum benar. Ketik tepat: SEED DATA UJI.'];
     } elseif ($selectedAction === 'view-logs') {
         $results[] = [
             'command' => 'storage/logs/laravel.log',
@@ -287,9 +303,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
         </div>
 
         <div class="confirmation">
-            <label for="confirm_reset">Konfirmasi reset database</label>
-            <input id="confirm_reset" name="confirm_reset" type="text" autocomplete="off" placeholder="Wajib diisi hanya saat Fresh deployment: RESET DATABASE">
-            <small>Fresh deployment menghapus semua tabel. Jangan gunakan setelah aplikasi sudah memiliki data warga atau transaksi.</small>
+            <label for="confirm_reset">Konfirmasi tindakan data</label>
+            <input id="confirm_reset" name="confirm_reset" type="text" autocomplete="off" placeholder="Fresh: RESET DATABASE — Data uji: SEED DATA UJI">
+            <small>Fresh deployment menghapus semua tabel. Isi data uji menambahkan akun dan transaksi contoh; jangan gunakan setelah data operasional masuk.</small>
         </div>
 
         <button type="submit">Jalankan aksi</button>

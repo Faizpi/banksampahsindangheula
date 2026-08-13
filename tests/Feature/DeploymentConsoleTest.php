@@ -24,3 +24,12 @@ it('provides an explicit confirmed fresh deployment action for a new database', 
         ->and($console)->toContain("'RESET DATABASE'")
         ->and($console)->toContain('DEPLOY_CONSOLE_TOKEN');
 });
+
+it('provides a confirmed data seed action for temporary production testing', function (): void {
+    $console = file_get_contents(base_path('public/deploy.php'));
+
+    expect($console)->not->toBeFalse()
+        ->and($console)->toContain("'seed-demo-data'")
+        ->and($console)->toContain("'SEED DATA UJI'")
+        ->and($console)->toContain('Database\\\\Seeders\\\\LocalDataSeeder');
+});

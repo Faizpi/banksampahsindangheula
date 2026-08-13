@@ -1,9 +1,9 @@
 <x-filament-panels::page.simple>
     @php
-        $demoAccounts = app()->environment('production') ? [] : [
+        $demoAccounts = config('app.demo_mode') ? [
             'admin'      => 'Admin',
             'superadmin' => 'Superadmin',
-        ];
+        ] : [];
     @endphp
 
     {{--

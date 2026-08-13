@@ -107,10 +107,11 @@ Verifikasi nama environment key terhadap config Laravel aktual sebelum deploy. S
 1. Pastikan domain sudah HTTPS dan document root tetap mengarah hanya ke `public/`.
 2. Buat token acak yang kuat lalu simpan secara privat pada environment production sebagai `DEPLOY_CONSOLE_TOKEN`; jangan masukkan token ke repository, dokumentasi, atau screenshot.
 3. Bila IP operator stabil, isi `DEPLOY_CONSOLE_ALLOWED_IPS` dengan daftar IP publik yang dipisahkan koma untuk membatasi akses lebih lanjut.
-4. Buka `/deploy.php`, masukkan token, lalu pilih salah satu aksi allowlist: pemeriksaan status migrasi, deployment (migrasi `--force` → clear cache → cache ulang), seed admin awal, cache ulang, atau baca 200 baris log Laravel terbaru. Urutan ini memungkinkan deployment pertama dengan cache driver database, saat tabel `cache` belum ada.
+4. Buka `/deploy.php`, masukkan token, lalu pilih salah satu aksi allowlist: pemeriksaan status migrasi, deployment (migrasi `--force` → clear cache → cache ulang), seed admin awal, seed data uji lengkap, cache ulang, atau baca 200 baris log Laravel terbaru. Urutan ini memungkinkan deployment pertama dengan cache driver database, saat tabel `cache` belum ada.
 5. Untuk database yang memang masih baru dan belum berisi data, tersedia aksi **Fresh deployment + seed**. Aksi ini sengaja mewajibkan konfirmasi `RESET DATABASE`, menjalankan `migrate:fresh --seed --force`, lalu membangun cache. Jangan gunakan pada database yang sudah memiliki data operasional.
-6. Console tidak menjalankan custom command, tidak dapat menghapus log, dan tidak membuat storage link. Tetap lakukan backup pra-deploy serta gunakan SSH untuk `composer install` dan operasi di luar allowlist.
-7. Setelah kebutuhan sementara selesai, kosongkan `DEPLOY_CONSOLE_TOKEN` atau hapus file console dari release berikutnya untuk menonaktifkannya kembali.
+6. Data uji di production bersifat sementara dan harus dinyalakan secara eksplisit: isi `APP_DEMO_MODE=true` dan `APP_DEMO_PASSWORD` unik dengan minimal 16 karakter di `.env`, lalu bangun ulang cache dan pilih **Isi data uji lengkap** dengan konfirmasi `SEED DATA UJI`. Aksi ini membuat akun uji, wilayah, transaksi, saldo, pencairan, sembako, pengumuman, dan statistik. Setelah pengujian, set `APP_DEMO_MODE=false`, hapus password demo, ganti/nonaktifkan akun uji, lalu bangun ulang cache.
+7. Console tidak menjalankan custom command, tidak dapat menghapus log, dan tidak membuat storage link. Tetap lakukan backup pra-deploy serta gunakan SSH untuk `composer install` dan operasi di luar allowlist.
+8. Setelah kebutuhan sementara selesai, kosongkan `DEPLOY_CONSOLE_TOKEN` atau hapus file console dari release berikutnya untuk menonaktifkannya kembali.
 
 Token diproses hanya melalui POST dan seluruh output memakai `no-store`; namun log tetap dapat memuat informasi operasional. Batasi token hanya kepada operator berwenang dan jangan membagikan hasil log ke kanal publik.
 

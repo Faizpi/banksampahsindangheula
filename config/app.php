@@ -61,6 +61,12 @@ return [
     'initial_admin_email' => env('APP_INITIAL_ADMIN_EMAIL'),
     'initial_admin_password' => env('APP_INITIAL_ADMIN_PASSWORD'),
 
+    // Temporary demo data switch. It defaults to enabled outside production so
+    // local development remains convenient, while production must opt in
+    // explicitly with both APP_DEMO_MODE=true and APP_DEMO_PASSWORD.
+    'demo_mode' => env('APP_DEMO_MODE', env('APP_ENV', 'production') !== 'production'),
+    'demo_password' => env('APP_DEMO_PASSWORD'),
+
     'registration_max_attempts_per_minute' => (int) env('REGISTRATION_MAX_ATTEMPTS_PER_MINUTE', 5),
 
     'public_qr_max_attempts_per_minute' => (int) env('PUBLIC_QR_MAX_ATTEMPTS_PER_MINUTE', 30),

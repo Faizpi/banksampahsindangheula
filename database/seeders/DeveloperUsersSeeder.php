@@ -78,13 +78,40 @@ final class DeveloperUsersSeeder extends Seeder
         return self::ACCOUNTS[$role]['email'];
     }
 
-    public function run(): void
+    public static function password(): string
     {
-        if (app()->environment('production')) {
-            $this->command?->warn('DeveloperUsersSeeder skipped: production environment. This seeder is for local/staging credential testing only.');
+        $configuredPassword = config('app.demo_password');
 
+        if (is_string($configuredPassword) && $configuredPassword !== '') {
+            return $configuredPassword;
+        }
+
+        return self::DEV_PASSWORD;
+    }
+
+    public static function canSeedDemoData(): bool
+    {
+        if (config('app.env') !== 'production') {
+            return true;
+        }
+
+        return config('app.demo_mode') === true
+            && is_string(config('app.demo_password'))
+            && mb_strlen((string) config('app.demo_password')) >= 16;
+    }
+
+    public static function requireDemoDataConfiguration(): void
+    {
+        if (self::canSeedDemoData()) {
             return;
         }
+
+        throw new \LogicException('Data uji production dinonaktifkan. Isi APP_DEMO_MODE=true dan APP_DEMO_PASSWORD minimal 16 karakter secara sementara, lalu bangun ulang cache.');
+    }
+
+    public function run(): void
+    {
+        self::requireDemoDataConfiguration();
 
         $this->call(RolesAndPermissionsSeeder::class);
 
@@ -95,7 +122,7 @@ final class DeveloperUsersSeeder extends Seeder
                     'name' => self::DISPLAY_NAMES[$roleName],
                     'email' => $account['email'],
                     'email_verified_at' => now(),
-                    'password' => Hash::make(self::DEV_PASSWORD),
+                    'password' => Hash::make(self::password()),
                     'status' => UserStatus::Active,
                     'verified_at' => now(),
                     'terms_version' => (string) config('app.terms_version'),

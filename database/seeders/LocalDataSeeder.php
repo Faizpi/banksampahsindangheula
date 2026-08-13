@@ -57,8 +57,6 @@ use Illuminate\Support\Facades\Hash;
  */
 final class LocalDataSeeder extends Seeder
 {
-    private const LOCAL_PASSWORD = 'Lokal#Sindangheula2026';
-
     /** @var list<string> */
     private const CUSTOMER_NAMES = [
         'Asep Saepuloh', 'Ujang Suherman',
@@ -73,11 +71,7 @@ final class LocalDataSeeder extends Seeder
 
     public function run(): void
     {
-        if (app()->environment('production')) {
-            $this->command?->warn('LocalDataSeeder dilewati pada production.');
-
-            return;
-        }
+        DeveloperUsersSeeder::requireDemoDataConfiguration();
 
         $now = CarbonImmutable::now('Asia/Jakarta');
         $admin = User::query()->where('email', DeveloperUsersSeeder::email('admin'))->firstOrFail();
@@ -172,7 +166,7 @@ final class LocalDataSeeder extends Seeder
                     'name' => $definition['name'],
                     'email' => $definition['email'],
                     'email_verified_at' => now(),
-                    'password' => Hash::make(self::LOCAL_PASSWORD),
+                    'password' => Hash::make(DeveloperUsersSeeder::password()),
                     'status' => UserStatus::Active,
                     'verified_at' => now(),
                     'terms_version' => (string) config('app.terms_version'),
@@ -213,7 +207,7 @@ final class LocalDataSeeder extends Seeder
                     'name' => $name,
                     'email' => 'warga.'.str_pad((string) $number, 3, '0', STR_PAD_LEFT).'@sindangheula.test',
                     'email_verified_at' => now(),
-                    'password' => Hash::make(self::LOCAL_PASSWORD),
+                    'password' => Hash::make(DeveloperUsersSeeder::password()),
                     'status' => UserStatus::Active,
                     'verified_at' => now(),
                     'terms_version' => (string) config('app.terms_version'),

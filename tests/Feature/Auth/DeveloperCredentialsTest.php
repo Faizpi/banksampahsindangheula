@@ -11,6 +11,7 @@ use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
 use App\Livewire\Auth\LoginForm;
 use App\Models\User;
+use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DeveloperUsersSeeder;
 use Filament\Auth\Pages\Login as FilamentLogin;
 use Filament\Facades\Filament;
@@ -122,6 +123,39 @@ final class DeveloperCredentialsTest extends TestCase
             self::assertSame(1, Role::query()->where('name', $role)->count());
             self::assertSame(1, $this->devUser($role)->roles()->where('name', $role)->count());
         }
+    }
+
+    public function test_production_demo_data_requires_an_explicit_flag_and_a_strong_password(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('app.demo_mode', false);
+        config()->set('app.demo_password', null);
+
+        self::assertFalse(DeveloperUsersSeeder::canSeedDemoData());
+
+        config()->set('app.demo_mode', true);
+        config()->set('app.demo_password', 'terlalu-pendek');
+
+        self::assertFalse(DeveloperUsersSeeder::canSeedDemoData());
+
+        config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
+
+        self::assertTrue(DeveloperUsersSeeder::canSeedDemoData());
+    }
+
+    public function test_explicit_production_demo_configuration_seeds_accounts_and_operational_sample_data(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('app.demo_mode', true);
+        config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
+
+        $this->seed(DatabaseSeeder::class);
+
+        self::assertGreaterThanOrEqual(45, User::query()->count());
+        self::assertNotNull($this->devUser('warga')->customerProfile);
+        self::assertNotNull($this->devUser('petugas')->staffProfile);
+        self::assertTrue($this->devUser('admin')->canAccessPanel($this->backofficePanel()));
+        self::assertTrue($this->devUser('superadmin')->canAccessPanel($this->backofficePanel()));
     }
 
     private function loginViaPublicPhone(mixed $user): void
