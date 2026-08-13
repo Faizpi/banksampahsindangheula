@@ -570,33 +570,37 @@ async function downloadCustomerCardPng(button, card) {
     }
 }
 
-document.addEventListener('click', (event) => {
-    const target = event.target instanceof Element ? event.target : null;
-    const cardDownload = target?.closest('[data-customer-card-download]');
+function handlePublicNavigationClick(event) {
+    const target = event.target instanceof Element ? event.target.closest('[data-public-navigation-trigger]') : null;
 
-    if (cardDownload instanceof HTMLButtonElement) {
-        const card = customerCardFromTarget(cardDownload);
-
-        if (card !== null) {
-            event.preventDefault();
-            void downloadCustomerCardPng(cardDownload, card);
-        }
-
-        return;
-    }
-
-    const trigger = target?.closest('[data-public-navigation-trigger]');
-
-    if (!(trigger instanceof HTMLElement)) {
+    if (!(target instanceof HTMLElement)) {
         return;
     }
 
     window.dispatchEvent(new CustomEvent('open-bottom-sheet', {
         detail: {
-            id: trigger.getAttribute('aria-controls'),
-            invoker: trigger,
+            id: target.getAttribute('aria-controls'),
+            invoker: target,
         },
     }));
+}
+
+window.addEventListener('click', handlePublicNavigationClick);
+
+document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element ? event.target : null;
+    const cardDownload = target?.closest('[data-customer-card-download]');
+
+    if (!(cardDownload instanceof HTMLButtonElement)) {
+        return;
+    }
+
+    const card = customerCardFromTarget(cardDownload);
+
+    if (card !== null) {
+        event.preventDefault();
+        void downloadCustomerCardPng(cardDownload, card);
+    }
 });
 
 document.addEventListener('public:offline-action-blocked', (event) => {

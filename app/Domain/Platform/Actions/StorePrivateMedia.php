@@ -59,9 +59,6 @@ final class StorePrivateMedia
 
         $contents = $file->getContent();
         $mimeType = $this->detectedMimeType($contents);
-        if (str_starts_with($mimeType, 'image/')) {
-            return $this->store($file, $this->normalizePhoto($contents), 'image/jpeg', 'jpg', $uploader);
-        }
 
         return $this->store($file, $contents, $mimeType, self::ALLOWED_TYPES[$mimeType]['extension'], $uploader);
     }

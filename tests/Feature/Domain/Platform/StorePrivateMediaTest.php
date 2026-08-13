@@ -70,19 +70,19 @@ final class StorePrivateMediaTest extends TestCase
         self::assertStringStartsWith("\xFF\xD8\xFF", $contents);
     }
 
-    public function test_it_normalizes_every_evidence_image_but_preserves_allowed_pdf_files(): void
+    public function test_it_preserves_signature_verified_evidence_bytes_without_gd_normalization(): void
     {
         Storage::fake('media_private');
 
-        $image = app(StorePrivateMedia::class)->handleEvidence(UploadedFile::fake()->image('evidence.png', 2400, 1800));
-        $imageContents = Storage::disk('media_private')->get($image->path);
+        $pngContents = self::png();
+        $image = app(StorePrivateMedia::class)->handleEvidence($this->uploadedFile('evidence.png', $pngContents));
         $pdfContents = self::pdf();
         $pdf = app(StorePrivateMedia::class)->handleEvidence($this->uploadedFile('evidence.pdf', $pdfContents));
 
-        self::assertSame('image/jpeg', $image->mime_type);
-        self::assertLessThanOrEqual(1024 * 1024, $image->size);
-        self::assertStringEndsWith('.jpg', $image->path);
-        self::assertStringStartsWith("\xFF\xD8\xFF", $imageContents);
+        self::assertSame('image/png', $image->mime_type);
+        self::assertStringEndsWith('.png', $image->path);
+        self::assertSame($pngContents, Storage::disk('media_private')->get($image->path));
+        self::assertSame(hash('sha256', $pngContents), $image->checksum);
         self::assertSame('application/pdf', $pdf->mime_type);
         self::assertStringEndsWith('.pdf', $pdf->path);
         self::assertSame($pdfContents, Storage::disk('media_private')->get($pdf->path));

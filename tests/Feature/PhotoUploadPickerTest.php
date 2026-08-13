@@ -21,7 +21,9 @@ final class PhotoUploadPickerTest extends TestCase
         $script = (string) file_get_contents(resource_path('js/app.js'));
 
         self::assertStringContainsString('preparedFiles.push(await preparePhotoPickerFile(file, picker));', $script);
+        self::assertStringContainsString("setPhotoPickerStatus(\n                picker,", $script);
         self::assertStringContainsString('await uploadPhotoPickerFiles(picker, property, preparedFiles, input.multiple);', $script);
+        self::assertSame(1, substr_count($script, 'await uploadPhotoPickerFiles(picker, property, preparedFiles, input.multiple);'));
         self::assertStringContainsString('wire.$uploadMultiple(property, files, onFinished, onError, onProgress);', $script);
         self::assertStringContainsString('const confirmedFiles = await wire.$call(confirmMethod);', $script);
         self::assertStringContainsString('PHOTO_PICKER_CONFIRM_ATTEMPTS', $script);
@@ -34,6 +36,9 @@ final class PhotoUploadPickerTest extends TestCase
         self::assertStringContainsString("input.addEventListener('change'", $script);
         self::assertStringContainsString('setPhotoPickerStatus(picker, `Mengunggah ${noun}… ${Math.round(progress)}%`', $script);
         self::assertStringContainsString("The label's native activation is", $script);
+        self::assertStringContainsString("window.addEventListener('click', handlePublicNavigationClick);", $script);
+        self::assertStringNotContainsString("const trigger = target?.closest('[data-public-navigation-trigger]');", $script);
+        self::assertStringNotContainsString('DataTransfer', $script);
         self::assertStringNotContainsString('photoPickerEventRoot', $script);
         self::assertStringNotContainsString('syncPhotoPickerInput', $script);
         self::assertStringNotContainsString('photoPickerSyncing', $script);
