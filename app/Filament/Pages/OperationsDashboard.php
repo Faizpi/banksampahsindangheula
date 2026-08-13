@@ -13,6 +13,7 @@ use App\Domain\Operations\Services\BackupLifecycleService;
 use App\Domain\Operations\Services\BackupRequest;
 use App\Domain\Operations\Services\OperationalHealthService;
 use App\Domain\Operations\Services\OperationalSettingsService;
+use App\Domain\Operations\Services\PickupPhotoRetentionService;
 use App\Models\User;
 use BackedEnum;
 use Carbon\CarbonImmutable;
@@ -51,6 +52,23 @@ class OperationsDashboard extends Page
 
     public string $retentionPreviewedAt = '';
 
+    public string $mediaRetentionBefore = '';
+
+    public string $mediaRetentionResult = '';
+
+    public string $mediaRetentionPreviewBefore = '';
+
+    public string $mediaRetentionPreviewedAt = '';
+
+    public int $mediaRetentionCandidateCount = 0;
+
+    public string $mediaRetentionCandidateSize = '0 B';
+
+    public int $mediaRetentionMissingFiles = 0;
+
+    /** @var list<array{id: int, pickup_number: string, pickup_status: string, original_name: string, size: int, created_at: string, file_exists: bool}> */
+    public array $mediaRetentionCandidates = [];
+
     public string $backupDatabaseAlias = '';
 
     public string $backupDatabaseSha256 = '';
@@ -84,6 +102,7 @@ class OperationsDashboard extends Page
             'backup.run',
             'backup.restore',
             'audit.retention.execute',
+            'media.retention.execute',
         ]);
     }
 
@@ -96,6 +115,9 @@ class OperationsDashboard extends Page
             : [];
         $this->maintenanceEnabled = $permissions->allows($actor, 'system.maintenance')
             && app()->maintenanceMode()->active();
+        $minimumAge = max(30, (int) config('operations.retention.pickup_photo_minimum_age_days', 30));
+        $defaultAge = max($minimumAge, (int) config('operations.retention.pickup_photo_default_age_days', 180));
+        $this->mediaRetentionBefore = now('Asia/Jakarta')->subDays($defaultAge)->toDateString();
     }
 
     public function saveSettings(): void
@@ -145,6 +167,55 @@ class OperationsDashboard extends Page
         $this->retentionResult = sprintf('Retensi selesai. Baris audit dihapus: %d.', $count);
         $this->retentionPreviewBefore = '';
         $this->retentionPreviewedAt = '';
+    }
+
+    public function previewMediaRetention(): void
+    {
+        $preview = app(PickupPhotoRetentionService::class)->preview($this->actor(), $this->mediaRetentionBefore);
+        $this->mediaRetentionPreviewBefore = $this->mediaRetentionBefore;
+        $this->mediaRetentionPreviewedAt = now()->toIso8601String();
+        $this->mediaRetentionCandidateCount = $preview->deletableCount;
+        $this->mediaRetentionCandidateSize = $this->formatBytes($preview->deletableBytes);
+        $this->mediaRetentionMissingFiles = $preview->batchMissingFileCount;
+        $this->mediaRetentionCandidates = $preview->items;
+        $this->mediaRetentionResult = $preview->deletableCount > $preview->batchCount
+            ? sprintf('Pratinjau siap. Batch berikutnya memuat %d dari %d kandidat.', $preview->batchCount, $preview->deletableCount)
+            : sprintf('Pratinjau siap. Kandidat yang akan diproses: %d.', $preview->batchCount);
+    }
+
+    public function executeMediaRetention(): void
+    {
+        if ($this->mediaRetentionPreviewBefore !== $this->mediaRetentionBefore || $this->mediaRetentionPreviewedAt === '') {
+            throw ValidationException::withMessages(['mediaRetentionBefore' => 'Jalankan pratinjau dengan batas tanggal yang sama sebelum menghapus foto.']);
+        }
+
+        try {
+            $previewedAt = CarbonImmutable::parse($this->mediaRetentionPreviewedAt);
+        } catch (\Throwable) {
+            throw ValidationException::withMessages(['mediaRetentionBefore' => 'Pratinjau retensi foto tidak valid. Jalankan pratinjau kembali.']);
+        }
+
+        if ($previewedAt->addMinutes(10)->isPast()) {
+            throw ValidationException::withMessages(['mediaRetentionBefore' => 'Pratinjau retensi foto sudah kedaluwarsa. Jalankan pratinjau kembali.']);
+        }
+
+        $result = app(PickupPhotoRetentionService::class)->execute(
+            $this->actor(),
+            $this->mediaRetentionBefore,
+            $this->correlationId(),
+        );
+        $this->mediaRetentionResult = sprintf(
+            'Pembersihan selesai. %d foto (%s) dihapus; %d catatan sudah kehilangan file fisik.',
+            $result->deletedCount,
+            $this->formatBytes($result->deletedBytes),
+            $result->missingFileCount,
+        );
+        $this->mediaRetentionPreviewBefore = '';
+        $this->mediaRetentionPreviewedAt = '';
+        $this->mediaRetentionCandidateCount = 0;
+        $this->mediaRetentionCandidateSize = '0 B';
+        $this->mediaRetentionMissingFiles = 0;
+        $this->mediaRetentionCandidates = [];
     }
 
     public function recordBackupMetadata(): void
@@ -213,7 +284,13 @@ class OperationsDashboard extends Page
             'canRunBackup' => $permissions->allows($actor, 'backup.run'),
             'canRestoreBackup' => $permissions->allows($actor, 'backup.restore'),
             'canExecuteRetention' => $permissions->allows($actor, 'audit.retention.execute'),
+            'canExecuteMediaRetention' => $permissions->allows($actor, 'media.retention.execute'),
             'canViewBackups' => $permissions->allows($actor, 'backup.view'),
+            'mediaRetentionMinimumAgeDays' => max(30, (int) config('operations.retention.pickup_photo_minimum_age_days', 30)),
+            'mediaRetentionBatchLimit' => min(500, max(1, (int) config('operations.retention.pickup_photo_batch_size', 100))),
+            'mediaRetentionLatestCutoff' => now('Asia/Jakarta')
+                ->subDays(max(30, (int) config('operations.retention.pickup_photo_minimum_age_days', 30)))
+                ->toDateString(),
         ];
     }
 
@@ -251,6 +328,19 @@ class OperationsDashboard extends Page
         $this->backupMediaSizeBytes = '';
         $this->backupRetentionUntil = '';
         $this->backupOperatorKey = '';
+    }
+
+    private function formatBytes(int $bytes): string
+    {
+        if ($bytes < 1024) {
+            return $bytes.' B';
+        }
+
+        if ($bytes < 1024 * 1024) {
+            return number_format($bytes / 1024, 1, ',', '.').' KB';
+        }
+
+        return number_format($bytes / (1024 * 1024), 1, ',', '.').' MB';
     }
 
     private function actor(): User

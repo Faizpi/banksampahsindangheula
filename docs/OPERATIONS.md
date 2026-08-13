@@ -228,7 +228,20 @@ UI aplikasi hanya mengelola metadata, status, dan verifikasi backup/restore. Eks
 5. Cocokkan data laporan setelah restore; transaksi yang hilang dipulihkan melalui prosedur resmi, bukan edit saldo.
 6. Dokumentasikan keputusan, pelaksana, hasil, dan komunikasi.
 
-## 18. Pergantian petugas/admin
+## 18. Retensi foto penjemputan
+
+Retensi ini hanya tersedia untuk superadmin melalui **Administrasi sistem → Kontrol teknis → Retensi foto**. Jangan menghapus isi `storage/app/media` langsung melalui File Manager karena folder itu juga memuat bukti dan media privat lain.
+
+1. Pastikan backup database dan media terbaru tersedia dan lolos pemeriksaan dasar.
+2. Pilih batas tanggal. Aplikasi menolak foto yang belum berusia 30 hari dan memakai 180 hari sebagai nilai awal.
+3. Jalankan **Pratinjau**, lalu periksa nomor penjemputan, status, ukuran, tanggal, dan penanda file yang sudah hilang.
+4. Pastikan kandidat hanya berasal dari penjemputan berstatus selesai, ditolak, atau dibatalkan. Foto pengajuan aktif, setoran, pembayaran, master sampah, dan ekspor tidak boleh muncul.
+5. Jalankan **Hapus batch** dalam 10 menit setelah pratinjau. Satu eksekusi memproses maksimal 100 foto; ulangi pratinjau jika kandidat masih tersisa.
+6. Periksa pesan hasil, kapasitas penyimpanan, dan audit `media.pickup_photo_retention.executed`. Jika eksekusi gagal, jangan menghapus file manual; periksa log karena file yang sempat diproses dikembalikan dari karantina.
+
+Nilai usia dan ukuran batch dapat dinaikkan secara konservatif melalui `OPERATIONS_PICKUP_PHOTO_MINIMUM_AGE_DAYS`, `OPERATIONS_PICKUP_PHOTO_DEFAULT_AGE_DAYS`, dan `OPERATIONS_PICKUP_PHOTO_BATCH_SIZE`. Batas usia minimum efektif tidak pernah kurang dari 30 hari dan batch tidak pernah lebih dari 500 file.
+
+## 19. Pergantian petugas/admin
 
 ### Sebelum hari terakhir
 
@@ -248,7 +261,7 @@ UI aplikasi hanya mengelola metadata, status, dan verifikasi backup/restore. Eks
 
 Tinjau audit, failed task, laporan, backup, cron, dan contact list. Permission koreksi, pembalikan, dan penyesuaian saldo hanya tersedia pada pemilik rekonsiliasi yang ditetapkan; baseline saat ini berada pada superadmin dan tetap wajib memakai alasan, bukti, serta audit.
 
-## 19. Monitoring rutin
+## 20. Monitoring rutin
 
 | Frekuensi | Pemeriksaan |
 |---|---|
@@ -258,7 +271,7 @@ Tinjau audit, failed task, laporan, backup, cron, dan contact list. Permission k
 | Bulanan | dependency/security update, restore sample, performa DB, quota hosting, SSL/domain, SOP |
 | Saat pergantian/rilis | akses, secret, rehearsal MySQL 8.0.30 disposable sebelum UAT/production, backup, rollback, restore, smoke test, training |
 
-## 20. Eskalasi
+## 21. Eskalasi
 
 - Saldo/transaksi ganda, akses lintas warga, uang/paket diserahkan tanpa record, atau backup hilang: hentikan proses terkait dan eskalasi sebagai insiden kritis.
 - Selisih kas/ledger: jangan tutup sebagai sesuai; admin+bendahara menelusuri.

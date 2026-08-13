@@ -20,6 +20,9 @@
             @if ($canExecuteRetention)
                 <a href="{{ \App\Filament\Pages\TechnicalAuditRetentionPage::getUrl() }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Retensi audit</a>
             @endif
+            @if ($canExecuteMediaRetention)
+                <a href="{{ \App\Filament\Pages\TechnicalMediaRetentionPage::getUrl() }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Retensi foto</a>
+            @endif
         </div>
     </nav>
 

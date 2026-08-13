@@ -101,6 +101,7 @@ Kode matriks: `O` own, `A` area, `X` semua record aktif, `—` tidak diberikan s
 | `system.maintenance` | Maintenance mode dan pemeriksaan sistem. |
 | `backup.run` / `backup.view` / `backup.restore` | Mengelola metadata, status, dan verifikasi backup/restore. Eksekusi artefak aktual tetap melalui deployment/SOP, bukan UI aplikasi. |
 | `audit.retention.execute` | Menjalankan retensi teknis yang disetujui. |
+| `media.retention.execute` | Mempratinjau dan menghapus foto penjemputan terminal sesuai batas usia dan batch yang disetujui. |
 
 ## 4. Matriks role-permission
 
@@ -185,6 +186,7 @@ Permission rekonsiliasi hanya melekat pada baseline `superadmin`; aktor custom t
 | `system.settings.manage`, `system.maintenance` | — | — | — | — | X |
 | `backup.run`, `backup.view`, `backup.restore` | — | — | — | — | X |
 | `audit.retention.execute` | — | — | — | — | X |
+| `media.retention.execute` | — | — | — | — | X |
 
 ## 5. Separation of duties
 

@@ -16,6 +16,7 @@ use App\Filament\Pages\TechnicalAuditRetentionPage;
 use App\Filament\Pages\TechnicalBackupsPage;
 use App\Filament\Pages\TechnicalHealthPage;
 use App\Filament\Pages\TechnicalMaintenancePage;
+use App\Filament\Pages\TechnicalMediaRetentionPage;
 use App\Filament\Pages\TechnicalSettingsPage;
 use App\Filament\Resources\AuditReconciliation\Models\AuditLogs\AuditLogResource;
 use App\Filament\Resources\Communication\Models\Announcements\AnnouncementResource;
@@ -91,7 +92,7 @@ final class BackofficePanelTest extends TestCase
             $this->navigationLabelsForGroup($panel, 'Administrasi sistem'),
         );
         self::assertSame(
-            ['Kontrol teknis', 'Health', 'Pengaturan', 'Pemeliharaan', 'Cadangan', 'Retensi audit'],
+            ['Kontrol teknis', 'Health', 'Pengaturan', 'Pemeliharaan', 'Cadangan', 'Retensi audit', 'Retensi foto'],
             $this->navigationLabelsForGroup($panel, 'Administrasi sistem', includeChildren: true),
         );
         self::assertContains(
@@ -108,6 +109,7 @@ final class BackofficePanelTest extends TestCase
         self::assertContains(TechnicalMaintenancePage::class, array_values(Filament::getPanel('backoffice')->getPages()));
         self::assertContains(TechnicalBackupsPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
         self::assertContains(TechnicalAuditRetentionPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
+        self::assertContains(TechnicalMediaRetentionPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
 
         $technical = User::factory()->create();
         $viewer = User::factory()->create();
@@ -163,6 +165,7 @@ final class BackofficePanelTest extends TestCase
             'filament/backoffice/technical-maintenance.blade.php',
             'filament/backoffice/technical-backups.blade.php',
             'filament/backoffice/technical-audit-retention.blade.php',
+            'filament/backoffice/technical-media-retention.blade.php',
         ] as $view) {
             $contents = file_get_contents(resource_path('views/'.$view));
 
@@ -193,6 +196,7 @@ final class BackofficePanelTest extends TestCase
         $this->get('/backoffice/technical-maintenance-page')->assertOk()->assertSee('Pemeliharaan aplikasi');
         $this->get('/backoffice/technical-backups-page')->assertOk()->assertSee('Cadangan dan pemulihan');
         $this->get('/backoffice/technical-audit-retention-page')->assertOk()->assertSee('Retensi audit');
+        $this->get('/backoffice/technical-media-retention-page')->assertOk()->assertSee('Pembersihan foto penjemputan');
     }
 
     public function test_backoffice_hubs_use_the_shared_light_intro_surface(): void
