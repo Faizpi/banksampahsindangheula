@@ -143,6 +143,35 @@ final class DeveloperCredentialsTest extends TestCase
         self::assertTrue(DeveloperUsersSeeder::canSeedDemoData());
     }
 
+    public function test_production_demo_data_uses_the_recent_environment_values_when_the_deploy_console_has_an_old_config_cache(): void
+    {
+        $originalMode = $_ENV['APP_DEMO_MODE'] ?? null;
+        $originalPassword = $_ENV['APP_DEMO_PASSWORD'] ?? null;
+
+        try {
+            config()->set('app.env', 'production');
+            config()->set('app.demo_mode', false);
+            config()->set('app.demo_password', null);
+            $_ENV['APP_DEMO_MODE'] = 'true';
+            $_ENV['APP_DEMO_PASSWORD'] = 'KataSandiUji-Yang-Unik-2026';
+
+            self::assertTrue(DeveloperUsersSeeder::canSeedDemoData());
+            self::assertSame('KataSandiUji-Yang-Unik-2026', DeveloperUsersSeeder::password());
+        } finally {
+            if ($originalMode === null) {
+                unset($_ENV['APP_DEMO_MODE']);
+            } else {
+                $_ENV['APP_DEMO_MODE'] = $originalMode;
+            }
+
+            if ($originalPassword === null) {
+                unset($_ENV['APP_DEMO_PASSWORD']);
+            } else {
+                $_ENV['APP_DEMO_PASSWORD'] = $originalPassword;
+            }
+        }
+    }
+
     public function test_explicit_production_demo_configuration_seeds_accounts_and_operational_sample_data(): void
     {
         config()->set('app.env', 'production');

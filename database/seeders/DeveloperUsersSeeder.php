@@ -80,7 +80,7 @@ final class DeveloperUsersSeeder extends Seeder
 
     public static function password(): string
     {
-        $configuredPassword = config('app.demo_password');
+        $configuredPassword = self::demoSetting('app.demo_password', 'APP_DEMO_PASSWORD');
 
         if (is_string($configuredPassword) && $configuredPassword !== '') {
             return $configuredPassword;
@@ -95,9 +95,11 @@ final class DeveloperUsersSeeder extends Seeder
             return true;
         }
 
-        return config('app.demo_mode') === true
-            && is_string(config('app.demo_password'))
-            && mb_strlen((string) config('app.demo_password')) >= 16;
+        $demoPassword = self::demoSetting('app.demo_password', 'APP_DEMO_PASSWORD');
+
+        return filter_var(self::demoSetting('app.demo_mode', 'APP_DEMO_MODE'), FILTER_VALIDATE_BOOL)
+            && is_string($demoPassword)
+            && mb_strlen($demoPassword) >= 16;
     }
 
     public static function requireDemoDataConfiguration(): void
@@ -107,6 +109,21 @@ final class DeveloperUsersSeeder extends Seeder
         }
 
         throw new \LogicException('Data uji production dinonaktifkan. Isi APP_DEMO_MODE=true dan APP_DEMO_PASSWORD minimal 16 karakter secara sementara, lalu bangun ulang cache.');
+    }
+
+    private static function demoSetting(string $configKey, string $environmentKey): mixed
+    {
+        $environmentValue = $_ENV[$environmentKey]
+            ?? $_SERVER[$environmentKey]
+            ?? getenv($environmentKey);
+
+        if ($environmentValue !== false && $environmentValue !== null && $environmentValue !== '') {
+            return $environmentValue;
+        }
+
+        // deploy.php loads .env before it boots Laravel so that a recently
+        // changed demo flag is usable even while an older config cache exists.
+        return config($configKey);
     }
 
     public function run(): void
