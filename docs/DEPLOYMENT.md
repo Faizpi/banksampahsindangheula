@@ -30,6 +30,12 @@ Document root domain harus menunjuk **hanya** ke direktori Laravel `public/`.
 
 Gunakan pengaturan document root provider atau symlink yang didukung paket. Bila symlink tidak didukung, pilih layout provider yang tetap menyajikan hanya isi `public/` dan menyesuaikan bootstrap path secara terkontrol. Jangan menaruh `.env`, `vendor`, `storage` privat, database dump, backup, `.git`, `app/`, atau source lain dalam public root.
 
+### Fallback shared hosting dengan `public_html` yang terkunci
+
+Jika provider mengunci document root domain utama ke `/home/<account>/public_html`, simpan **seluruh** source Laravel pada `/home/<account>/bank-sampah/` dan salin **hanya isi** folder `bank-sampah/public/` (termasuk `.htaccess`, `build/`, `index.php`, dan `deploy.php` bila console memang digunakan) ke `/home/<account>/public_html/`.
+
+`public/index.php` dan `public/deploy.php` proyek ini mendukung layout tersebut: saat dijalankan dari `public_html`, keduanya lebih dulu mencari source privat pada sibling `../bank-sampah`, lalu tetap memakai layout Laravel standar saat berjalan dari `public/`. Jangan menyalin `.env`, `vendor`, `storage`, `app`, `bootstrap`, `config`, `database`, `resources`, atau `routes` ke `public_html`.
+
 ## 3. Capability prerequisites
 
 1. Domain aktif dan sertifikat SSL valid; paksa HTTPS setelah pengujian.

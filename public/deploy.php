@@ -15,7 +15,15 @@ use Illuminate\Contracts\Foundation\Application;
 
 const DEPLOY_CONSOLE_MAX_OUTPUT_LENGTH = 12000;
 
-$projectPath = realpath(__DIR__.'/..');
+$projectPath = realpath(__DIR__.'/../bank-sampah');
+
+// Shared hosting may lock the primary document root to /public_html. In that
+// layout this console is copied to /public_html, while the Laravel source is
+// kept privately in the sibling /bank-sampah directory. Local and standard
+// Laravel layouts continue to use the conventional parent path.
+if ($projectPath === false || ! is_file($projectPath.'/artisan')) {
+    $projectPath = realpath(__DIR__.'/..');
+}
 
 if ($projectPath === false || ! is_file($projectPath.'/artisan')) {
     http_response_code(500);
