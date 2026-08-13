@@ -5,6 +5,14 @@
     $selectedArea = $areas->firstWhere('id', (int) $serviceAreaId);
     $estimatedWeight = collect($items)->sum(static fn (array $item): float => (float) ($item['estimated_weight_kg'] ?? 0));
     $steps = [1 => 'Lokasi', 2 => 'Jenis & foto', 3 => 'Tinjau'];
+    $photoPickerInitialFiles = collect($photos)
+        ->map(static fn ($photo): array => [
+            'name' => $photo->getClientOriginalName(),
+            'size' => $photo->getSize(),
+            'previewUrl' => $photo->temporaryUrl(),
+        ])
+        ->values()
+        ->all();
 @endphp
 
 <section
@@ -107,7 +115,8 @@
                                 :options="$types->pluck('name', 'id')->all()" :error="$errors->first('items.'.$index.'.waste_type_id')" />
                             <x-ui.input wire:model="items.{{ $index }}.estimated_weight_kg" label="Perkiraan berat (kg)" name="items.{{ $index }}.estimated_weight_kg" inputmode="decimal"
                                 :error="$errors->first('items.'.$index.'.estimated_weight_kg')" />
-                            <x-ui.input wire:model="items.{{ $index }}.estimated_quantity" label="Perkiraan jumlah" name="items.{{ $index }}.estimated_quantity" inputmode="numeric"
+                            <x-ui.input wire:model="items.{{ $index }}.estimated_quantity" label="Perkiraan jumlah (opsional)" name="items.{{ $index }}.estimated_quantity" inputmode="numeric"
+                                hint="Contoh: 2 kantong atau 1 karung."
                                 :error="$errors->first('items.'.$index.'.estimated_quantity')" />
                             @if (count($items) > 1)
                                 <button type="button" wire:click="removeItem({{ $index }})" class="inline-flex min-h-touch items-center justify-center rounded-md border-2 border-terracotta px-4 text-label font-bold text-terracotta transition hover:bg-danger-bg">Hapus</button>
@@ -122,7 +131,15 @@
             </x-ui.panel>
 
             <x-ui.panel title="Foto wajib" description="Unggah 1–2 foto JPEG atau PNG. Foto akan dinormalisasi menjadi JPEG maksimal 1 MB per file.">
-                <div class="space-y-3" data-photo-picker data-photo-picker-max="2" data-photo-picker-limit="1048576">
+                <div
+                    wire:ignore
+                    class="space-y-3"
+                    data-photo-picker
+                    data-photo-picker-max="2"
+                    data-photo-picker-limit="1048576"
+                    data-photo-picker-remove-method="removePhoto"
+                    data-photo-picker-initial-files="{{ json_encode($photoPickerInitialFiles, JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
+                >
                     <label for="pickup-photos" class="block text-label font-semibold text-deep-green">Foto sampah</label>
                     <div class="flex flex-col gap-2 sm:flex-row">
                         <button type="button" data-photo-picker-trigger="camera" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
@@ -134,11 +151,11 @@
                             Pilih dari galeri
                         </button>
                     </div>
-                    <input id="pickup-photos" wire:model="photos" type="file" accept="image/jpeg,image/png" multiple data-photo-picker-input class="block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-warm-canvas p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
+                    <input id="pickup-photos" type="file" accept="image/jpeg,image/png" multiple data-photo-picker-input data-photo-picker-property="photos" class="block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-warm-canvas p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
                     <p data-photo-picker-status class="text-body-sm text-text-secondary" aria-live="polite">Belum ada foto dipilih.</p>
                     <div data-photo-picker-preview class="grid gap-2 sm:grid-cols-2" aria-live="polite"></div>
-                    @error('photos')<p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>@enderror
                 </div>
+                @error('photos')<p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>@enderror
             </x-ui.panel>
         @else
             <x-ui.panel title="Ringkasan pengajuan" description="Periksa kembali detail sebelum pengajuan dikirim.">

@@ -13,6 +13,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 #[Layout('layouts.citizen')]
@@ -54,6 +55,22 @@ final class PickupRequestForm extends Component
     {
         unset($this->items[$index]);
         $this->items = array_values($this->items);
+    }
+
+    public function removePhoto(int $index): void
+    {
+        if (! array_key_exists($index, $this->photos)) {
+            return;
+        }
+
+        $photo = $this->photos[$index];
+        if ($photo instanceof TemporaryUploadedFile) {
+            $photo->delete();
+        }
+
+        unset($this->photos[$index]);
+        $this->photos = array_values($this->photos);
+        $this->resetErrorBag('photos');
     }
 
     public function nextStep(): void

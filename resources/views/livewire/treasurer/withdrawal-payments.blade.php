@@ -81,7 +81,7 @@
                     <p class="font-semibold text-deep-green">Kartu dan nomor nasabah berbeda</p>
                     <p class="mt-1">Kartu adalah media identitasnya; nomor nasabah adalah kode unik di dalam kartu. Pilihan di atas mencatat cara Anda memeriksa penerima, sedangkan field berikut mencatat kode yang dicocokkan sistem.</p>
                 </div>
-                <div wire:key="payment-proof-picker-{{ $selectedWithdrawal->id }}" class="rounded-md border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576">
+                <div wire:ignore wire:key="payment-proof-picker-{{ $selectedWithdrawal->id }}" class="rounded-md border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576" data-photo-picker-remove-method="clearProof">
                     <div>
                         <h3 class="text-label font-bold text-deep-green">Satu foto bukti pembayaran</h3>
                         <p class="mt-1 text-body-sm text-text-secondary">Ambil foto melalui kamera atau pilih satu foto dari galeri. Foto akan dikompres menjadi JPEG maksimal 1 MB.</p>
@@ -96,14 +96,14 @@
                             Pilih dari galeri
                         </button>
                     </div>
-                    <input id="payment-proof" wire:model="proof" type="file" accept="image/jpeg,image/png" data-photo-picker-input class="mt-3 block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
+                    <input id="payment-proof" type="file" accept="image/jpeg,image/png" data-photo-picker-input data-photo-picker-property="proof" class="mt-3 block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
                     <p data-photo-picker-status class="mt-2 text-body-sm text-text-secondary" aria-live="polite">Belum ada foto dipilih.</p>
                     <div data-photo-picker-preview class="mt-2 grid gap-2" aria-live="polite"></div>
-                    <div wire:loading wire:target="proof" class="mt-2 text-body-sm text-sky-blue" role="status">Mengunggah foto…</div>
-                    @error('proof')
-                        <p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
-                    @enderror
                 </div>
+                <div wire:loading wire:target="proof" class="mt-2 text-body-sm text-sky-blue" role="status">Mengunggah foto…</div>
+                @error('proof')
+                    <p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                @enderror
                 <x-ui.button type="button" wire:click="reviewPayment" wire:loading.attr="disabled" wire:target="reviewPayment">
                     <span wire:loading.remove wire:target="reviewPayment">Tinjau sebelum bayar</span>
                     <span wire:loading wire:target="reviewPayment">Memeriksa...</span>

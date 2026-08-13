@@ -617,12 +617,28 @@ document.addEventListener('click', (event) => {
         }
 
         event.preventDefault();
-        const files = Array.isArray(input._photoPickerFiles) ? [...input._photoPickerFiles] : [];
+        const removeMethod = picker.dataset.photoPickerRemoveMethod;
+        const component = photoPickerComponent(picker);
+        if (typeof removeMethod !== 'string' || removeMethod === '' || component === null) {
+            setPhotoPickerStatus(picker, 'Foto tidak dapat dihapus. Muat ulang halaman lalu coba lagi.', true);
+
+            return;
+        }
+
+        const files = photoPickerFiles(input, picker);
+        const previousFiles = [...files];
         files.splice(index, 1);
         input._photoPickerFiles = files;
         renderPhotoPickerPreview(picker, files);
-        setPhotoPickerStatus(picker, files.length === 0 ? 'Belum ada foto dipilih.' : `${files.length} dari ${PICKUP_PHOTO_MAX_COUNT} foto siap dikirim.`);
-        syncPhotoPickerInput(input, files);
+        setPhotoPickerStatus(picker, photoPickerStatusMessage(files.length, photoPickerMaxCount(picker)));
+        setPhotoPickerBusy(picker, true);
+        void component.$wire.call(removeMethod, index)
+            .catch(() => {
+                input._photoPickerFiles = previousFiles;
+                renderPhotoPickerPreview(picker, previousFiles);
+                setPhotoPickerStatus(picker, 'Foto tidak dapat dihapus. Coba lagi.', true);
+            })
+            .finally(() => setPhotoPickerBusy(picker, false));
 
         return;
     }
@@ -727,6 +743,55 @@ function photoPickerInput(picker) {
     return input instanceof HTMLInputElement ? input : null;
 }
 
+function photoPickerMaxCount(picker) {
+    const configured = Number.parseInt(picker.dataset.photoPickerMax ?? '', 10);
+
+    return Number.isInteger(configured) && configured > 0 ? configured : PICKUP_PHOTO_MAX_COUNT;
+}
+
+function photoPickerStatusMessage(count, maxCount) {
+    return count === 0
+        ? 'Belum ada foto dipilih.'
+        : `${count} dari ${maxCount} foto siap dikirim.`;
+}
+
+function photoPickerFiles(input, picker) {
+    if (Array.isArray(input._photoPickerFiles)) {
+        return input._photoPickerFiles;
+    }
+
+    let initialFiles = [];
+    try {
+        const encoded = picker.dataset.photoPickerInitialFiles;
+        initialFiles = typeof encoded === 'string' && encoded !== '' ? JSON.parse(encoded) : [];
+    } catch {
+        initialFiles = [];
+    }
+
+    input._photoPickerFiles = Array.isArray(initialFiles)
+        ? initialFiles
+            .filter((file) => file !== null && typeof file === 'object')
+            .map((file) => ({
+                name: typeof file.name === 'string' ? file.name : 'Foto sampah',
+                size: Number.isFinite(Number(file.size)) ? Number(file.size) : 0,
+                previewUrl: typeof file.previewUrl === 'string' ? file.previewUrl : '',
+            }))
+        : [];
+
+    return input._photoPickerFiles;
+}
+
+function photoPickerComponent(picker) {
+    const componentRoot = picker.closest('[wire\\:id]');
+    const componentId = componentRoot?.getAttribute('wire:id');
+
+    if (typeof componentId !== 'string' || componentId === '' || typeof window.Livewire?.find !== 'function') {
+        return null;
+    }
+
+    return window.Livewire.find(componentId);
+}
+
 function photoPickerStatus(picker) {
     const status = picker.querySelector('[data-photo-picker-status]');
 
@@ -770,7 +835,22 @@ function renderPhotoPickerPreview(picker, files) {
 
     files.forEach((file, index) => {
         const item = document.createElement('div');
-        item.className = 'flex items-center justify-between gap-3 rounded-md border border-border bg-warm-canvas px-3 py-2 text-body-sm';
+        item.className = 'flex min-w-0 items-center justify-between gap-3 rounded-md border border-border bg-warm-canvas p-2 text-body-sm';
+
+        const summary = document.createElement('div');
+        summary.className = 'flex min-w-0 items-center gap-3';
+
+        const imageSource = file instanceof File ? URL.createObjectURL(file) : file.previewUrl;
+        if (typeof imageSource === 'string' && imageSource !== '') {
+            const image = document.createElement('img');
+            image.className = 'size-12 shrink-0 rounded-sm border border-border bg-surface object-cover';
+            image.src = imageSource;
+            image.alt = `Pratinjau ${file.name}`;
+            if (file instanceof File) {
+                image.addEventListener('load', () => URL.revokeObjectURL(imageSource), { once: true });
+            }
+            summary.append(image);
+        }
 
         const details = document.createElement('div');
         details.className = 'min-w-0';
@@ -791,21 +871,62 @@ function renderPhotoPickerPreview(picker, files) {
         remove.setAttribute('aria-label', `Hapus ${file.name}`);
 
         details.append(name, size);
-        item.append(details, remove);
+        summary.append(details);
+        item.append(summary, remove);
         preview.append(item);
     });
 }
 
-function syncPhotoPickerInput(input, files) {
-    if (typeof DataTransfer === 'undefined') {
+function setPhotoPickerBusy(picker, isBusy) {
+    picker.toggleAttribute('aria-busy', isBusy);
+    picker.dataset.photoPickerBusy = isBusy ? 'true' : 'false';
+
+    picker.querySelectorAll('[data-photo-picker-trigger], [data-photo-picker-input]').forEach((element) => {
+        if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) {
+            element.disabled = isBusy;
+        }
+    });
+}
+
+function uploadPhotoPickerFile(picker, property, file) {
+    const component = photoPickerComponent(picker);
+    if (component === null || typeof component.$wire?.$upload !== 'function') {
+        return Promise.reject(new Error('Uploader belum siap. Muat ulang halaman lalu coba lagi.'));
+    }
+
+    return new Promise((resolve, reject) => {
+        component.$wire.$upload(
+            property,
+            file,
+            () => resolve(),
+            () => reject(new Error('Foto gagal diunggah. Periksa koneksi lalu coba lagi.')),
+        );
+    });
+}
+
+function hydratePhotoPicker(picker) {
+    const input = photoPickerInput(picker);
+    if (input === null) {
         return;
     }
 
-    const dataTransfer = new DataTransfer();
-    files.forEach((file) => dataTransfer.items.add(file));
-    input.files = dataTransfer.files;
-    input.dataset.photoPickerSyncing = 'true';
-    input.dispatchEvent(new Event('change', { bubbles: true }));
+    const files = photoPickerFiles(input, picker);
+    renderPhotoPickerPreview(picker, files);
+    setPhotoPickerStatus(picker, photoPickerStatusMessage(files.length, photoPickerMaxCount(picker)));
+}
+
+function hydratePhotoPickers(root = document) {
+    if (root instanceof HTMLElement && root.matches('[data-photo-picker]')) {
+        hydratePhotoPicker(root);
+    }
+
+    if (root instanceof Document || root instanceof HTMLElement) {
+        root.querySelectorAll('[data-photo-picker]').forEach((picker) => {
+            if (picker instanceof HTMLElement) {
+                hydratePhotoPicker(picker);
+            }
+        });
+    }
 }
 
 function loadPhotoImage(file) {
@@ -881,18 +1002,20 @@ photoPickerEventRoot.addEventListener('change', (event) => {
         return;
     }
 
-    if (input.dataset.photoPickerSyncing === 'true') {
-        delete input.dataset.photoPickerSyncing;
+    const picker = photoPickerFromTarget(input);
+    const property = input.dataset.photoPickerProperty;
+    if (picker === null || typeof property !== 'string' || property === '') {
         return;
     }
 
-    const picker = photoPickerFromTarget(input);
-    if (picker === null) {
+    if (picker.dataset.photoPickerBusy === 'true') {
+        input.value = '';
+
         return;
     }
 
     const selectedFiles = Array.from(input.files ?? []);
-    const existingFiles = Array.isArray(input._photoPickerFiles) ? [...input._photoPickerFiles] : [];
+    const existingFiles = photoPickerFiles(input, picker);
 
     if (selectedFiles.length === 0) {
         return;
@@ -901,30 +1024,61 @@ photoPickerEventRoot.addEventListener('change', (event) => {
     event.stopImmediatePropagation();
 
     void (async () => {
-        const maxCount = Number.parseInt(picker.dataset.photoPickerMax ?? String(PICKUP_PHOTO_MAX_COUNT), 10);
+        const maxCount = photoPickerMaxCount(picker);
         const available = Math.max(0, maxCount - existingFiles.length);
         const filesToProcess = selectedFiles.slice(0, available);
         const compressedFiles = [];
 
-        setPhotoPickerStatus(picker, 'Mengompres foto…');
+        if (available === 0) {
+            setPhotoPickerStatus(picker, `Maksimal ${maxCount} foto sudah dipilih. Hapus salah satu foto sebelum menambahkan lagi.`, true);
+            input.value = '';
 
-        for (const file of filesToProcess) {
-            try {
-                compressedFiles.push(await compressPickupPhoto(file));
-            } catch (error) {
-                setPhotoPickerStatus(picker, error instanceof Error ? error.message : 'Foto tidak dapat diproses.', true);
-                return;
-            }
+            return;
         }
 
-        const files = [...existingFiles, ...compressedFiles].slice(0, maxCount);
-        input._photoPickerFiles = files;
-        renderPhotoPickerPreview(picker, files);
-        setPhotoPickerStatus(picker, `${files.length} dari ${maxCount} foto siap dikirim.`);
-        syncPhotoPickerInput(input, files);
+        setPhotoPickerBusy(picker, true);
+        setPhotoPickerStatus(picker, 'Mengompres foto…');
 
-        if (selectedFiles.length > filesToProcess.length) {
-            setPhotoPickerStatus(picker, `Maksimal ${maxCount} foto. Hanya ${maxCount} foto pertama yang dipakai.`, true);
+        try {
+            for (const file of filesToProcess) {
+                compressedFiles.push(await compressPickupPhoto(file));
+            }
+
+            for (const file of compressedFiles) {
+                setPhotoPickerStatus(picker, `Mengunggah foto ${existingFiles.length + 1} dari ${maxCount}…`);
+                await uploadPhotoPickerFile(picker, property, file);
+                existingFiles.push(file);
+                input._photoPickerFiles = existingFiles;
+                renderPhotoPickerPreview(picker, existingFiles);
+                setPhotoPickerStatus(picker, photoPickerStatusMessage(existingFiles.length, maxCount));
+            }
+
+            if (selectedFiles.length > filesToProcess.length) {
+                setPhotoPickerStatus(picker, `Maksimal ${maxCount} foto. Hanya ${filesToProcess.length} foto pertama yang ditambahkan.`, true);
+            }
+        } catch (error) {
+            setPhotoPickerStatus(picker, error instanceof Error ? error.message : 'Foto tidak dapat diproses.', true);
+        } finally {
+            input.value = '';
+            setPhotoPickerBusy(picker, false);
         }
     })();
 }, true);
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => hydratePhotoPickers(), { once: true });
+} else {
+    hydratePhotoPickers();
+}
+
+const photoPickerObserver = new MutationObserver((records) => {
+    records.forEach((record) => {
+        record.addedNodes.forEach((node) => {
+            if (node instanceof HTMLElement) {
+                hydratePhotoPickers(node);
+            }
+        });
+    });
+});
+
+photoPickerObserver.observe(document.body ?? document.documentElement, { childList: true, subtree: true });

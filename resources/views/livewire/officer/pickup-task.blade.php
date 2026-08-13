@@ -100,7 +100,7 @@
                     </div>
                 @endforeach
 
-                <div class="rounded-xl border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576">
+                <div wire:ignore class="rounded-xl border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576" data-photo-picker-remove-method="clearEvidence">
                     <div>
                         <h3 class="text-label font-bold text-deep-green">Bukti foto penjemputan</h3>
                         <p class="mt-1 text-body-sm text-text-secondary">Ambil 1 foto di lokasi melalui kamera atau pilih dari galeri. Foto akan dikompres menjadi JPEG maksimal 1 MB. Foto pengajuan warga tetap dipakai bila bukti baru tidak ditambahkan.</p>
@@ -115,11 +115,11 @@
                             Pilih dari galeri
                         </button>
                     </div>
-                    <input id="pickup-evidence" wire:model="evidence" type="file" accept="image/jpeg,image/png" data-photo-picker-input class="mt-3 block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
+                    <input id="pickup-evidence" type="file" accept="image/jpeg,image/png" data-photo-picker-input data-photo-picker-property="evidence" class="mt-3 block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
                     <p data-photo-picker-status class="mt-2 text-body-sm text-text-secondary" aria-live="polite">Belum ada foto baru dipilih.</p>
                     <div data-photo-picker-preview class="mt-2 grid gap-2" aria-live="polite"></div>
-                    @error('evidence')<p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>@enderror
                 </div>
+                @error('evidence')<p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>@enderror
 
                 <div class="rounded-md border border-border bg-surface p-4" aria-live="polite">
                     <div class="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">

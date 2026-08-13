@@ -11,6 +11,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 #[Layout('layouts.officer')]
@@ -53,6 +54,16 @@ final class WithdrawalPayments extends Component
     public function cancelPaymentReview(): void
     {
         $this->showPaymentReview = false;
+    }
+
+    public function clearProof(): void
+    {
+        if ($this->proof instanceof TemporaryUploadedFile) {
+            $this->proof->delete();
+        }
+
+        $this->proof = null;
+        $this->resetErrorBag('proof');
     }
 
     public function pay(WithdrawalService $service): void

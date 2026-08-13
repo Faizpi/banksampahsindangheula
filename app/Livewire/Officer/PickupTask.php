@@ -17,6 +17,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Throwable;
 
@@ -84,6 +85,16 @@ final class PickupTask extends Component
     public function closeFailureReport(): void
     {
         $this->failureDialogOpen = false;
+    }
+
+    public function clearEvidence(): void
+    {
+        if ($this->evidence instanceof TemporaryUploadedFile) {
+            $this->evidence->delete();
+        }
+
+        $this->evidence = null;
+        $this->resetErrorBag('evidence');
     }
 
     public function complete(PickupService $service): void
