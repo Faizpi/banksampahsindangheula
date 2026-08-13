@@ -172,6 +172,15 @@ final class DeveloperCredentialsTest extends TestCase
         }
     }
 
+    public function test_demo_settings_are_read_from_the_private_project_environment_file_before_stale_cache_values(): void
+    {
+        $seeder = file_get_contents(base_path('database/seeders/DeveloperUsersSeeder.php'));
+
+        self::assertNotFalse($seeder);
+        self::assertStringContainsString("base_path('.env')", $seeder);
+        self::assertStringContainsString('Dotenv::parse($contents)', $seeder);
+    }
+
     public function test_explicit_production_demo_configuration_seeds_accounts_and_operational_sample_data(): void
     {
         config()->set('app.env', 'production');

@@ -13,6 +13,7 @@ use App\Domain\Identity\Models\CustomerProfile;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
 use App\Models\User;
+use Dotenv\Dotenv;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -113,6 +114,12 @@ final class DeveloperUsersSeeder extends Seeder
 
     private static function demoSetting(string $configKey, string $environmentKey): mixed
     {
+        $dotenvValue = self::projectEnvironmentValue($environmentKey);
+
+        if ($dotenvValue !== null && $dotenvValue !== '') {
+            return $dotenvValue;
+        }
+
         $environmentValue = $_ENV[$environmentKey]
             ?? $_SERVER[$environmentKey]
             ?? getenv($environmentKey);
@@ -124,6 +131,30 @@ final class DeveloperUsersSeeder extends Seeder
         // deploy.php loads .env before it boots Laravel so that a recently
         // changed demo flag is usable even while an older config cache exists.
         return config($configKey);
+    }
+
+    private static function projectEnvironmentValue(string $environmentKey): ?string
+    {
+        $environmentFile = base_path('.env');
+
+        if (! is_readable($environmentFile)) {
+            return null;
+        }
+
+        try {
+            $contents = file_get_contents($environmentFile);
+
+            if (! is_string($contents)) {
+                return null;
+            }
+
+            $values = Dotenv::parse($contents);
+            $value = $values[$environmentKey] ?? null;
+
+            return is_string($value) ? $value : null;
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function run(): void
