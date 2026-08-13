@@ -187,7 +187,7 @@ final class BackofficePanelTest extends TestCase
         self::assertFalse(Reconciliation::canAccess());
 
         $this->actingAs($superadmin->fresh());
-        $this->get('/backoffice/reconciliation')->assertOk()->assertSee('Koreksi dan rekonsiliasi');
+        $this->get('/backoffice/reconciliation')->assertOk()->assertSee('Rekonsiliasi saldo harian');
         $this->get('/backoffice/technical-health-page')->assertOk()->assertSee('Health sistem');
         $this->get('/backoffice/technical-settings-page')->assertOk()->assertSee('Pengaturan teknis');
         $this->get('/backoffice/technical-maintenance-page')->assertOk()->assertSee('Pemeliharaan aplikasi');

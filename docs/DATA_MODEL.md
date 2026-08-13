@@ -54,7 +54,7 @@ erDiagram
 | `customer_profiles` | `user_id`, `customer_number VARCHAR(40)`, `rt_id`, `address VARCHAR(500)`, `joined_at`, `qr_token_hash CHAR(64)`, `qr_rotated_at` | PK/FK `user_id`; UQ nomor dan token; IDX `rt_id` | RESTRICT |
 | `staff_profiles` | `user_id`, `staff_number`, `service_area_id`, `active_from/to` | UQ nomor; IDX area/status | RESTRICT |
 | `roles`, `permissions` | `id`, `name`, `description` | UQ `name` | RESTRICT bila dipakai |
-| `role_user`, `permission_role` | FK terkait, timestamps, pemberi/alasan assignment | UQ pasangan; FK cascade untuk pivot | Cascade pivot |
+| `role_user`, `permission_role` | FK terkait, timestamps, pemberi/alasan assignment | PK komposit pasangan; FK cascade untuk pivot | Cascade pivot |
 | `sessions` | session identifier, user, IP ringkas, timestamps | IDX user | Purge sesuai retensi |
 
 Perubahan kata sandi berbantuan direkam pada `audit_logs`: aktor, target, metode verifikasi `tatap_muka` atau `callback_nomor_terdaftar`, alasan 10–1000 karakter, dan hasil. Perubahan mandiri direkam pada `audit_logs`: aktor yang sama dengan target, metode `mandiri_profil`, alasan sistem `perubahan_mandiri`, dan hasil. Audit tidak menyimpan kata sandi atau secret. Tidak ada tabel atau data lifecycle token reset, token sementara, maupun kanal pengiriman password/token.
@@ -65,12 +65,12 @@ Perubahan kata sandi berbantuan direkam pada `audit_logs`: aktor, target, metode
 |---|---|---|---|
 | `dusun`, `rw`, `rt` | `id`, parent FK, `code`, `name`, `is_active` | UQ `(parent_id,code)`; IDX aktif | Nonaktif; RESTRICT |
 | `service_areas` | `id`, `name`, `is_active`, batas default kapasitas | UQ nama | Nonaktif |
-| `service_area_rt` | area/RT | UQ pasangan | Cascade pivot |
+| `service_area_rt` | area/RT | PK komposit pasangan | Cascade pivot |
 | `waste_categories` | kode, nama, urutan, aktif | UQ kode | Nonaktif |
 | `waste_units` | kode, nama, simbol, klasifikasi satuan, faktor konversi ke `kg` hanya untuk satuan berat fisik bila ditetapkan | UQ kode | RESTRICT |
 | `waste_conditions` | kode, nama, deskripsi, urutan, aktif | UQ kode | Nonaktif |
 | `waste_types` | kategori/satuan FK, kode, nama, deskripsi edukasi, `is_plastic`, media FK, aktif | UQ kode; IDX kategori/aktif/plastik | Nonaktif |
-| `waste_type_conditions` | jenis/kondisi FK | PK atau UQ pasangan; FK cascade untuk pivot tanpa histori | Cascade pivot |
+| `waste_type_conditions` | jenis/kondisi FK | PK komposit pasangan; FK cascade untuk pivot tanpa histori | Cascade pivot |
 | `waste_prices` | jenis dan kondisi FK, `price BIGINT`, `effective_from`, `effective_to`, pembuat | IDX `(waste_type_id,waste_condition_id,effective_from,effective_to)`; constraint tidak tumpang tindih per jenis+kondisi ditegakkan service+lock | Immutable; tutup periode |
 
 `kg` adalah satuan kanonik untuk berat. Satuan berat fisik dapat dikonversi untuk presentasi atau input ke `kg` bila faktor konversinya ditetapkan. Satuan non-berat tidak dikonversi otomatis ke atau dari satuan lain. Harga selalu berscope tepat pada pasangan jenis sampah dan kondisi.
@@ -81,7 +81,7 @@ Perubahan kata sandi berbantuan direkam pada `audit_logs`: aktor, target, metode
 |---|---|---|---|
 | `deposits` | nomor, customer/staff FK, metode enum, pickup/mobile FK nullable, lokasi/waktu, status, total berat `DECIMAL(15,3)`, total nilai `BIGINT`, `finalized_at`, `idempotency_id`, `verification_token_hash` | UQ nomor, idempotency, token; IDX customer/date, staff/date, status/date | Draf dapat dibersihkan; final RESTRICT |
 | `deposit_items` | deposit/jenis FK, snapshot kode/nama/satuan/kondisi, berat `DECIMAL(15,3)`, harga `BIGINT`, subtotal `BIGINT`, rounding_version | UQ logis bila item digabung; IDX jenis | RESTRICT |
-| `transaction_corrections` | deposit FK, nomor, alasan, before/after JSON aman, delta nilai/berat, pembuat, approved/finalized time, media FK | UQ nomor; IDX deposit/date | Append-only |
+| `transaction_corrections` | deposit FK, nomor, alasan, before/after JSON aman, delta nilai/berat, pembuat, approved/finalized time, media FK | UQ nomor dan deposit; IDX deposit/date | Append-only |
 | `transaction_reversals` | original deposit/entry, nomor, alasan, actor, time | UQ original per reversal penuh; UQ nomor | Append-only |
 | `idempotency_keys` | key, actor, scope, payload hash, status, result type/id, expiry | UQ `(actor_id,scope,key)`; IDX expiry | Purge setelah retensi aman |
 
@@ -170,5 +170,5 @@ Klasifikasi dan retensi rinci mengikuti [SECURITY.md](SECURITY.md) serta [OPERAT
 Laravel Truss v1.8.3 tersedia sebagai dependency development untuk melihat diagram relasi skema pada `/truss` ketika `APP_ENV=local`. Package ini hanya menginspeksi struktur (tabel, kolom, key, dan indeks), bukan isi baris data.
 
 - Gunakan `php artisan truss:doctor` untuk review struktur dan `php artisan truss:export --format=markdown` untuk artefak lokal bila diperlukan.
-- Hasil doctor awal adalah bahan triage, bukan quality gate: terdapat empat error primary key pada tabel penghubung dan sembilan warning heuristic yang harus ditinjau terhadap kontrak domain sebelum perubahan migration dibuat.
+- Hasil doctor adalah bahan triage, bukan quality gate. Primary key komposit pada tabel penghubung dan unique `transaction_corrections.deposit_id` dijaga migration; warning heuristic tetap ditinjau terhadap kontrak domain sebelum perubahan migration dibuat.
 - Jangan mengaktifkan `TRUSS_ENABLED` pada production. Nama tabel dan kolom tetap informasi sensitif, walaupun data baris tidak diekspos.
