@@ -13,6 +13,7 @@ use App\Livewire\Auth\LoginForm;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\DeveloperUsersSeeder;
+use Database\Seeders\LocalDataSeeder;
 use Filament\Auth\Pages\Login as FilamentLogin;
 use Filament\Facades\Filament;
 use Filament\Panel;
@@ -187,7 +188,10 @@ final class DeveloperCredentialsTest extends TestCase
         config()->set('app.demo_mode', true);
         config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
 
-        $this->seed(DatabaseSeeder::class);
+        // This mirrors the shared-hosting deploy console, which invokes the
+        // credential and operational seeders as two separate Artisan calls.
+        $this->seed(DeveloperUsersSeeder::class);
+        $this->seed(LocalDataSeeder::class);
 
         self::assertGreaterThanOrEqual(45, User::query()->count());
         self::assertNotNull($this->devUser('warga')->customerProfile);

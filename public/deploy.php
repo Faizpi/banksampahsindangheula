@@ -65,6 +65,23 @@ function compactDeployOutput(string $output): string
     return "[Output lama dipotong demi keamanan.]\n\n".mb_substr($output, -DEPLOY_CONSOLE_MAX_OUTPUT_LENGTH);
 }
 
+function deployConsoleFailureMessage(Throwable $exception): string
+{
+    $message = preg_replace('/\s+/', ' ', trim($exception->getMessage()));
+
+    if (! is_string($message) || $message === '') {
+        $message = 'Pesan kesalahan tidak tersedia.';
+    }
+
+    // Exception messages can contain SQL values. Keep the console useful for
+    // a trusted operator without exposing a full query, path, stack trace, or
+    // configuration value in a browser response.
+    $message = preg_replace('/\s*\(Connection:.*$/i', '', $message) ?? $message;
+    $message = preg_replace('/\s*\(SQL:.*$/i', '', $message) ?? $message;
+
+    return 'Gagal: '.$exception::class."\n".mb_strimwidth($message, 0, 700, '…');
+}
+
 function latestDeployLogLines(string $logFile, int $lineLimit = 200): string
 {
     if (! is_file($logFile) || ! is_readable($logFile)) {
@@ -250,7 +267,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
                 $results[] = [
                     'command' => $command,
                     'success' => false,
-                    'output' => 'Command gagal dijalankan. Periksa log aplikasi melalui aksi Lihat log aplikasi.',
+                    'output' => deployConsoleFailureMessage($exception)."\n\nPeriksa log aplikasi melalui aksi Lihat log aplikasi untuk detail internal.",
                     'duration' => microtime(true) - $startedAt,
                 ];
                 break;

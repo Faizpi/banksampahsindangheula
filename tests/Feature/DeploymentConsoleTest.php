@@ -33,3 +33,12 @@ it('provides a confirmed data seed action for temporary production testing', fun
         ->and($console)->toContain("'SEED DATA UJI'")
         ->and($console)->toContain('Database\\\\Seeders\\\\LocalDataSeeder');
 });
+
+it('shows a bounded exception summary to the authenticated deployment operator', function (): void {
+    $console = file_get_contents(base_path('public/deploy.php'));
+
+    expect($console)->not->toBeFalse()
+        ->and($console)->toContain('deployConsoleFailureMessage')
+        ->and($console)->toContain("preg_replace('/\\s*\\(SQL:.*\$/i'")
+        ->and($console)->toContain('Periksa log aplikasi melalui aksi Lihat log aplikasi');
+});
