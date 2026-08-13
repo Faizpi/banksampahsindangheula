@@ -107,7 +107,7 @@ Verifikasi nama environment key terhadap config Laravel aktual sebelum deploy. S
 1. Pastikan domain sudah HTTPS dan document root tetap mengarah hanya ke `public/`.
 2. Buat token acak yang kuat lalu simpan secara privat pada environment production sebagai `DEPLOY_CONSOLE_TOKEN`; jangan masukkan token ke repository, dokumentasi, atau screenshot.
 3. Bila IP operator stabil, isi `DEPLOY_CONSOLE_ALLOWED_IPS` dengan daftar IP publik yang dipisahkan koma untuk membatasi akses lebih lanjut.
-4. Buka `/deploy.php`, masukkan token, lalu pilih salah satu aksi allowlist: pemeriksaan status migrasi, deployment (clear cache → migrasi `--force` → cache ulang), cache ulang, atau baca 200 baris log Laravel terbaru.
+4. Buka `/deploy.php`, masukkan token, lalu pilih salah satu aksi allowlist: pemeriksaan status migrasi, deployment (migrasi `--force` → clear cache → cache ulang), cache ulang, atau baca 200 baris log Laravel terbaru. Urutan ini memungkinkan deployment pertama dengan cache driver database, saat tabel `cache` belum ada.
 5. Console tidak menjalankan custom command, tidak dapat menghapus log, dan tidak membuat storage link. Tetap lakukan backup pra-deploy serta gunakan SSH untuk `composer install` dan operasi di luar allowlist.
 6. Setelah kebutuhan sementara selesai, kosongkan `DEPLOY_CONSOLE_TOKEN` atau hapus file console dari release berikutnya untuk menonaktifkannya kembali.
 

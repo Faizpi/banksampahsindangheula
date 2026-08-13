@@ -79,10 +79,10 @@ $actions = [
     ],
     'release' => [
         'label' => 'Selesaikan deployment',
-        'description' => 'Membersihkan cache, menjalankan migrasi produksi, lalu membangun cache aplikasi.',
+        'description' => 'Menjalankan migrasi produksi terlebih dahulu, lalu membersihkan dan membangun cache aplikasi.',
         'commands' => [
-            ['optimize:clear', []],
             ['migrate', ['--force' => true]],
+            ['optimize:clear', []],
             ['config:cache', []],
             ['route:cache', []],
             ['view:cache', []],
