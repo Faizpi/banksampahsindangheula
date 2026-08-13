@@ -26,7 +26,9 @@ final class BackofficeLoginFormTest extends TestCase
         $this->get('/backoffice/login')
             ->assertOk()
             ->assertSee('Panel pengelolaan bank sampah')
-            ->assertSee('Masuk dengan akun Anda');
+            ->assertSee('Masuk dengan akun Anda')
+            ->assertSee('Kembali ke landing page')
+            ->assertSee(route('home'), false);
     }
 
     public function test_the_panel_uses_the_custom_backoffice_login_class(): void
