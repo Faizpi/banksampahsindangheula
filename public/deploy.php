@@ -7,20 +7,19 @@ use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Contracts\Foundation\Application;
 
 /*
- * Protected release console for this Laravel application.
+ * Protected release console for shared hosting.
  *
- * Enable it only when DEPLOY_CONSOLE_TOKEN is set in the private production
- * environment. The token must never be committed or placed in this file.
+ * The visual interface deliberately keeps the familiar deploy workspace, but
+ * execution is limited to an allowlist. This file must never become a web
+ * terminal, because it is served from the public document root.
  */
 
 const DEPLOY_CONSOLE_MAX_OUTPUT_LENGTH = 12000;
 
 $projectPath = realpath(__DIR__.'/../bank-sampah');
 
-// Shared hosting may lock the primary document root to /public_html. In that
-// layout this console is copied to /public_html, while the Laravel source is
-// kept privately in the sibling /bank-sampah directory. Local and standard
-// Laravel layouts continue to use the conventional parent path.
+// On normal Laravel installs deploy.php lives in public/. On shared hosting
+// with a locked public_html, it lives in public_html beside bank-sampah/.
 if ($projectPath === false || ! is_file($projectPath.'/artisan')) {
     $projectPath = realpath(__DIR__.'/..');
 }
@@ -32,138 +31,24 @@ if ($projectPath === false || ! is_file($projectPath.'/artisan')) {
 
 if (! is_file($projectPath.'/vendor/autoload.php')) {
     http_response_code(503);
-    exit('Dependencies are not installed. Run composer install through SSH first.');
+    exit('Dependencies are not installed. Upload the production vendor directory first.');
 }
 
 chdir($projectPath);
 
 require $projectPath.'/vendor/autoload.php';
 
-// Config cache makes Laravel skip loading .env. Load it here so this protection
-// remains available before a cache-rebuild deployment action can run.
+// Read the deployment token even when Laravel config has already been cached.
 Dotenv::createImmutable($projectPath)->safeLoad();
+
+/** @var Application $app */
+$app = require $projectPath.'/bootstrap/app.php';
 
 function deployConsoleEnvironment(string $key): string
 {
     $value = $_ENV[$key] ?? $_SERVER[$key] ?? getenv($key);
 
     return is_string($value) ? trim($value) : '';
-}
-
-/** @var Application $app */
-$app = require $projectPath.'/bootstrap/app.php';
-$configuredToken = deployConsoleEnvironment('DEPLOY_CONSOLE_TOKEN');
-
-if ($configuredToken === '') {
-    http_response_code(503);
-    exit('Deploy console is disabled. Configure DEPLOY_CONSOLE_TOKEN in the private environment to enable it.');
-}
-
-$allowedIps = array_values(array_filter(array_map(
-    static fn (string $ip): string => trim($ip),
-    explode(',', deployConsoleEnvironment('DEPLOY_CONSOLE_ALLOWED_IPS')),
-)));
-
-if ($allowedIps !== [] && ! in_array((string) ($_SERVER['REMOTE_ADDR'] ?? ''), $allowedIps, true)) {
-    http_response_code(403);
-    exit('This IP address is not authorised to use the deploy console.');
-}
-
-$actions = [
-    'status' => [
-        'label' => 'Periksa status migrasi',
-        'description' => 'Menampilkan status migrasi tanpa mengubah aplikasi.',
-        'commands' => [
-            ['migrate:status', []],
-        ],
-    ],
-    'release' => [
-        'label' => 'Selesaikan deployment',
-        'description' => 'Menjalankan migrasi produksi terlebih dahulu, lalu membersihkan dan membangun cache aplikasi.',
-        'commands' => [
-            ['migrate', ['--force' => true]],
-            ['optimize:clear', []],
-            ['config:cache', []],
-            ['route:cache', []],
-            ['view:cache', []],
-        ],
-    ],
-    'rebuild-cache' => [
-        'label' => 'Bangun ulang cache',
-        'description' => 'Gunakan setelah perubahan konfigurasi, route, atau view tanpa migrasi database.',
-        'commands' => [
-            ['optimize:clear', []],
-            ['config:cache', []],
-            ['route:cache', []],
-            ['view:cache', []],
-        ],
-    ],
-    'view-logs' => [
-        'label' => 'Lihat log aplikasi terbaru',
-        'description' => 'Menampilkan 200 baris terakhir dari storage/logs/laravel.log tanpa mengubahnya.',
-        'commands' => [],
-    ],
-];
-
-$results = [];
-$message = null;
-
-if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
-    $submittedToken = (string) ($_POST['token'] ?? '');
-    $action = (string) ($_POST['action'] ?? '');
-
-    if (! hash_equals($configuredToken, $submittedToken)) {
-        http_response_code(403);
-        $message = ['error', 'Token deploy tidak valid.'];
-    } elseif (! isset($actions[$action])) {
-        http_response_code(422);
-        $message = ['error', 'Aksi deployment tidak dikenal.'];
-    } elseif ($action === 'view-logs') {
-        $logFile = $projectPath.'/storage/logs/laravel.log';
-        $results[] = [
-            'command' => 'storage/logs/laravel.log',
-            'success' => true,
-            'output' => latestDeployLogLines($logFile),
-            'duration' => 0.0,
-        ];
-        $message = ['success', 'Log aplikasi terbaru berhasil dimuat.'];
-    } else {
-        /** @var Kernel $kernel */
-        $kernel = $app->make(Kernel::class);
-
-        foreach ($actions[$action]['commands'] as [$command, $parameters]) {
-            $startedAt = microtime(true);
-
-            try {
-                $exitCode = $kernel->call($command, $parameters);
-                $output = $kernel->output();
-                $results[] = [
-                    'command' => $command,
-                    'success' => $exitCode === 0,
-                    'output' => $output === '' ? '(Tidak ada output.)' : $output,
-                    'duration' => microtime(true) - $startedAt,
-                ];
-
-                if ($exitCode !== 0) {
-                    break;
-                }
-            } catch (Throwable $exception) {
-                report($exception);
-                $results[] = [
-                    'command' => $command,
-                    'success' => false,
-                    'output' => 'Command gagal dijalankan. Periksa log aplikasi melalui kanal operasional yang aman.',
-                    'duration' => microtime(true) - $startedAt,
-                ];
-                break;
-            }
-        }
-
-        $hasFailure = array_filter($results, static fn (array $result): bool => ! $result['success']) !== [];
-        $message = $hasFailure
-            ? ['error', 'Deployment berhenti karena ada command yang gagal.']
-            : ['success', 'Aksi deployment selesai dijalankan.'];
-    }
 }
 
 function escapeDeployConsole(string $value): string
@@ -221,12 +106,147 @@ function latestDeployLogLines(string $logFile, int $lineLimit = 200): string
     return implode("\n", $latestLines) ?: '(Log aplikasi kosong.)';
 }
 
+$configuredToken = deployConsoleEnvironment('DEPLOY_CONSOLE_TOKEN');
+
+if ($configuredToken === '') {
+    http_response_code(503);
+    exit('Deploy console is disabled. Set DEPLOY_CONSOLE_TOKEN in the private .env file to enable it.');
+}
+
+$allowedIps = array_values(array_filter(array_map(
+    static fn (string $ip): string => trim($ip),
+    explode(',', deployConsoleEnvironment('DEPLOY_CONSOLE_ALLOWED_IPS')),
+)));
+
+if ($allowedIps !== [] && ! in_array((string) ($_SERVER['REMOTE_ADDR'] ?? ''), $allowedIps, true)) {
+    http_response_code(403);
+    exit('This IP address is not authorised to use the deploy console.');
+}
+
 header('Cache-Control: no-store, private');
 header('Pragma: no-cache');
 header('Referrer-Policy: no-referrer');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
-header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
+header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
+
+$actions = [
+    'status' => [
+        'label' => 'Periksa status migrasi',
+        'description' => 'Membaca daftar migration tanpa mengubah aplikasi.',
+        'commands' => [
+            ['migrate:status', []],
+        ],
+    ],
+    'release' => [
+        'label' => 'Selesaikan deployment',
+        'description' => 'Menerapkan migration yang tertunda lalu membangun ulang seluruh cache produksi.',
+        'commands' => [
+            ['migrate', ['--force' => true]],
+            ['optimize:clear', []],
+            ['config:cache', []],
+            ['route:cache', []],
+            ['view:cache', []],
+        ],
+    ],
+    'fresh-release' => [
+        'label' => 'Fresh deployment + seed',
+        'description' => 'Menghapus seluruh tabel, menjalankan seluruh migration, membuat role dan admin awal, lalu membangun cache. Hanya untuk database baru sebelum go-live.',
+        'dangerous' => true,
+        'commands' => [
+            ['migrate:fresh', ['--seed' => true, '--force' => true]],
+            ['optimize:clear', []],
+            ['config:cache', []],
+            ['route:cache', []],
+            ['view:cache', []],
+        ],
+    ],
+    'seed' => [
+        'label' => 'Seed admin awal',
+        'description' => 'Menjalankan DatabaseSeeder yang idempotent. Membutuhkan APP_INITIAL_ADMIN_EMAIL dan APP_INITIAL_ADMIN_PASSWORD di .env.',
+        'commands' => [
+            ['db:seed', ['--class' => 'Database\\Seeders\\DatabaseSeeder', '--force' => true]],
+        ],
+    ],
+    'rebuild-cache' => [
+        'label' => 'Bangun ulang cache',
+        'description' => 'Gunakan setelah perubahan konfigurasi, route, atau view tanpa migration database.',
+        'commands' => [
+            ['optimize:clear', []],
+            ['config:cache', []],
+            ['route:cache', []],
+            ['view:cache', []],
+        ],
+    ],
+    'view-logs' => [
+        'label' => 'Lihat log aplikasi',
+        'description' => 'Membaca 200 baris terakhir storage/logs/laravel.log tanpa menghapus atau mengubahnya.',
+        'commands' => [],
+    ],
+];
+
+$results = [];
+$message = null;
+$selectedAction = (string) ($_POST['action'] ?? 'status');
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') {
+    $submittedToken = (string) ($_POST['token'] ?? '');
+
+    if (! hash_equals($configuredToken, $submittedToken)) {
+        http_response_code(403);
+        $message = ['error', 'Token deploy tidak valid.'];
+    } elseif (! isset($actions[$selectedAction])) {
+        http_response_code(422);
+        $message = ['error', 'Aksi deployment tidak dikenal.'];
+    } elseif ($selectedAction === 'fresh-release' && (string) ($_POST['confirm_reset'] ?? '') !== 'RESET DATABASE') {
+        http_response_code(422);
+        $message = ['error', 'Konfirmasi reset belum benar. Ketik tepat: RESET DATABASE.'];
+    } elseif ($selectedAction === 'view-logs') {
+        $results[] = [
+            'command' => 'storage/logs/laravel.log',
+            'success' => true,
+            'output' => latestDeployLogLines($projectPath.'/storage/logs/laravel.log'),
+            'duration' => 0.0,
+        ];
+        $message = ['success', 'Log aplikasi terbaru berhasil dimuat.'];
+    } else {
+        /** @var Kernel $kernel */
+        $kernel = $app->make(Kernel::class);
+
+        foreach ($actions[$selectedAction]['commands'] as [$command, $parameters]) {
+            $startedAt = microtime(true);
+
+            try {
+                $exitCode = $kernel->call($command, $parameters);
+                $output = $kernel->output();
+                $results[] = [
+                    'command' => $command,
+                    'success' => $exitCode === 0,
+                    'output' => $output === '' ? '(Tidak ada output.)' : $output,
+                    'duration' => microtime(true) - $startedAt,
+                ];
+
+                if ($exitCode !== 0) {
+                    break;
+                }
+            } catch (Throwable $exception) {
+                report($exception);
+                $results[] = [
+                    'command' => $command,
+                    'success' => false,
+                    'output' => 'Command gagal dijalankan. Periksa log aplikasi melalui aksi Lihat log aplikasi.',
+                    'duration' => microtime(true) - $startedAt,
+                ];
+                break;
+            }
+        }
+
+        $hasFailure = array_filter($results, static fn (array $result): bool => ! $result['success']) !== [];
+        $message = $hasFailure
+            ? ['error', 'Deployment berhenti karena ada command yang gagal.']
+            : ['success', 'Aksi deployment selesai dijalankan.'];
+    }
+}
 ?>
 <!doctype html>
 <html lang="id">
@@ -235,23 +255,16 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Deploy Console | Bank Sampah Sindangheula</title>
     <style>
-        :root { color-scheme: light; font-family: system-ui, sans-serif; }
-        body { max-width: 780px; margin: 0 auto; padding: 2rem 1rem 4rem; color: #18251c; background: #f5f7f2; }
-        main { padding: 1.5rem; border: 1px solid #d5ddd1; border-radius: 1rem; background: #fff; }
-        h1 { margin: 0; font-size: 1.5rem; } p { line-height: 1.55; }
-        .notice, .result { margin-top: 1rem; padding: 1rem; border-radius: .75rem; }
-        .success { color: #135b31; background: #e7f6eb; } .error { color: #8a1d1d; background: #fceaea; }
-        form { margin-top: 1rem; padding: 1rem; border: 1px solid #d5ddd1; border-radius: .75rem; }
-        label, input, select, button { display: block; width: 100%; } label { font-weight: 700; }
-        input, select, button { box-sizing: border-box; margin-top: .45rem; min-height: 2.7rem; padding: .55rem .7rem; border-radius: .45rem; }
-        input, select { border: 1px solid #aab8a4; background: #fff; } button { border: 0; color: #fff; background: #24663d; font-weight: 700; cursor: pointer; }
-        button:hover { background: #174d2d; } small { color: #56635b; } pre { overflow: auto; margin: .7rem 0 0; padding: 1rem; color: #d8eadb; background: #122217; border-radius: .5rem; white-space: pre-wrap; }
+        @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+        :root { --canvas:#f5f5f4; --surface:#fff; --soft:#fafaf9; --ink:#202124; --muted:#6f737b; --line:#dededb; --lime:#daf39f; --blue:#dceff7; --lilac:#ebd3ff; --yellow:#ffdeb0; --danger:#b42318; --danger-soft:#fee4e2; --success:#237a45; --success-soft:#dcf3e5; font-family:Manrope,ui-sans-serif,system-ui,sans-serif; color:var(--ink); background:var(--canvas); }
+        * { box-sizing:border-box; } body { max-width:980px; margin:0 auto; padding:28px; line-height:1.5; } main { background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:26px; } h1 { margin:0; font-size:28px; letter-spacing:-.035em; } h1::before { content:"HE"; display:inline-grid; place-items:center; width:38px; height:38px; margin-right:10px; border-radius:11px; background:var(--lilac); font-size:12px; vertical-align:4px; } p { margin:8px 0 0; } .muted, small { color:var(--muted); font-size:12px; } .notice, .result { margin-top:18px; padding:16px; border-radius:12px; } .success { color:#135b31; background:var(--success-soft); } .error { color:var(--danger); background:var(--danger-soft); } form { margin-top:20px; padding:18px; border:1px solid var(--line); border-radius:13px; background:var(--soft); } label { font-weight:800; font-size:13px; } input, button { font:inherit; } input[type=password], input[type=text] { width:100%; min-height:43px; margin-top:7px; padding:9px 11px; border:1px solid #aab8a4; border-radius:8px; background:#fff; } .action-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px; margin-top:14px; } .action-card { display:flex; gap:10px; min-height:92px; padding:13px; border:1px solid var(--line); border-radius:10px; background:#fff; cursor:pointer; } .action-card:nth-child(2n) { background:var(--blue); } .action-card:nth-child(3n) { background:var(--lime); } .action-card:nth-child(4n) { background:var(--lilac); } .action-card.danger { background:var(--danger-soft); border-color:#f4b8b3; } .action-card input { width:16px; height:16px; margin:3px 0 0; accent-color:var(--ink); flex:0 0 auto; } .action-card strong { display:block; font-size:12px; } .action-card span { display:block; margin-top:4px; font-size:11px; color:#4d5056; font-weight:500; } .confirmation { margin-top:14px; } button { width:100%; min-height:44px; margin-top:18px; border:0; border-radius:8px; color:#fff; background:#24663d; font-weight:800; cursor:pointer; } button:hover { background:#174d2d; } pre { overflow:auto; margin:10px 0 0; padding:15px; color:#d8eadb; background:#122217; border-radius:9px; white-space:pre-wrap; word-break:break-word; font:11px/1.65 Consolas,"Liberation Mono",monospace; } .result small { display:block; margin-top:3px; } .result strong { font-size:13px; } @media (max-width:640px) { body { padding:16px; } main { padding:18px; } h1 { font-size:23px; } .action-grid { grid-template-columns:1fr; } }
     </style>
 </head>
 <body>
 <main>
-    <h1>Deploy Console</h1>
-    <p>Console terbatas untuk <strong>Bank Sampah Sindangheula</strong>. Hanya gunakan setelah backup pra-deploy dan aset Vite sudah tersedia. Log tersedia untuk pembacaan saja.</p>
+    <h1>Deploy workspace</h1>
+    <p>Console terbatas untuk <strong>Bank Sampah Sindangheula</strong>. Pilih satu aksi yang sesuai; log tetap tersedia untuk dibaca, tetapi tidak bisa dihapus dari sini.</p>
+    <p class="muted">Project: <?= escapeDeployConsole($projectPath) ?></p>
 
     <?php if ($message !== null) { ?>
         <div class="notice <?= escapeDeployConsole($message[0]) ?>"><?= escapeDeployConsole($message[1]) ?></div>
@@ -261,15 +274,25 @@ header("Content-Security-Policy: default-src 'none'; style-src 'unsafe-inline'; 
         <label for="token">Token deploy</label>
         <input id="token" name="token" type="password" required autocomplete="current-password">
 
-        <label for="action" style="margin-top: 1rem;">Aksi</label>
-        <select id="action" name="action" required>
-            <?php foreach ($actions as $key => $action) { ?>
-                <option value="<?= escapeDeployConsole($key) ?>"><?= escapeDeployConsole($action['label']) ?></option>
-            <?php } ?>
-        </select>
-        <small>Pilih aksi dengan hati-hati. Detail setiap aksi tersedia di panduan deployment proyek.</small>
+        <div style="margin-top:18px">
+            <label>Pilih aksi</label>
+            <div class="action-grid">
+                <?php foreach ($actions as $key => $action) { ?>
+                    <label class="action-card <?= ! empty($action['dangerous']) ? 'danger' : '' ?>">
+                        <input type="radio" name="action" value="<?= escapeDeployConsole($key) ?>" <?= $selectedAction === $key ? 'checked' : '' ?> required>
+                        <span><strong><?= escapeDeployConsole($action['label']) ?></strong><span><?= escapeDeployConsole($action['description']) ?></span></span>
+                    </label>
+                <?php } ?>
+            </div>
+        </div>
 
-        <button type="submit" style="margin-top: 1rem;">Jalankan aksi</button>
+        <div class="confirmation">
+            <label for="confirm_reset">Konfirmasi reset database</label>
+            <input id="confirm_reset" name="confirm_reset" type="text" autocomplete="off" placeholder="Wajib diisi hanya saat Fresh deployment: RESET DATABASE">
+            <small>Fresh deployment menghapus semua tabel. Jangan gunakan setelah aplikasi sudah memiliki data warga atau transaksi.</small>
+        </div>
+
+        <button type="submit">Jalankan aksi</button>
     </form>
 
     <?php foreach ($results as $result) { ?>
