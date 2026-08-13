@@ -140,6 +140,7 @@
                     data-photo-picker-max="2"
                     data-photo-picker-limit="1048576"
                     data-photo-picker-remove-method="removePhoto"
+                    data-photo-picker-confirm-method="confirmPhotoUploads"
                     data-photo-picker-initial-files="{{ json_encode($photoPickerInitialFiles, JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
                 >
                     <label for="pickup-photos" class="block text-label font-semibold text-deep-green">Foto sampah</label>
@@ -197,7 +198,7 @@
             @endif
 
             @if ($step < 3)
-                <x-ui.button type="button" wire:click="nextStep" wire:loading.attr="disabled" wire:target="nextStep">Lanjut ke {{ $steps[$step + 1] }}</x-ui.button>
+                <x-ui.button type="button" wire:click="nextStep" wire:loading.attr="disabled" wire:target="nextStep" data-photo-picker-action>Lanjut ke {{ $steps[$step + 1] }}</x-ui.button>
             @else
                 <x-ui.button type="submit" wire:loading.attr="disabled" wire:target="submit">
                     <span wire:loading.remove wire:target="submit">Kirim pengajuan</span>

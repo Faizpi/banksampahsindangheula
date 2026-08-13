@@ -97,6 +97,21 @@ final class PickupTask extends Component
         $this->resetErrorBag('evidence');
     }
 
+    /** @return list<array{name: string, size: int, previewUrl: string}> */
+    public function confirmEvidenceUpload(): array
+    {
+        $this->validate([
+            'evidence' => ['required', 'file', 'max:1024', 'mimes:jpg,jpeg,png'],
+        ], $this->completionMessages());
+        $this->resetErrorBag('evidence');
+
+        return $this->evidence === null ? [] : [[
+            'name' => $this->evidence->getClientOriginalName(),
+            'size' => (int) $this->evidence->getSize(),
+            'previewUrl' => $this->evidence instanceof TemporaryUploadedFile ? $this->evidence->temporaryUrl() : '',
+        ]];
+    }
+
     public function complete(PickupService $service): void
     {
         /** @var User $actor */

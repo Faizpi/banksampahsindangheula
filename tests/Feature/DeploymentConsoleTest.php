@@ -15,6 +15,23 @@ it('runs database migration before clearing the database-backed cache during a r
         ->and(strpos($matches[1], "['migrate', ['--force' => true]]"))->toBeLessThan(strpos($matches[1], "['optimize:clear', []]"));
 });
 
+it('provides a standalone ordinary migration action that preserves existing data', function (): void {
+    $console = file_get_contents(base_path('public/deploy.php'));
+
+    expect($console)->not->toBeFalse();
+
+    $start = strpos((string) $console, "'migrate' => [");
+    $end = strpos((string) $console, "'release' => [");
+    $block = $start === false || $end === false ? '' : substr((string) $console, $start, $end - $start);
+
+    expect($block)->not->toBe('')
+        ->and($console)->toContain('Jalankan migrasi biasa')
+        ->and($console)->toContain('tanpa menghapus tabel atau data')
+        ->and($block)->toContain("['migrate', ['--force' => true]]")
+        ->and($block)->not->toContain('migrate:fresh')
+        ->and($block)->not->toContain('db:seed');
+});
+
 it('provides an explicit confirmed fresh deployment action for a new database', function (): void {
     $console = file_get_contents(base_path('public/deploy.php'));
 

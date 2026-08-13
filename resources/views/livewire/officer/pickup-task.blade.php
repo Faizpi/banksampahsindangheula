@@ -100,7 +100,7 @@
                     </div>
                 @endforeach
 
-                <div wire:ignore class="rounded-xl border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576" data-photo-picker-remove-method="clearEvidence">
+                <div wire:ignore class="rounded-xl border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576" data-photo-picker-remove-method="clearEvidence" data-photo-picker-confirm-method="confirmEvidenceUpload">
                     <div>
                         <h3 class="text-label font-bold text-deep-green">Bukti foto penjemputan</h3>
                         <p class="mt-1 text-body-sm text-text-secondary">Ambil 1 foto di lokasi melalui kamera atau pilih dari galeri. Foto akan dikompres menjadi JPEG maksimal 1 MB. Foto pengajuan warga tetap dipakai bila bukti baru tidak ditambahkan.</p>
@@ -152,7 +152,7 @@
                         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                         Tambah Detail Timbang
                     </button>
-                    <x-ui.button type="button" wire:click="complete" wire:loading.attr="disabled">
+                    <x-ui.button type="button" wire:click="complete" wire:loading.attr="disabled" data-photo-picker-action>
                         <span wire:loading.remove>Finalkan Setoran Aktual</span>
                         <span wire:loading>Memproses...</span>
                     </x-ui.button>

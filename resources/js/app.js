@@ -886,22 +886,58 @@ function setPhotoPickerBusy(picker, isBusy) {
             element.disabled = isBusy;
         }
     });
+
+    const form = picker.closest('form');
+    form?.querySelectorAll('[data-photo-picker-action]').forEach((element) => {
+        if (!(element instanceof HTMLButtonElement)) {
+            return;
+        }
+
+        if (isBusy && !element.disabled) {
+            element.disabled = true;
+            element.dataset.photoPickerDisabled = 'true';
+        } else if (!isBusy && element.dataset.photoPickerDisabled === 'true') {
+            element.disabled = false;
+            delete element.dataset.photoPickerDisabled;
+        }
+    });
 }
 
-function uploadPhotoPickerFile(picker, property, file) {
+function uploadPhotoPickerFiles(picker, property, files, multiple) {
     const wire = photoPickerWire(picker);
-    if (wire === null || typeof wire.$upload !== 'function') {
+    if (wire === null || typeof wire.$upload !== 'function' || typeof wire.$uploadMultiple !== 'function') {
         return Promise.reject(new Error('Uploader belum siap. Muat ulang halaman lalu coba lagi.'));
     }
 
     return new Promise((resolve, reject) => {
-        wire.$upload(
-            property,
-            file,
-            () => resolve(),
-            () => reject(new Error('Foto gagal diunggah. Periksa koneksi lalu coba lagi.')),
-        );
+        const onError = () => reject(new Error('Foto gagal diunggah. Periksa koneksi lalu coba lagi.'));
+
+        if (multiple) {
+            wire.$uploadMultiple(property, files, () => resolve(), onError);
+        } else {
+            wire.$upload(property, files[0], () => resolve(), onError);
+        }
     });
+}
+
+async function confirmedPhotoPickerFiles(picker, fallbackFiles) {
+    const confirmMethod = picker.dataset.photoPickerConfirmMethod;
+    const wire = photoPickerWire(picker);
+
+    if (typeof confirmMethod !== 'string' || confirmMethod === '' || wire === null) {
+        return fallbackFiles;
+    }
+
+    const confirmedFiles = await wire.$call(confirmMethod);
+    if (!Array.isArray(confirmedFiles) || confirmedFiles.length === 0) {
+        throw new Error('Foto belum tersimpan di formulir. Muat ulang halaman lalu unggah kembali.');
+    }
+
+    return confirmedFiles.map((file) => ({
+        name: typeof file?.name === 'string' ? file.name : 'Foto sampah',
+        size: Number.isFinite(Number(file?.size)) ? Number(file.size) : 0,
+        previewUrl: typeof file?.previewUrl === 'string' ? file.previewUrl : '',
+    }));
 }
 
 function hydratePhotoPicker(picker) {
@@ -1044,14 +1080,14 @@ photoPickerEventRoot.addEventListener('change', (event) => {
                 compressedFiles.push(await compressPickupPhoto(file));
             }
 
-            for (const file of compressedFiles) {
-                setPhotoPickerStatus(picker, `Mengunggah foto ${existingFiles.length + 1} dari ${maxCount}…`);
-                await uploadPhotoPickerFile(picker, property, file);
-                existingFiles.push(file);
-                input._photoPickerFiles = existingFiles;
-                renderPhotoPickerPreview(picker, existingFiles);
-                setPhotoPickerStatus(picker, photoPickerStatusMessage(existingFiles.length, maxCount));
-            }
+            setPhotoPickerStatus(picker, `Mengunggah ${compressedFiles.length} foto…`);
+            await uploadPhotoPickerFiles(picker, property, compressedFiles, input.multiple);
+            setPhotoPickerStatus(picker, 'Memastikan foto tersimpan di formulir…');
+
+            const confirmedFiles = await confirmedPhotoPickerFiles(picker, [...existingFiles, ...compressedFiles]);
+            input._photoPickerFiles = confirmedFiles;
+            renderPhotoPickerPreview(picker, confirmedFiles);
+            setPhotoPickerStatus(picker, photoPickerStatusMessage(confirmedFiles.length, maxCount));
 
             if (selectedFiles.length > filesToProcess.length) {
                 setPhotoPickerStatus(picker, `Maksimal ${maxCount} foto. Hanya ${filesToProcess.length} foto pertama yang ditambahkan.`, true);

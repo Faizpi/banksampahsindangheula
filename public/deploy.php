@@ -155,6 +155,13 @@ $actions = [
             ['migrate:status', []],
         ],
     ],
+    'migrate' => [
+        'label' => 'Jalankan migrasi biasa',
+        'description' => 'Menerapkan migration yang tertunda tanpa menghapus tabel atau data yang sudah ada.',
+        'commands' => [
+            ['migrate', ['--force' => true]],
+        ],
+    ],
     'release' => [
         'label' => 'Selesaikan deployment',
         'description' => 'Menerapkan migration yang tertunda lalu membangun ulang seluruh cache produksi.',

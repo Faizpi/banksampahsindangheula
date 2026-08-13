@@ -70,12 +70,25 @@ final class PickupRequestForm extends Component
 
         unset($this->photos[$index]);
         $this->photos = array_values($this->photos);
-        $this->resetErrorBag('photos');
+        $this->clearPhotoErrors();
     }
 
     public function updatedPhotos(): void
     {
-        $this->resetErrorBag('photos');
+        $this->clearPhotoErrors();
+    }
+
+    /** @return list<array{name: string, size: int, previewUrl: string}> */
+    public function confirmPhotoUploads(): array
+    {
+        $this->validate($this->photoRules());
+        $this->clearPhotoErrors();
+
+        return array_map(static fn (UploadedFile $photo): array => [
+            'name' => $photo->getClientOriginalName(),
+            'size' => (int) $photo->getSize(),
+            'previewUrl' => $photo instanceof TemporaryUploadedFile ? $photo->temporaryUrl() : '',
+        ], $this->photos);
     }
 
     public function nextStep(): void
@@ -159,9 +172,29 @@ final class PickupRequestForm extends Component
             'items.*.waste_type_id' => ['required', 'integer', 'min:1'],
             'items.*.estimated_weight_kg' => ['nullable', 'numeric', 'gt:0', 'regex:/^\d+(?:\.\d{1,3})?$/'],
             'items.*.estimated_quantity' => ['nullable', 'integer', 'min:1'],
+            ...$this->photoRules(),
+        ];
+    }
+
+    /** @return array<string, array<int, string>> */
+    private function photoRules(): array
+    {
+        return [
             'photos' => ['required', 'array', 'min:1', 'max:2'],
             'photos.*' => ['file', 'mimes:jpg,jpeg,png', 'max:1024'],
         ];
+    }
+
+    private function clearPhotoErrors(): void
+    {
+        $keys = array_values(array_filter(
+            array_keys($this->getErrorBag()->getMessages()),
+            static fn (string $key): bool => $key === 'photos' || str_starts_with($key, 'photos.'),
+        ));
+
+        if ($keys !== []) {
+            $this->resetErrorBag($keys);
+        }
     }
 
     /** @param array<string, array<int, string>> $rules */

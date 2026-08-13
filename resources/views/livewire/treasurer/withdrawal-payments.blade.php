@@ -81,7 +81,7 @@
                     <p class="font-semibold text-deep-green">Kartu dan nomor nasabah berbeda</p>
                     <p class="mt-1">Kartu adalah media identitasnya; nomor nasabah adalah kode unik di dalam kartu. Pilihan di atas mencatat cara Anda memeriksa penerima, sedangkan field berikut mencatat kode yang dicocokkan sistem.</p>
                 </div>
-                <div wire:ignore wire:key="payment-proof-picker-{{ $selectedWithdrawal->id }}" class="rounded-md border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576" data-photo-picker-remove-method="clearProof">
+                <div wire:ignore wire:key="payment-proof-picker-{{ $selectedWithdrawal->id }}" class="rounded-md border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576" data-photo-picker-remove-method="clearProof" data-photo-picker-confirm-method="confirmProofUpload">
                     <div>
                         <h3 class="text-label font-bold text-deep-green">Satu foto bukti pembayaran</h3>
                         <p class="mt-1 text-body-sm text-text-secondary">Ambil foto melalui kamera atau pilih satu foto dari galeri. Foto akan dikompres menjadi JPEG maksimal 1 MB.</p>
@@ -104,7 +104,7 @@
                 @error('proof')
                     <p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
                 @enderror
-                <x-ui.button type="button" wire:click="reviewPayment" wire:loading.attr="disabled" wire:target="reviewPayment">
+                <x-ui.button type="button" wire:click="reviewPayment" wire:loading.attr="disabled" wire:target="reviewPayment" data-photo-picker-action>
                     <span wire:loading.remove wire:target="reviewPayment">Tinjau sebelum bayar</span>
                     <span wire:loading wire:target="reviewPayment">Memeriksa...</span>
                 </x-ui.button>

@@ -66,6 +66,21 @@ final class WithdrawalPayments extends Component
         $this->resetErrorBag('proof');
     }
 
+    /** @return list<array{name: string, size: int, previewUrl: string}> */
+    public function confirmProofUpload(): array
+    {
+        $this->validate([
+            'proof' => ['required', 'file', 'max:1024', 'mimes:jpg,jpeg,png'],
+        ], $this->proofMessages());
+        $this->resetErrorBag('proof');
+
+        return $this->proof === null ? [] : [[
+            'name' => $this->proof->getClientOriginalName(),
+            'size' => (int) $this->proof->getSize(),
+            'previewUrl' => $this->proof instanceof TemporaryUploadedFile ? $this->proof->temporaryUrl() : '',
+        ]];
+    }
+
     public function pay(WithdrawalService $service): void
     {
         /** @var User $actor */
@@ -105,9 +120,17 @@ final class WithdrawalPayments extends Component
         ], [
             'recipientReference.required' => 'Masukkan nomor nasabah yang diverifikasi.',
             'recipientReference.regex' => 'Nomor nasabah harus berformat CST-########.',
+            ...$this->proofMessages(),
+        ]);
+    }
+
+    /** @return array<string, string> */
+    private function proofMessages(): array
+    {
+        return [
             'proof.required' => 'Tambahkan satu foto bukti pembayaran melalui kamera atau galeri.',
             'proof.max' => 'Foto bukti pembayaran maksimal 1 MB.',
             'proof.mimes' => 'Foto bukti pembayaran harus berupa JPG, JPEG, atau PNG.',
-        ]);
+        ];
     }
 }
