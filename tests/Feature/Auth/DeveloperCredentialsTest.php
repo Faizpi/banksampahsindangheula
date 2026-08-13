@@ -44,12 +44,39 @@ final class DeveloperCredentialsTest extends TestCase
         }
     }
 
-    public function test_warga_petugas_bendahara_and_superadmin_log_in_through_the_public_phone_gate(): void
+    public function test_public_demo_shortcuts_fill_the_matching_account_for_each_visible_role(): void
+    {
+        config()->set('app.demo_mode', true);
+
+        foreach (['warga', 'petugas', 'bendahara'] as $role) {
+            Livewire::test(LoginForm::class)
+                ->call('fillDemo', $role)
+                ->assertSet('phone', DeveloperUsersSeeder::telephone($role))
+                ->assertSet('password', DeveloperUsersSeeder::DEV_PASSWORD);
+        }
+    }
+
+    public function test_warga_petugas_and_bendahara_are_redirected_to_their_own_workspace_after_public_login(): void
     {
         $this->seed(DeveloperUsersSeeder::class);
 
-        foreach (['warga', 'petugas', 'bendahara', 'superadmin'] as $role) {
-            $this->loginViaPublicPhone($this->devUser($role));
+        $dashboardRoutes = [
+            'warga' => 'citizen.dashboard',
+            'petugas' => 'officer.dashboard',
+            'bendahara' => 'treasurer.dashboard',
+        ];
+
+        foreach ($dashboardRoutes as $role => $dashboardRoute) {
+            $user = $this->devUser($role);
+
+            Livewire::test(LoginForm::class)
+                ->set('phone', $user->phone)
+                ->set('password', DeveloperUsersSeeder::DEV_PASSWORD)
+                ->call('login')
+                ->assertHasNoErrors()
+                ->assertRedirect(route($dashboardRoute));
+
+            self::assertAuthenticatedAs($user);
             app(LogoutUser::class)->handle(request());
         }
     }
@@ -243,17 +270,6 @@ final class DeveloperCredentialsTest extends TestCase
             ->assertOk()
             ->assertSee('Jadwal aktif')
             ->assertSee('Halaman Kantor Desa Sindangheula');
-    }
-
-    private function loginViaPublicPhone(mixed $user): void
-    {
-        Livewire::test(LoginForm::class)
-            ->set('phone', $user->phone)
-            ->set('password', DeveloperUsersSeeder::DEV_PASSWORD)
-            ->call('login')
-            ->assertHasNoErrors();
-
-        self::assertAuthenticatedAs($user);
     }
 
     private function devUser(string $role): User
