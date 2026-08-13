@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Livewire\Citizen;
 
-use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Pickups\Exceptions\PickupCapacityUnavailable;
 use App\Domain\Pickups\Services\PickupService;
 use App\Domain\WasteMaster\Models\WasteType;
@@ -140,6 +139,11 @@ final class PickupRequestForm extends Component
         }
 
         $this->refreshAvailableDates($service, false);
+        if ($this->getErrorBag()->has('serviceAreaId')) {
+            $this->dispatch('focus-pickup-errors');
+
+            return;
+        }
         if (! $this->validateStep([...$this->locationRules(), ...$this->itemRules()])) {
             return;
         }
@@ -165,7 +169,12 @@ final class PickupRequestForm extends Component
 
             return;
         } catch (ValidationException $exception) {
-            $this->setErrorBag($exception->validator->errors());
+            $errors = $exception->validator->errors();
+            if ($errors->has('service_area_id')) {
+                $errors->add('serviceAreaId', $errors->first('service_area_id'));
+                $errors->forget('service_area_id');
+            }
+            $this->setErrorBag($errors);
             $this->dispatch('focus-pickup-errors');
 
             return;
@@ -174,10 +183,13 @@ final class PickupRequestForm extends Component
         $this->redirectRoute('citizen.pickup.show', ['pickup' => $pickup], navigate: true);
     }
 
-    public function render(): View
+    public function render(PickupService $service): View
     {
+        /** @var User $actor */
+        $actor = auth()->user();
+
         return view('livewire.citizen.pickup-request-form', [
-            'areas' => ServiceArea::query()->where('is_active', true)->whereHas('rts', fn ($query) => $query->where('is_active', true))->orderBy('name')->get(),
+            'areas' => $service->eligibleAreasFor($actor)->orderBy('name')->get(),
             'types' => WasteType::query()->with('category')->where('is_active', true)->whereHas('category', fn ($query) => $query->where('is_active', true))->orderBy('name')->get(),
         ]);
     }
@@ -195,9 +207,17 @@ final class PickupRequestForm extends Component
 
     private function refreshAvailableDates(PickupService $service, bool $selectFirst = true): void
     {
-        $area = ServiceArea::query()->whereKey($this->serviceAreaId)->where('is_active', true)->first();
+        /** @var User $actor */
+        $actor = auth()->user();
+        $area = $service->activeAreaFor($actor, $this->serviceAreaId);
         $estimatedWeight = collect($this->items)->sum(static fn (array $item): float => (float) $item['estimated_weight_kg']);
         $this->availableDates = $area === null ? [] : $service->alternatives($area, today()->toDateString(), 14, $estimatedWeight > 0 ? number_format($estimatedWeight, 3, '.', '') : null);
+
+        if ($this->serviceAreaId !== '' && $area === null) {
+            $this->addError('serviceAreaId', 'Alamat berada di luar area pelayanan aktif.');
+        } else {
+            $this->resetErrorBag('serviceAreaId');
+        }
 
         if (! in_array($this->selectedDate, $this->availableDates, true)) {
             $this->selectedDate = $selectFirst ? ($this->availableDates[0] ?? '') : $this->selectedDate;

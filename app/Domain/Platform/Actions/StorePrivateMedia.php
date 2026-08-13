@@ -18,6 +18,8 @@ final class StorePrivateMedia
 {
     private const DISK = 'media_private';
 
+    public function __construct(private readonly ?bool $normalizationAvailable = null) {}
+
     private const MAX_BYTES = 5 * 1024 * 1024;
 
     private const MAX_PHOTO_BYTES = 1 * 1024 * 1024;
@@ -48,9 +50,19 @@ final class StorePrivateMedia
         $this->validate($file, true);
 
         $contents = $file->getContent();
-        $normalized = $this->normalizePhoto($contents);
+        $mimeType = $this->detectedMimeType($contents);
+        $dimensions = @getimagesizefromstring($contents);
 
-        return $this->store($file, $normalized, 'image/jpeg', 'jpg', $uploader);
+        if ($mimeType === 'image/jpeg'
+            && strlen($contents) <= self::MAX_PHOTO_BYTES
+            && is_array($dimensions)
+            && $dimensions[2] === IMAGETYPE_JPEG
+            && $dimensions[0] <= self::PHOTO_MAX_DIMENSION
+            && $dimensions[1] <= self::PHOTO_MAX_DIMENSION) {
+            return $this->store($file, $contents, 'image/jpeg', 'jpg', $uploader);
+        }
+
+        return $this->store($file, $this->normalizePhoto($contents), 'image/jpeg', 'jpg', $uploader);
     }
 
     public function handleEvidence(UploadedFile $file, ?User $uploader = null): Media
@@ -110,7 +122,11 @@ final class StorePrivateMedia
             ? array_filter(self::ALLOWED_TYPES, static fn (string $type): bool => str_starts_with($type, 'image/') && $type !== 'image/webp', ARRAY_FILTER_USE_KEY)
             : self::ALLOWED_TYPES;
 
-        if (! isset($allowedTypes[$mimeType]) || $extension !== $allowedTypes[$mimeType]['extension'] || ! $this->hasExpectedSignature($contents, $mimeType) || $this->hasProhibitedEmbeddedContent($contents)) {
+        $validExtension = $mimeType === 'image/jpeg'
+            ? in_array($extension, ['jpg', 'jpeg'], true)
+            : $extension === ($allowedTypes[$mimeType]['extension'] ?? null);
+
+        if (! isset($allowedTypes[$mimeType]) || ! $validExtension || ! $this->hasExpectedSignature($contents, $mimeType) || $this->hasProhibitedEmbeddedContent($contents)) {
             throw ValidationException::withMessages(['file' => 'The uploaded file type is not allowed.']);
         }
 
@@ -121,7 +137,7 @@ final class StorePrivateMedia
 
     private function normalizePhoto(string $contents): string
     {
-        if (! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
+        if ($this->normalizationAvailable === false || ! function_exists('imagecreatefromstring') || ! function_exists('imagejpeg')) {
             throw ValidationException::withMessages(['file' => 'Kompresi foto membutuhkan ekstensi GD PHP.']);
         }
 

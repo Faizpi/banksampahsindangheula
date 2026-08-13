@@ -125,6 +125,80 @@ final class PickupWaveTest extends TestCase
         self::assertFalse(app(PickupService::class)->canDownloadMedia($other, $pickup->media->sole()));
     }
 
+    public function test_pickup_form_only_exposes_areas_attached_to_the_customers_active_rt_hierarchy(): void
+    {
+        [$customer, $area] = $this->context();
+        $manager = User::factory()->create();
+        $this->grant($manager, ['region.manage']);
+        $regions = app(ManageRegions::class);
+        $dusun = $regions->createDusun($manager, 'W5-OTHER-DS-'.$customer->id, 'Dusun lain');
+        $rw = $regions->createRw($manager, $dusun, 'W5-OTHER-RW-'.$customer->id, 'RW lain');
+        $rt = $regions->createRt($manager, $rw, 'W5-OTHER-RT-'.$customer->id, 'RT lain');
+        $unrelated = $regions->createServiceArea($manager, 'Area tidak terkait '.$customer->id, [$rt]);
+
+        $this->actingAs($customer);
+
+        Livewire::test(PickupRequestForm::class)
+            ->assertSee($area->name)
+            ->assertDontSee($unrelated->name);
+    }
+
+    public function test_pickup_form_rejects_available_dates_for_an_active_but_unrelated_area(): void
+    {
+        [$customer] = $this->context();
+        $manager = User::factory()->create();
+        $this->grant($manager, ['region.manage']);
+        $regions = app(ManageRegions::class);
+        $dusun = $regions->createDusun($manager, 'W5-DATES-DS-'.$customer->id, 'Dusun tanggal lain');
+        $rw = $regions->createRw($manager, $dusun, 'W5-DATES-RW-'.$customer->id, 'RW tanggal lain');
+        $rt = $regions->createRt($manager, $rw, 'W5-DATES-RT-'.$customer->id, 'RT tanggal lain');
+        $unrelated = $regions->createServiceArea($manager, 'Area tanggal tidak terkait '.$customer->id, [$rt]);
+        $this->capacity($unrelated, 5, '50.000');
+
+        $this->actingAs($customer);
+
+        Livewire::test(PickupRequestForm::class)
+            ->set('serviceAreaId', (string) $unrelated->id)
+            ->assertSet('availableDates', [])
+            ->assertHasErrors(['serviceAreaId']);
+    }
+
+    public function test_pickup_form_rejects_tampered_unrelated_area_inline_and_preserves_state(): void
+    {
+        [$customer, $area, $type] = $this->context();
+        $this->grant($customer, ['pickup.request']);
+        $manager = User::factory()->create();
+        $this->grant($manager, ['region.manage']);
+        $regions = app(ManageRegions::class);
+        $dusun = $regions->createDusun($manager, 'W5-TAMPER-DS-'.$customer->id, 'Dusun tamper');
+        $rw = $regions->createRw($manager, $dusun, 'W5-TAMPER-RW-'.$customer->id, 'RW tamper');
+        $rt = $regions->createRt($manager, $rw, 'W5-TAMPER-RT-'.$customer->id, 'RT tamper');
+        $unrelated = $regions->createServiceArea($manager, 'Area tamper '.$customer->id, [$rt]);
+        $date = today()->addDay()->toDateString();
+        $this->capacity($area, 5, '50.000', $date);
+        $this->capacity($unrelated, 5, '50.000', $date);
+        $component = new PickupRequestForm;
+        $component->mount();
+        $component->step = 3;
+        $component->serviceAreaId = (string) $unrelated->id;
+        $component->selectedDate = $date;
+        $component->address = 'Alamat penjemputan warga yang lengkap';
+        $component->notes = 'Pertahankan state ketika area ditolak';
+        $component->items = [['waste_type_id' => (string) $type->id, 'estimated_weight_kg' => '1.000', 'estimated_quantity' => '1']];
+        $photo = UploadedFile::fake()->image('pickup.jpg');
+        $component->photos = [$photo];
+        $this->actingAs($customer);
+
+        $component->submit(app(PickupService::class));
+
+        self::assertTrue($component->getErrorBag()->has('serviceAreaId'));
+        self::assertFalse($component->getErrorBag()->has('service_area_id'));
+        self::assertSame(3, $component->step);
+        self::assertSame('Pertahankan state ketika area ditolak', $component->notes);
+        self::assertSame([$photo], $component->photos);
+        self::assertDatabaseCount('pickup_requests', 0);
+    }
+
     public function test_pickup_form_rejects_a_selected_date_when_its_capacity_row_is_missing(): void
     {
         [$customer, $area, $type] = $this->context();

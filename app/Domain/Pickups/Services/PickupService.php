@@ -6,7 +6,6 @@ namespace App\Domain\Pickups\Services;
 
 use App\Authorization\PermissionChecker;
 use App\Domain\AuditReconciliation\Services\AuditLogger;
-use App\Domain\CustomersRegions\Models\Rt;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Deposits\Data\DepositItemInput;
 use App\Domain\Deposits\Services\DepositService;
@@ -202,6 +201,28 @@ final readonly class PickupService
 
             return $capacity->fresh();
         });
+    }
+
+    /** @return Builder<ServiceArea> */
+    public function eligibleAreasFor(User $customer): Builder
+    {
+        $rtId = $customer->customerProfile?->rt_id;
+
+        return ServiceArea::query()
+            ->where('is_active', true)
+            ->whereHas('rts', fn (Builder $query): Builder => $query
+                ->whereKey($rtId)
+                ->where('is_active', true)
+                ->whereHas('rw', fn (Builder $query): Builder => $query
+                    ->where('is_active', true)
+                    ->whereHas('dusun', fn (Builder $query): Builder => $query->where('is_active', true))));
+    }
+
+    public function activeAreaFor(User $customer, mixed $serviceAreaId): ?ServiceArea
+    {
+        return is_numeric($serviceAreaId)
+            ? $this->eligibleAreasFor($customer)->whereKey((int) $serviceAreaId)->first()
+            : null;
     }
 
     /** @return list<string> */
@@ -497,13 +518,12 @@ final readonly class PickupService
         if (! is_numeric($serviceAreaId)) {
             throw ValidationException::withMessages(['service_area_id' => 'Area pelayanan wajib dipilih.']);
         }
-        $profile = $customer->customerProfile;
-        if (! $profile instanceof CustomerProfile) {
+        if (! $customer->customerProfile instanceof CustomerProfile) {
             throw ValidationException::withMessages(['customer_id' => 'Profil nasabah tidak tersedia.']);
         }
-        $rt = Rt::query()->with(['rw.dusun'])->whereKey($profile->rt_id)->first();
-        $area = ServiceArea::query()->whereKey((int) $serviceAreaId)->where('is_active', true)->first();
-        if ($rt === null || ! $rt->is_active || $rt->rw?->is_active !== true || $rt->rw->dusun?->is_active !== true || $area === null || ! $area->rts()->whereKey($rt->id)->exists()) {
+
+        $area = $this->activeAreaFor($customer, $serviceAreaId);
+        if ($area === null) {
             throw ValidationException::withMessages(['service_area_id' => 'Alamat berada di luar area pelayanan aktif.']);
         }
 
