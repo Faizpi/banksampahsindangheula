@@ -1078,8 +1078,6 @@ async function handlePhotoPickerChange(event, picker, input) {
         return;
     }
 
-    event.stopImmediatePropagation();
-
     const maxCount = photoPickerMaxCount(picker);
     const available = Math.max(0, maxCount - existingFiles.length);
     const filesToProcess = selectedFiles.slice(0, available);
@@ -1166,39 +1164,40 @@ function handlePhotoPickerRemove(event, picker, input) {
 }
 
 function hydratePhotoPicker(picker) {
-    if (picker.dataset.photoPickerInitialized === 'true') {
-        return;
-    }
-
     const input = photoPickerInput(picker);
     if (input === null) {
         return;
     }
+    if (input.dataset.photoPickerInput === 'compressed-upload-v2') {
+        return;
+    }
 
-    picker.dataset.photoPickerInitialized = 'true';
+    input.dataset.photoPickerInput = 'compressed-upload-v2';
     picker.querySelectorAll('[data-photo-picker-trigger]').forEach((trigger) => {
-        if (!(trigger instanceof HTMLLabelElement)) {
+        if (!(trigger instanceof HTMLLabelElement) || trigger.dataset.photoPickerInitialized === 'true') {
             return;
         }
 
+        trigger.dataset.photoPickerInitialized = 'true';
         const prepareInput = () => {
-            if (picker.dataset.photoPickerBusy === 'true') {
-                return false;
+            const activeInput = photoPickerInput(picker);
+            if (activeInput === null || picker.dataset.photoPickerBusy === 'true') {
+                return null;
             }
 
             if (trigger.dataset.photoPickerTrigger === 'camera') {
-                input.setAttribute('capture', 'environment');
+                activeInput.setAttribute('capture', 'environment');
             } else {
-                input.removeAttribute('capture');
+                activeInput.removeAttribute('capture');
             }
 
-            input.value = '';
+            activeInput.value = '';
 
-            return true;
+            return activeInput;
         };
 
         trigger.addEventListener('click', (event) => {
-            if (!prepareInput()) {
+            if (prepareInput() === null) {
                 event.preventDefault();
             }
             // Do not call input.click() here. The label's native activation is
@@ -1210,13 +1209,19 @@ function hydratePhotoPicker(picker) {
             }
 
             event.preventDefault();
-            if (prepareInput()) {
-                input.click();
-            }
+            prepareInput()?.click();
         });
     });
     input.addEventListener('change', (event) => void handlePhotoPickerChange(event, picker, input), true);
-    picker.addEventListener('click', (event) => handlePhotoPickerRemove(event, picker, input));
+    if (picker.dataset.photoPickerInitialized !== 'true') {
+        picker.dataset.photoPickerInitialized = 'true';
+        picker.addEventListener('click', (event) => {
+            const activeInput = photoPickerInput(picker);
+            if (activeInput !== null) {
+                handlePhotoPickerRemove(event, picker, activeInput);
+            }
+        });
+    }
 
     const files = photoPickerFiles(input, picker);
     renderPhotoPickerPreview(picker, files);
@@ -1247,6 +1252,7 @@ if (document.readyState === 'loading') {
     hydratePhotoPickers();
 }
 
+document.addEventListener('livewire:initialized', () => hydratePhotoPickers());
 document.addEventListener('livewire:navigated', () => hydratePhotoPickers());
 
 const photoPickerObserver = new MutationObserver((records) => {

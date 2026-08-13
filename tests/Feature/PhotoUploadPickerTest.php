@@ -44,6 +44,40 @@ final class PhotoUploadPickerTest extends TestCase
         self::assertStringNotContainsString('photoPickerSyncing', $script);
     }
 
+    public function test_picker_lifecycle_binds_each_live_input_and_hydrates_when_livewire_initializes(): void
+    {
+        $script = (string) file_get_contents(resource_path('js/app.js'));
+
+        self::assertStringContainsString("input.dataset.photoPickerInput = 'compressed-upload-v2';", $script);
+        self::assertStringContainsString("if (input.dataset.photoPickerInput === 'compressed-upload-v2')", $script);
+        self::assertStringContainsString("document.addEventListener('livewire:initialized', () => hydratePhotoPickers());", $script);
+        self::assertStringContainsString("document.addEventListener('livewire:navigated', () => hydratePhotoPickers());", $script);
+    }
+
+    public function test_picker_change_processing_does_not_block_other_change_listeners(): void
+    {
+        $script = (string) file_get_contents(resource_path('js/app.js'));
+        preg_match('/async function handlePhotoPickerChange\(.*?^}/ms', $script, $matches);
+
+        self::assertArrayHasKey(0, $matches);
+        self::assertStringNotContainsString('stopImmediatePropagation', $matches[0]);
+    }
+
+    public function test_production_app_chunk_contains_the_current_shared_picker_contract(): void
+    {
+        $manifest = json_decode((string) file_get_contents(public_path('build/manifest.json')), true, 512, JSON_THROW_ON_ERROR);
+        $asset = $manifest['resources/js/app.js']['file'] ?? null;
+
+        self::assertIsString($asset);
+        self::assertStringStartsWith('assets/', $asset);
+        self::assertStringNotContainsString('..', $asset);
+
+        $chunk = (string) file_get_contents(public_path('build/'.$asset));
+        self::assertStringContainsString('data-photo-picker-input', $chunk);
+        self::assertStringContainsString('compressed-upload-v2', $chunk);
+        self::assertStringContainsString('Mengompres foto', $chunk);
+    }
+
     public function test_reusable_picker_exposes_camera_gallery_loading_progress_and_authoritative_preview(): void
     {
         $html = Blade::render(<<<'BLADE'

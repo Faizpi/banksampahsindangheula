@@ -83,6 +83,50 @@ function deployConsoleFailureMessage(Throwable $exception): string
     return 'Gagal: '.$exception::class."\n".mb_strimwidth($message, 0, 700, '…');
 }
 
+function deployFrontendAssetIsCurrent(string $projectPath): bool
+{
+    $buildPath = realpath($projectPath.'/public/build');
+    if ($buildPath === false) {
+        return false;
+    }
+
+    $manifestPath = $buildPath.'/manifest.json';
+    if (! is_file($manifestPath) || ! is_readable($manifestPath)) {
+        return false;
+    }
+
+    $manifestContents = file_get_contents($manifestPath);
+    if (! is_string($manifestContents)) {
+        return false;
+    }
+
+    try {
+        $manifest = json_decode($manifestContents, true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException) {
+        return false;
+    }
+
+    $asset = is_array($manifest) ? ($manifest['resources/js/app.js']['file'] ?? null) : null;
+    if (! is_string($asset) || ! str_starts_with($asset, 'assets/') || str_contains($asset, '..')) {
+        return false;
+    }
+
+    $assetPath = realpath($buildPath.'/'.$asset);
+    if ($assetPath === false
+        || ! str_starts_with($assetPath, $buildPath.DIRECTORY_SEPARATOR)
+        || ! is_file($assetPath)
+        || ! is_readable($assetPath)) {
+        return false;
+    }
+
+    $assetContents = file_get_contents($assetPath);
+
+    return is_string($assetContents)
+        && str_contains($assetContents, 'data-photo-picker-input')
+        && str_contains($assetContents, 'compressed-upload-v2')
+        && str_contains($assetContents, 'Mengompres foto');
+}
+
 function deployReadinessStatus(string $projectPath, Application $app): string
 {
     /** @var Kernel $kernel */
@@ -91,7 +135,7 @@ function deployReadinessStatus(string $projectPath, Application $app): string
     $requirements = [
         'PHP >= 8.3' => version_compare(PHP_VERSION, '8.3.0', '>='),
         'pdo_mysql extension' => extension_loaded('pdo_mysql'),
-        'Vite manifest' => is_file($projectPath.'/public/build/manifest.json'),
+        'Vite app asset current' => deployFrontendAssetIsCurrent($projectPath),
         'storage writable' => is_writable($projectPath.'/storage'),
         'views writable' => is_writable($projectPath.'/storage/framework/views'),
         'cache path writable' => is_writable($projectPath.'/bootstrap/cache'),
