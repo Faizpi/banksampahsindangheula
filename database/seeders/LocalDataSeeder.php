@@ -101,7 +101,7 @@ final class LocalDataSeeder extends Seeder
             $this->seedStatisticPublication($admin);
         });
 
-        $this->command?->info('Data lokal siap: '.count($customers).' warga, '.count($regions['rts']).' RT, '.count($master['types']).' jenis sampah, dan histori transaksi 7 hari.');
+        $this->command->info('Data lokal siap: '.count($customers).' warga, '.count($regions['rts']).' RT, '.count($master['types']).' jenis sampah, dan histori transaksi 7 hari.');
     }
 
     /** @return array{dusuns: list<Dusun>, rws: list<Rw>, rts: list<Rt>, areas: list<ServiceArea>} */
@@ -420,8 +420,8 @@ final class LocalDataSeeder extends Seeder
 
         foreach ($regions['areas'] as $area) {
             foreach (range(0, 6) as $dayOffset) {
-                PickupCapacity::query()->firstOrCreate(
-                    ['service_area_id' => $area->id, 'service_date' => $now->subDays($dayOffset)->toDateString()],
+                PickupCapacity::query()->updateOrCreate(
+                    ['service_area_id' => $area->id, 'service_date' => $now->addDays($dayOffset + 1)->startOfDay()],
                     ['max_addresses' => 12, 'max_weight_kg' => '80.000', 'vehicle_label' => 'Kendaraan Layanan '.($area->id), 'is_active' => true],
                 );
             }
@@ -461,7 +461,7 @@ final class LocalDataSeeder extends Seeder
                     'method' => $method,
                     'pickup_request_id' => $pickup?->id,
                     'mobile_service_id' => $mobile?->id,
-                    'location' => $mobile?->point ?? 'Loket Bank Sampah Sindangheula',
+                    'location' => $mobile instanceof MobileService ? $mobile->point : 'Loket Bank Sampah Sindangheula',
                     'occurred_at' => $occurredAt,
                     'status' => Deposit::STATUS_DRAFT,
                 ]);

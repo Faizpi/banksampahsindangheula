@@ -205,13 +205,13 @@ final readonly class PickupService
     }
 
     /** @return list<string> */
-    public function alternatives(ServiceArea $area, string $date, int $limit = 3): array
+    public function alternatives(ServiceArea $area, string $date, int $limit = 3, ?string $estimatedWeight = null): array
     {
-        return $this->findAlternatives($area, $this->businessDate($date), $limit);
+        return $this->findAlternatives($area, $this->businessDate($date), $limit, $estimatedWeight);
     }
 
     /** @return list<string> */
-    private function findAlternatives(ServiceArea $area, CarbonImmutable $start, int $limit = 3): array
+    private function findAlternatives(ServiceArea $area, CarbonImmutable $start, int $limit = 3, ?string $estimatedWeight = null): array
     {
         $alternatives = [];
         for ($offset = 1; $offset <= 14 && count($alternatives) < $limit; $offset++) {
@@ -220,10 +220,14 @@ final readonly class PickupService
             if ($capacity === null) {
                 continue;
             }
-            $reservedAddresses = PickupRequest::query()->where('service_area_id', $area->id)->whereIn('status', self::RESERVING_STATUSES)->where(function (Builder $query) use ($candidate): void {
+            $reserved = PickupRequest::query()->where('service_area_id', $area->id)->whereIn('status', self::RESERVING_STATUSES)->where(function (Builder $query) use ($candidate): void {
                 $query->whereDate('selected_date', $candidate->toDateString())->whereNull('scheduled_date')->orWhereDate('scheduled_date', $candidate->toDateString());
-            })->count();
-            if ($capacity->max_addresses !== null && $reservedAddresses >= $capacity->max_addresses) {
+            })->get();
+            if ($capacity->max_addresses !== null && $reserved->count() >= $capacity->max_addresses) {
+                continue;
+            }
+            $weightGrams = $reserved->sum(static fn (PickupRequest $request): int => $request->estimated_weight_kg === null ? 0 : Weight::fromDecimal((string) $request->estimated_weight_kg)->grams());
+            if ($capacity->max_weight_kg !== null && $estimatedWeight !== null && ($weightGrams + Weight::fromDecimal($estimatedWeight)->grams()) > Weight::fromDecimal((string) $capacity->max_weight_kg)->grams()) {
                 continue;
             }
             $alternatives[] = $candidate->toDateString();
@@ -578,7 +582,7 @@ final readonly class PickupService
     {
         $capacity = PickupCapacity::query()->where('service_area_id', $area->id)->whereDate('service_date', $date->toDateString())->where('is_active', true)->lockForUpdate()->first();
         if ($capacity === null) {
-            throw new PickupCapacityUnavailable('Tanggal layanan tidak tersedia.', $this->findAlternatives($area, $date));
+            throw new PickupCapacityUnavailable('Tanggal layanan tidak tersedia.', $this->findAlternatives($area, $date, estimatedWeight: $estimatedWeight));
         }
         $reserved = PickupRequest::query()->where('service_area_id', $area->id)->whereIn('status', self::RESERVING_STATUSES)->where(function (Builder $query) use ($date): void {
             $query->whereDate('selected_date', $date->toDateString())->whereNull('scheduled_date')->orWhereDate('scheduled_date', $date->toDateString());
@@ -586,10 +590,10 @@ final readonly class PickupService
         $addressCount = $reserved->count();
         $weightGrams = $reserved->sum(static fn (PickupRequest $request): int => $request->estimated_weight_kg === null ? 0 : Weight::fromDecimal((string) $request->estimated_weight_kg)->grams());
         if ($capacity->max_addresses !== null && $addressCount >= $capacity->max_addresses) {
-            throw new PickupCapacityUnavailable('Kapasitas alamat untuk tanggal tersebut penuh.', $this->findAlternatives($area, $date));
+            throw new PickupCapacityUnavailable('Kapasitas alamat untuk tanggal tersebut penuh.', $this->findAlternatives($area, $date, estimatedWeight: $estimatedWeight));
         }
         if ($capacity->max_weight_kg !== null && $estimatedWeight !== null && ($weightGrams + Weight::fromDecimal($estimatedWeight)->grams()) > Weight::fromDecimal((string) $capacity->max_weight_kg)->grams()) {
-            throw new PickupCapacityUnavailable('Kapasitas berat untuk tanggal tersebut penuh.', $this->findAlternatives($area, $date));
+            throw new PickupCapacityUnavailable('Kapasitas berat untuk tanggal tersebut penuh.', $this->findAlternatives($area, $date, estimatedWeight: $estimatedWeight));
         }
 
         return $capacity;

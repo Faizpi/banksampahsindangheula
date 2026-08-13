@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Tests\Feature\Auth;
 
 use App\Actions\Auth\LogoutUser;
+use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\CustomerProfile;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
+use App\Domain\Pickups\Models\PickupCapacity;
 use App\Domain\WasteMaster\Models\WasteCategory;
 use App\Domain\WasteMaster\Models\WasteCondition;
 use App\Domain\WasteMaster\Models\WasteUnit;
@@ -36,8 +38,7 @@ final class DeveloperCredentialsTest extends TestCase
         foreach (DeveloperUsersSeeder::telephones() as $role => $phone) {
             $user = $this->devUser($role);
 
-            self::assertNotNull($user, "Dev account missing for role [{$role}].");
-            self::assertSame(UserStatus::Active, $user->status);
+            self::assertSame(UserStatus::Active, $user->status, "Dev account invalid for role [{$role}].");
             self::assertNotNull($user->email);
             self::assertNotNull($user->phone);
             self::assertTrue($user->roles->pluck('name')->contains($role));
@@ -229,6 +230,50 @@ final class DeveloperCredentialsTest extends TestCase
         self::assertNotNull($this->devUser('petugas')->staffProfile);
         self::assertTrue($this->devUser('admin')->canAccessPanel($this->backofficePanel()));
         self::assertTrue($this->devUser('superadmin')->canAccessPanel($this->backofficePanel()));
+    }
+
+    public function test_operational_demo_seed_provides_active_future_pickup_capacity_for_every_demo_area(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('app.demo_mode', true);
+        config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
+
+        $this->seed(DeveloperUsersSeeder::class);
+        $this->seed(LocalDataSeeder::class);
+
+        $demoAreaIds = ServiceArea::query()->where('name', 'like', 'Layanan Sindangheula %')->pluck('id')->sort()->values()->all();
+        $coveredAreaIds = PickupCapacity::query()
+            ->where('is_active', true)
+            ->whereDate('service_date', '>', today())
+            ->distinct()
+            ->pluck('service_area_id')
+            ->sort()
+            ->values()
+            ->all();
+
+        self::assertSame($demoAreaIds, $coveredAreaIds);
+    }
+
+    public function test_operational_demo_seed_reactivates_future_capacity_fixtures_and_remains_idempotent(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('app.demo_mode', true);
+        config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
+        $this->seed(DeveloperUsersSeeder::class);
+        $this->seed(LocalDataSeeder::class);
+        $capacity = PickupCapacity::query()->whereDate('service_date', today()->addDay())->firstOrFail();
+        $capacity->forceFill(['is_active' => false, 'max_addresses' => 1, 'max_weight_kg' => '1.000', 'vehicle_label' => 'Lama'])->save();
+        $count = PickupCapacity::query()->count();
+
+        $this->seed(LocalDataSeeder::class);
+        $this->seed(LocalDataSeeder::class);
+
+        $capacity->refresh();
+        self::assertTrue($capacity->is_active);
+        self::assertSame(12, $capacity->max_addresses);
+        self::assertSame('80.000', (string) $capacity->max_weight_kg);
+        self::assertStringStartsWith('Kendaraan Layanan ', (string) $capacity->vehicle_label);
+        self::assertSame($count, PickupCapacity::query()->count());
     }
 
     public function test_operational_demo_seed_reactivates_existing_master_data_required_by_its_fixtures(): void

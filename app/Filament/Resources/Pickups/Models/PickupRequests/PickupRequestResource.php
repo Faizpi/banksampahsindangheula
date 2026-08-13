@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\Pickups\Models\PickupRequests;
 
 use App\Domain\Pickups\Enums\PickupStatus;
+use App\Domain\Pickups\Exceptions\PickupCapacityUnavailable;
 use App\Domain\Pickups\Models\PickupCapacity;
 use App\Domain\Pickups\Models\PickupRequest;
 use App\Domain\Pickups\Services\PickupService;
@@ -18,6 +19,7 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\PageRegistration;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -113,7 +115,15 @@ final class PickupRequestResource extends Resource
                     ->color('success')
                     ->visible(fn (PickupRequest $record): bool => $record->status->value === 'menunggu_pemeriksaan')
                     ->authorize('review')
-                    ->action(fn (PickupRequest $record): PickupRequest => app(PickupService::class)->review(self::actor(), $record, true)),
+                    ->action(function (PickupRequest $record): ?PickupRequest {
+                        try {
+                            return app(PickupService::class)->review(self::actor(), $record, true);
+                        } catch (PickupCapacityUnavailable $exception) {
+                            self::notifyCapacityUnavailable($exception);
+
+                            return null;
+                        }
+                    }),
                 Action::make('reject')
                     ->label('Tolak')
                     ->icon(Heroicon::OutlinedXCircle)
@@ -131,7 +141,15 @@ final class PickupRequestResource extends Resource
                         Select::make('assigned_staff_id')->label('Petugas')->options(fn (PickupRequest $record): array => User::query()->whereHas('staffProfile', fn (Builder $profile): Builder => $profile->where('service_area_id', $record->service_area_id))->where('status', 'aktif')->pluck('name', 'id')->all())->required(),
                         DatePicker::make('scheduled_date')->label('Tanggal jadwal')->required(),
                     ])
-                    ->action(fn (PickupRequest $record, array $data): PickupRequest => app(PickupService::class)->schedule(self::actor(), $record, User::query()->findOrFail((int) $data['assigned_staff_id']), (string) $data['scheduled_date'])),
+                    ->action(function (PickupRequest $record, array $data): ?PickupRequest {
+                        try {
+                            return app(PickupService::class)->schedule(self::actor(), $record, User::query()->findOrFail((int) $data['assigned_staff_id']), (string) $data['scheduled_date']);
+                        } catch (PickupCapacityUnavailable $exception) {
+                            self::notifyCapacityUnavailable($exception);
+
+                            return null;
+                        }
+                    }),
             ]);
     }
 
@@ -163,6 +181,23 @@ final class PickupRequestResource extends Resource
             'evidence' => $record->media->map(static fn ($media): string => $media->original_name.' · '.$media->mime_type.' · '.$media->size.' byte')->implode("\n"),
             'timeline' => $record->statusHistory->sortBy('occurred_at')->map(static fn ($history): string => CarbonImmutable::parse($history->occurred_at, 'Asia/Jakarta')->format('d M Y H:i').' · '.StatusLabel::for($history->new_status).' · '.($history->reason ?? ''))->implode("\n"),
         ];
+    }
+
+    private static function notifyCapacityUnavailable(PickupCapacityUnavailable $exception): void
+    {
+        $body = $exception->getMessage();
+        if ($exception->alternatives !== []) {
+            $body .= ' Alternatif: '.implode(', ', array_map(
+                static fn (string $date): string => CarbonImmutable::createFromFormat('!Y-m-d', $date, 'Asia/Jakarta')->locale('id')->translatedFormat('d F Y'),
+                $exception->alternatives,
+            )).'.';
+        }
+
+        Notification::make()
+            ->title('Kapasitas penjemputan tidak tersedia')
+            ->body($body)
+            ->danger()
+            ->send();
     }
 
     private static function actor(): User
