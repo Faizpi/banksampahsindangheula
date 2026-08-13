@@ -27,12 +27,15 @@ trait InteractsWithMediaPicker
      */
     protected function confirmMediaPickerUpload(string $property, array $rules, array $messages = []): array
     {
+        $upload = $this->{$property} ?? null;
+        if (! $upload instanceof UploadedFile) {
+            return [];
+        }
+
         $this->validate([$property => $rules], $messages);
         $this->resetErrorBag($property);
 
-        $upload = $this->{$property} ?? null;
-
-        return $upload instanceof UploadedFile ? [self::mediaPickerMetadata($upload)] : [];
+        return [self::mediaPickerMetadata($upload)];
     }
 
     /** @return array{name: string, size: int, mimeType: string, previewUrl: string} */

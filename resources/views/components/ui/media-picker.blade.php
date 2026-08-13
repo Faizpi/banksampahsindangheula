@@ -18,8 +18,8 @@
     $hintId = "{$id}-hint";
     $statusId = "{$id}-status";
     $accept = $allowPdf
-        ? 'image/jpeg,image/png,image/webp,application/pdf'
-        : 'image/jpeg,image/png';
+        ? 'image/*,application/pdf'
+        : 'image/*';
     $emptyStatus = $initialStatus ?? ($allowPdf ? 'Belum ada file dipilih.' : 'Belum ada foto dipilih.');
     $resolvedGalleryLabel = $galleryLabel ?? ($allowPdf ? 'Pilih file' : 'Pilih dari galeri');
 @endphp
@@ -43,14 +43,14 @@
     </div>
 
     <div class="flex flex-col gap-2 sm:flex-row">
-        <button type="button" data-photo-picker-trigger="camera" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus disabled:cursor-wait disabled:bg-disabled-bg">
+        <label for="{{ $id }}" role="button" tabindex="0" data-photo-picker-trigger="camera" class="inline-flex min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2Z"/><circle cx="12" cy="12.5" r="3.25"/></svg>
             Ambil dari kamera
-        </button>
-        <button type="button" data-photo-picker-trigger="gallery" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus disabled:cursor-wait disabled:bg-disabled-bg">
+        </label>
+        <label for="{{ $id }}" role="button" tabindex="0" data-photo-picker-trigger="gallery" class="inline-flex min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
             <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L7 20"/></svg>
             {{ $resolvedGalleryLabel }}
-        </button>
+        </label>
     </div>
 
     <input

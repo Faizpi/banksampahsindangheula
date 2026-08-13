@@ -239,7 +239,7 @@ final class WithdrawalWaveTest extends TestCase
             ->assertSee('Ambil dari kamera')
             ->assertSee('Pilih dari galeri')
             ->assertSeeHtml('data-photo-picker-max="1"')
-            ->assertSeeHtml('accept="image/jpeg,image/png"')
+            ->assertSeeHtml('accept="image/*"')
             ->assertDontSeeHtml('application/pdf')
             ->set('recipientVerification', 'nomor_nasabah')
             ->assertSee('Nomor nasabah adalah kode unik warga.');

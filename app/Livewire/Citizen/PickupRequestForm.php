@@ -83,6 +83,10 @@ final class PickupRequestForm extends Component
     /** @return list<array{name: string, size: int, mimeType: string, previewUrl: string}> */
     public function confirmPhotoUploads(): array
     {
+        if ($this->photos === []) {
+            return [];
+        }
+
         $this->validate($this->photoRules());
         $this->clearPhotoErrors();
 

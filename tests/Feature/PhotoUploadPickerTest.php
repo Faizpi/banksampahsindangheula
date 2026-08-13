@@ -22,15 +22,18 @@ final class PhotoUploadPickerTest extends TestCase
 
         self::assertStringContainsString('preparedFiles.push(await preparePhotoPickerFile(file, picker));', $script);
         self::assertStringContainsString('await uploadPhotoPickerFiles(picker, property, preparedFiles, input.multiple);', $script);
-        self::assertStringContainsString('wire.$uploadMultiple(property, files, () => resolve(), onError, onProgress);', $script);
+        self::assertStringContainsString('wire.$uploadMultiple(property, files, onFinished, onError, onProgress);', $script);
         self::assertStringContainsString('const confirmedFiles = await wire.$call(confirmMethod);', $script);
+        self::assertStringContainsString('PHOTO_PICKER_CONFIRM_ATTEMPTS', $script);
+        self::assertStringContainsString("file.type.startsWith('image/')", $script);
         self::assertStringContainsString('return window.Livewire.find(componentId);', $script);
         self::assertStringContainsString('wire.$upload(', $script);
         self::assertStringContainsString('wire.$call(removeMethod, index)', $script);
+        self::assertStringContainsString('trigger instanceof HTMLLabelElement', $script);
         self::assertStringContainsString("trigger.addEventListener('click'", $script);
         self::assertStringContainsString("input.addEventListener('change'", $script);
         self::assertStringContainsString('setPhotoPickerStatus(picker, `Mengunggah ${noun}… ${Math.round(progress)}%`', $script);
-        self::assertStringContainsString('input.click();', $script);
+        self::assertStringContainsString("The label's native activation is", $script);
         self::assertStringNotContainsString('photoPickerEventRoot', $script);
         self::assertStringNotContainsString('syncPhotoPickerInput', $script);
         self::assertStringNotContainsString('photoPickerSyncing', $script);
@@ -53,11 +56,13 @@ final class PhotoUploadPickerTest extends TestCase
         self::assertStringContainsString('wire:ignore', $html);
         self::assertStringContainsString('data-photo-picker-trigger="camera"', $html);
         self::assertStringContainsString('data-photo-picker-trigger="gallery"', $html);
+        self::assertSame(2, substr_count($html, 'for="proof"'));
+        self::assertStringContainsString('role="button"', $html);
         self::assertStringContainsString('data-photo-picker-progress', $html);
         self::assertStringContainsString('data-photo-picker-icon="busy"', $html);
         self::assertStringContainsString('data-photo-picker-preview', $html);
         self::assertStringContainsString('data-photo-picker-property="proof"', $html);
-        self::assertStringContainsString('accept="image/jpeg,image/png,image/webp,application/pdf"', $html);
+        self::assertStringContainsString('accept="image/*,application/pdf"', $html);
         self::assertStringContainsString('class="sr-only"', $html);
         self::assertStringNotContainsString('wire:model', $html);
     }
@@ -168,5 +173,18 @@ final class PhotoUploadPickerTest extends TestCase
         $identification->withdrawalEvidence = UploadedFile::fake()->image('withdrawal.jpg');
         self::assertSame('assisted.jpg', $identification->confirmAssistedEvidenceUpload()[0]['name']);
         self::assertSame('withdrawal.jpg', $identification->confirmWithdrawalEvidenceUpload()[0]['name']);
+    }
+
+    public function test_early_confirmation_does_not_add_a_required_error_while_livewire_is_settling_the_upload(): void
+    {
+        $citizen = new PickupRequestForm;
+
+        self::assertSame([], $citizen->confirmPhotoUploads());
+        self::assertFalse($citizen->getErrorBag()->has('photos'));
+
+        $officer = new PickupTask;
+
+        self::assertSame([], $officer->confirmEvidenceUpload());
+        self::assertFalse($officer->getErrorBag()->has('evidence'));
     }
 }

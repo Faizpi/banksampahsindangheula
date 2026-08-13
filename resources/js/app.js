@@ -668,13 +668,15 @@ const PHOTO_PICKER_MAX_BYTES = 1024 * 1024;
 const MEDIA_PICKER_MAX_BYTES = 5 * 1024 * 1024;
 const PHOTO_PICKER_MAX_DIMENSION = 2000;
 const PHOTO_PICKER_QUALITIES = [0.86, 0.78, 0.7, 0.62, 0.54, 0.46];
-const PHOTO_PICKER_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PHOTO_PICKER_CONFIRM_ATTEMPTS = 3;
+const PHOTO_PICKER_CONFIRM_DELAY_MS = 80;
 const PHOTO_PICKER_EXTENSIONS = new Map([
     ['jpg', 'image/jpeg'],
     ['jpeg', 'image/jpeg'],
     ['png', 'image/png'],
     ['webp', 'image/webp'],
 ]);
+const PHOTO_PICKER_CAMERA_EXTENSIONS = new Set([...PHOTO_PICKER_EXTENSIONS.keys(), 'heic', 'heif']);
 
 function photoPickerFromTarget(target) {
     if (!(target instanceof Element)) {
@@ -894,6 +896,12 @@ function setPhotoPickerBusy(picker, isBusy) {
         if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) {
             element.disabled = isBusy;
         }
+
+        if (element instanceof HTMLLabelElement) {
+            element.setAttribute('aria-disabled', String(isBusy));
+            element.classList.toggle('pointer-events-none', isBusy);
+            element.classList.toggle('opacity-60', isBusy);
+        }
     });
 
     const componentRoot = picker.closest('[wire\\:id]');
@@ -922,15 +930,16 @@ function uploadPhotoPickerFiles(picker, property, files, multiple) {
     return new Promise((resolve, reject) => {
         const noun = photoPickerNoun(picker);
         const onError = () => reject(new Error(`${noun[0].toUpperCase()}${noun.slice(1)} gagal diunggah. Periksa koneksi lalu coba lagi.`));
+        const onFinished = () => window.setTimeout(resolve, 0);
         const onProgress = (event) => {
             const progress = Number(event?.detail?.progress ?? event?.progress ?? 0);
             setPhotoPickerStatus(picker, `Mengunggah ${noun}… ${Math.round(progress)}%`, 'busy', progress);
         };
 
         if (multiple) {
-            wire.$uploadMultiple(property, files, () => resolve(), onError, onProgress);
+            wire.$uploadMultiple(property, files, onFinished, onError, onProgress);
         } else {
-            wire.$upload(property, files[0], () => resolve(), onError, onProgress);
+            wire.$upload(property, files[0], onFinished, onError, onProgress);
         }
     });
 }
@@ -943,22 +952,23 @@ async function confirmedPhotoPickerFiles(picker, fallbackFiles) {
         return fallbackFiles.map((file) => normalizedPhotoPickerFile(file, picker));
     }
 
-    const confirmedFiles = await wire.$call(confirmMethod);
-    if (!Array.isArray(confirmedFiles) || confirmedFiles.length === 0) {
-        throw new Error(`${photoPickerNoun(picker)[0].toUpperCase()}${photoPickerNoun(picker).slice(1)} belum tersimpan di formulir. Muat ulang halaman lalu unggah kembali.`);
+    for (let attempt = 1; attempt <= PHOTO_PICKER_CONFIRM_ATTEMPTS; attempt += 1) {
+        try {
+            const confirmedFiles = await wire.$call(confirmMethod);
+            if (Array.isArray(confirmedFiles) && confirmedFiles.length > 0) {
+                return confirmedFiles.map((file) => normalizedPhotoPickerFile(file, picker));
+            }
+        } catch {
+            // Livewire may finish the upload callback just before its updated
+            // component snapshot is available to the next method call.
+        }
+
+        if (attempt < PHOTO_PICKER_CONFIRM_ATTEMPTS) {
+            await new Promise((resolve) => window.setTimeout(resolve, PHOTO_PICKER_CONFIRM_DELAY_MS));
+        }
     }
 
-    return confirmedFiles.map((file) => normalizedPhotoPickerFile(file, picker));
-}
-
-function photoPickerFileMimeType(file) {
-    if (PHOTO_PICKER_MIME_TYPES.includes(file.type)) {
-        return file.type;
-    }
-
-    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
-
-    return PHOTO_PICKER_EXTENSIONS.get(extension) ?? file.type;
+    throw new Error(`${photoPickerNoun(picker)[0].toUpperCase()}${photoPickerNoun(picker).slice(1)} belum tersimpan di formulir. Muat ulang halaman lalu unggah kembali.`);
 }
 
 function loadPhotoImage(file) {
@@ -983,8 +993,10 @@ function canvasBlob(canvas, quality) {
 }
 
 async function compressPickupPhoto(file) {
-    if (!PHOTO_PICKER_MIME_TYPES.includes(photoPickerFileMimeType(file))) {
-        throw new Error('Gunakan foto JPEG, PNG, atau WebP.');
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+    const browserRecognizesImage = file.type.startsWith('image/') || PHOTO_PICKER_CAMERA_EXTENSIONS.has(extension);
+    if (!browserRecognizesImage) {
+        throw new Error('Gunakan file foto yang dapat dibaca browser.');
     }
 
     const image = await loadPhotoImage(file);
@@ -1161,13 +1173,13 @@ function hydratePhotoPicker(picker) {
 
     picker.dataset.photoPickerInitialized = 'true';
     picker.querySelectorAll('[data-photo-picker-trigger]').forEach((trigger) => {
-        if (!(trigger instanceof HTMLButtonElement)) {
+        if (!(trigger instanceof HTMLLabelElement)) {
             return;
         }
 
-        trigger.addEventListener('click', () => {
+        const prepareInput = () => {
             if (picker.dataset.photoPickerBusy === 'true') {
-                return;
+                return false;
             }
 
             if (trigger.dataset.photoPickerTrigger === 'camera') {
@@ -1177,7 +1189,26 @@ function hydratePhotoPicker(picker) {
             }
 
             input.value = '';
-            input.click();
+
+            return true;
+        };
+
+        trigger.addEventListener('click', (event) => {
+            if (!prepareInput()) {
+                event.preventDefault();
+            }
+            // Do not call input.click() here. The label's native activation is
+            // required by mobile browsers that block programmatic file pickers.
+        });
+        trigger.addEventListener('keydown', (event) => {
+            if (event.key !== 'Enter' && event.key !== ' ') {
+                return;
+            }
+
+            event.preventDefault();
+            if (prepareInput()) {
+                input.click();
+            }
         });
     });
     input.addEventListener('change', (event) => void handlePhotoPickerChange(event, picker, input), true);
