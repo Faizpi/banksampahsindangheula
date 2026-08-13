@@ -27,8 +27,9 @@ final class PhotoUploadPickerTest extends TestCase
         self::assertStringContainsString('wire:ignore', $citizenView);
         self::assertStringContainsString('data-photo-picker-property="photos"', $citizenView);
         self::assertStringContainsString('data-photo-picker-remove-method="removePhoto"', $citizenView);
-        self::assertStringContainsString('Perkiraan jumlah (opsional)', $citizenView);
-        self::assertStringContainsString('Contoh: 2 kantong atau 1 karung.', $citizenView);
+        self::assertStringContainsString('Total berat (kg)', $citizenView);
+        self::assertStringContainsString('Jumlah wadah (opsional)', $citizenView);
+        self::assertStringContainsString('Contoh: 2 kantong atau 1 karung. Bukan pengali berat.', $citizenView);
 
         self::assertStringContainsString('wire:ignore', $officerView);
         self::assertStringContainsString('data-photo-picker-property="evidence"', $officerView);
