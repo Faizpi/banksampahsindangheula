@@ -56,7 +56,7 @@ final readonly class TransactionCorrectionService
             return TransactionCorrection::query()->findOrFail($existing->result_id);
         }
 
-        $media = $evidence === null ? null : $this->mediaStore->handle($evidence, $actor);
+        $media = $evidence === null ? null : $this->mediaStore->handleEvidence($evidence, $actor);
 
         try {
             $result = DB::transaction(function () use ($actor, $deposit, $newValue, $reason, $idempotencyKey, $payloadHash, $media): TransactionCorrection {
@@ -190,7 +190,7 @@ final readonly class TransactionCorrectionService
             return TransactionReversal::query()->findOrFail($existing->result_id);
         }
 
-        $media = $this->mediaStore->handle($evidence, $actor);
+        $media = $this->mediaStore->handleEvidence($evidence, $actor);
 
         try {
             return DB::transaction(function () use ($actor, $deposit, $reason, $idempotencyKey, $payloadHash, $media): TransactionReversal {

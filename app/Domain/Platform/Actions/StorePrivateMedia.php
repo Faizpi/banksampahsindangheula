@@ -53,6 +53,19 @@ final class StorePrivateMedia
         return $this->store($file, $normalized, 'image/jpeg', 'jpg', $uploader);
     }
 
+    public function handleEvidence(UploadedFile $file, ?User $uploader = null): Media
+    {
+        $this->validate($file);
+
+        $contents = $file->getContent();
+        $mimeType = $this->detectedMimeType($contents);
+        if (str_starts_with($mimeType, 'image/')) {
+            return $this->store($file, $this->normalizePhoto($contents), 'image/jpeg', 'jpg', $uploader);
+        }
+
+        return $this->store($file, $contents, $mimeType, self::ALLOWED_TYPES[$mimeType]['extension'], $uploader);
+    }
+
     private function store(UploadedFile $file, string $contents, string $mimeType, string $extension, ?User $uploader): Media
     {
         $path = sprintf('%s.%s', (string) Str::uuid(), $extension);

@@ -81,26 +81,15 @@
                     <p class="font-semibold text-deep-green">Kartu dan nomor nasabah berbeda</p>
                     <p class="mt-1">Kartu adalah media identitasnya; nomor nasabah adalah kode unik di dalam kartu. Pilihan di atas mencatat cara Anda memeriksa penerima, sedangkan field berikut mencatat kode yang dicocokkan sistem.</p>
                 </div>
-                <div wire:ignore wire:key="payment-proof-picker-{{ $selectedWithdrawal->id }}" class="rounded-md border border-border bg-warm-canvas p-4" data-photo-picker data-photo-picker-max="1" data-photo-picker-limit="1048576" data-photo-picker-remove-method="clearProof" data-photo-picker-confirm-method="confirmProofUpload">
-                    <div>
-                        <h3 class="text-label font-bold text-deep-green">Satu foto bukti pembayaran</h3>
-                        <p class="mt-1 text-body-sm text-text-secondary">Ambil foto melalui kamera atau pilih satu foto dari galeri. Foto akan dikompres menjadi JPEG maksimal 1 MB.</p>
-                    </div>
-                    <div class="mt-3 flex flex-col gap-2 sm:flex-row">
-                        <label for="payment-proof" data-photo-picker-trigger="camera" class="inline-flex min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
-                            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2Z"/><circle cx="12" cy="12.5" r="3.25"/></svg>
-                            Ambil dari kamera
-                        </label>
-                        <label for="payment-proof" data-photo-picker-trigger="gallery" class="inline-flex min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
-                            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L7 20"/></svg>
-                            Pilih dari galeri
-                        </label>
-                    </div>
-                    <input id="payment-proof" type="file" accept="image/jpeg,image/png" data-photo-picker-input data-photo-picker-property="proof" class="mt-3 block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
-                    <p data-photo-picker-status class="mt-2 text-body-sm text-text-secondary" aria-live="polite">Belum ada foto dipilih.</p>
-                    <div data-photo-picker-preview class="mt-2 grid gap-2" aria-live="polite"></div>
-                </div>
-                <div wire:loading wire:target="proof" class="mt-2 text-body-sm text-sky-blue" role="status">Mengunggah foto…</div>
+                <x-ui.media-picker
+                    id="payment-proof"
+                    property="proof"
+                    label="Satu foto bukti pembayaran"
+                    hint="Ambil foto melalui kamera atau pilih satu foto dari galeri. Foto dikompres menjadi JPEG maksimal 1 MB sebelum dimasukkan ke formulir."
+                    remove-method="clearProof"
+                    confirm-method="confirmProofUpload"
+                    wire:key="payment-proof-picker-{{ $selectedWithdrawal->id }}"
+                />
                 @error('proof')
                     <p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
                 @enderror

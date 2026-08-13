@@ -13,6 +13,7 @@ use App\Domain\MobileServices\Models\MobileService;
 use App\Domain\WasteMaster\Models\WasteCondition;
 use App\Domain\WasteMaster\Models\WasteType;
 use App\Domain\WasteMaster\Services\ResolveWastePrice;
+use App\Livewire\Concerns\InteractsWithMediaPicker;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
@@ -26,6 +27,7 @@ use Throwable;
 #[Layout('layouts.officer')]
 final class DepositForm extends Component
 {
+    use InteractsWithMediaPicker;
     use WithFileUploads;
 
     #[Locked]
@@ -96,6 +98,21 @@ final class DepositForm extends Component
     {
         unset($this->items[$index]);
         $this->items = array_values($this->items);
+    }
+
+    public function clearEvidence(): void
+    {
+        $this->clearMediaPickerUpload('evidence');
+    }
+
+    /** @return list<array{name: string, size: int, mimeType: string, previewUrl: string}> */
+    public function confirmEvidenceUpload(): array
+    {
+        return $this->confirmMediaPickerUpload(
+            'evidence',
+            ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
+            ['evidence.required' => 'Unggah bukti transaksi sebelum melanjutkan.'],
+        );
     }
 
     public function saveDraft(DepositService $service): void

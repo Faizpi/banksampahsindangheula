@@ -7,6 +7,7 @@ namespace App\Livewire\Citizen;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Pickups\Services\PickupService;
 use App\Domain\WasteMaster\Models\WasteType;
+use App\Livewire\Concerns\InteractsWithMediaPicker;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
@@ -19,6 +20,7 @@ use Livewire\WithFileUploads;
 #[Layout('layouts.citizen')]
 final class PickupRequestForm extends Component
 {
+    use InteractsWithMediaPicker;
     use WithFileUploads;
 
     public string $address = '';
@@ -78,17 +80,13 @@ final class PickupRequestForm extends Component
         $this->clearPhotoErrors();
     }
 
-    /** @return list<array{name: string, size: int, previewUrl: string}> */
+    /** @return list<array{name: string, size: int, mimeType: string, previewUrl: string}> */
     public function confirmPhotoUploads(): array
     {
         $this->validate($this->photoRules());
         $this->clearPhotoErrors();
 
-        return array_map(static fn (UploadedFile $photo): array => [
-            'name' => $photo->getClientOriginalName(),
-            'size' => (int) $photo->getSize(),
-            'previewUrl' => $photo instanceof TemporaryUploadedFile ? $photo->temporaryUrl() : '',
-        ], $this->photos);
+        return array_map(static fn (UploadedFile $photo): array => self::mediaPickerMetadata($photo), $this->photos);
     }
 
     public function nextStep(): void

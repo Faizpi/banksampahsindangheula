@@ -9,6 +9,7 @@
         ->map(static fn ($photo): array => [
             'name' => $photo->getClientOriginalName(),
             'size' => $photo->getSize(),
+            'mimeType' => (string) ($photo->getMimeType() ?? ''),
             'previewUrl' => $photo->temporaryUrl(),
         ])
         ->values()
@@ -133,31 +134,17 @@
             </x-ui.panel>
 
             <x-ui.panel title="Foto wajib" description="Unggah 1–2 foto JPEG atau PNG. Foto akan dinormalisasi menjadi JPEG maksimal 1 MB per file.">
-                <div
-                    wire:ignore
-                    class="space-y-3"
-                    data-photo-picker
-                    data-photo-picker-max="2"
-                    data-photo-picker-limit="1048576"
-                    data-photo-picker-remove-method="removePhoto"
-                    data-photo-picker-confirm-method="confirmPhotoUploads"
-                    data-photo-picker-initial-files="{{ json_encode($photoPickerInitialFiles, JSON_HEX_APOS | JSON_HEX_AMP | JSON_HEX_QUOT) }}"
-                >
-                    <label for="pickup-photos" class="block text-label font-semibold text-deep-green">Foto sampah</label>
-                    <div class="flex flex-col gap-2 sm:flex-row">
-                        <label for="pickup-photos" data-photo-picker-trigger="camera" class="inline-flex min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
-                            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L8 6H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-3l-1.5-2Z"/><circle cx="12" cy="12.5" r="3.25"/></svg>
-                            Ambil dari kamera
-                        </label>
-                        <label for="pickup-photos" data-photo-picker-trigger="gallery" class="inline-flex min-h-touch cursor-pointer items-center justify-center gap-2 rounded-md border border-border bg-surface px-5 text-label font-semibold text-deep-green transition hover:border-forest-600 hover:bg-success-bg focus:outline-none focus:ring-2 focus:ring-focus">
-                            <svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-4.5-4.5L7 20"/></svg>
-                            Pilih dari galeri
-                        </label>
-                    </div>
-                    <input id="pickup-photos" type="file" accept="image/jpeg,image/png" multiple data-photo-picker-input data-photo-picker-property="photos" class="block min-h-touch w-full rounded-md border-2 border-dashed border-border bg-warm-canvas p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
-                    <p data-photo-picker-status class="text-body-sm text-text-secondary" aria-live="polite">Belum ada foto dipilih.</p>
-                    <div data-photo-picker-preview class="grid gap-2 sm:grid-cols-2" aria-live="polite"></div>
-                </div>
+                <x-ui.media-picker
+                    id="pickup-photos"
+                    property="photos"
+                    label="Foto sampah"
+                    hint="Ambil atau pilih 1–2 foto. Setiap foto dikompres menjadi JPEG maksimal 1 MB sebelum dimasukkan ke formulir."
+                    :max="2"
+                    :multiple="true"
+                    remove-method="removePhoto"
+                    confirm-method="confirmPhotoUploads"
+                    :initial-files="$photoPickerInitialFiles"
+                />
                 @error('photos')<p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>@enderror
             </x-ui.panel>
         @else

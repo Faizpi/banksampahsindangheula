@@ -93,11 +93,11 @@
                     <svg viewBox="0 0 24 24" class="mr-2 size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                     Tambah Item
                 </x-ui.button>
-                <x-ui.button type="button" wire:click="saveDraft" wire:loading.attr="disabled">
+                <x-ui.button type="button" wire:click="saveDraft" wire:loading.attr="disabled" data-photo-picker-action>
                     <span wire:loading.remove wire:target="saveDraft">Simpan Draf</span>
                     <span wire:loading wire:target="saveDraft">Menyimpan...</span>
                 </x-ui.button>
-                <x-ui.button type="button" wire:click="finalize" wire:loading.attr="disabled">
+                <x-ui.button type="button" wire:click="finalize" wire:loading.attr="disabled" data-photo-picker-action>
                     <span wire:loading.remove wire:target="finalize">Finalisasi Setoran</span>
                     <span wire:loading wire:target="finalize">Memproses...</span>
                 </x-ui.button>
@@ -111,15 +111,18 @@
          </x-ui.panel>
      @endif
 
-     <x-ui.panel title="Bukti setoran" description="Unggah bukti JPEG, PNG, WebP, atau PDF. File disimpan privat dan wajib saat finalisasi.">
-         <div class="space-y-1.5">
-             <label for="deposit-evidence" class="block text-label font-semibold text-deep-green">Bukti transaksi</label>
-             <input id="deposit-evidence" wire:model="evidence" type="file"
-                 accept="image/jpeg,image/png,image/webp,application/pdf"
-                 class="block min-h-touch w-full rounded-xl border-2 border-dashed border-border bg-warm-canvas p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
-             @error('evidence')
-                 <p class="text-body-sm text-terracotta">{{ $message }}</p>
-             @enderror
-         </div>
+     <x-ui.panel title="Bukti setoran" description="Unggah bukti foto atau PDF. File disimpan privat dan wajib saat finalisasi.">
+         <x-ui.media-picker
+             id="deposit-evidence"
+             property="evidence"
+             label="Bukti transaksi"
+             hint="Foto JPEG, PNG, atau WebP dikompres menjadi JPEG maksimal 1 MB. PDF diterima maksimal 5 MB."
+             :allow-pdf="true"
+             remove-method="clearEvidence"
+             confirm-method="confirmEvidenceUpload"
+         />
+         @error('evidence')
+             <p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+         @enderror
      </x-ui.panel>
 </section>

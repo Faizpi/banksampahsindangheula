@@ -479,7 +479,7 @@ final class DepositWaveTest extends TestCase
     {
         $path = tempnam(sys_get_temp_dir(), 'deposit-proof-');
         self::assertIsString($path);
-        file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL7wQAAAABJRU5ErkJggg==', true));
+        file_put_contents($path, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true));
 
         return new UploadedFile($path, 'deposit-proof.png', 'image/png', null, true);
     }

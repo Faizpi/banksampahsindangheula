@@ -446,6 +446,6 @@ final class DepositEvidenceTest extends TestCase
 
     private static function png(): string
     {
-        return base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL7wQAAAABJRU5ErkJggg==', true) ?: throw new \LogicException('Invalid PNG fixture.');
+        return base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true) ?: throw new \LogicException('Invalid PNG fixture.');
     }
 }

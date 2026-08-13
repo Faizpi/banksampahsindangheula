@@ -8,6 +8,7 @@ use App\Authorization\PermissionChecker;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryRedemption;
 use App\Domain\Groceries\Services\GroceryService;
+use App\Livewire\Concerns\InteractsWithMediaPicker;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
@@ -18,6 +19,7 @@ use Livewire\WithFileUploads;
 #[Layout('layouts.officer')]
 final class GroceryTasks extends Component
 {
+    use InteractsWithMediaPicker;
     use WithFileUploads;
 
     public ?int $selectedRedemptionId = null;
@@ -62,6 +64,21 @@ final class GroceryTasks extends Component
         $this->recipientReference = '';
         $this->proof = null;
         $this->idempotencyKey = (string) str()->uuid();
+    }
+
+    public function clearProof(): void
+    {
+        $this->clearMediaPickerUpload('proof');
+    }
+
+    /** @return list<array{name: string, size: int, mimeType: string, previewUrl: string}> */
+    public function confirmProofUpload(): array
+    {
+        return $this->confirmMediaPickerUpload(
+            'proof',
+            ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
+            ['proof.required' => 'Unggah bukti serah-terima sebelum melanjutkan.'],
+        );
     }
 
     public function handover(GroceryService $service): void

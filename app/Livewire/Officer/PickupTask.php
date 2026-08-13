@@ -11,19 +11,20 @@ use App\Domain\Pickups\Services\PickupService;
 use App\Domain\WasteMaster\Models\WasteCondition;
 use App\Domain\WasteMaster\Models\WasteType;
 use App\Domain\WasteMaster\Services\ResolveWastePrice;
+use App\Livewire\Concerns\InteractsWithMediaPicker;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 use Throwable;
 
 #[Layout('layouts.officer')]
 final class PickupTask extends Component
 {
+    use InteractsWithMediaPicker;
     use WithFileUploads;
 
     public PickupRequest $pickup;
@@ -89,27 +90,17 @@ final class PickupTask extends Component
 
     public function clearEvidence(): void
     {
-        if ($this->evidence instanceof TemporaryUploadedFile) {
-            $this->evidence->delete();
-        }
-
-        $this->evidence = null;
-        $this->resetErrorBag('evidence');
+        $this->clearMediaPickerUpload('evidence');
     }
 
-    /** @return list<array{name: string, size: int, previewUrl: string}> */
+    /** @return list<array{name: string, size: int, mimeType: string, previewUrl: string}> */
     public function confirmEvidenceUpload(): array
     {
-        $this->validate([
-            'evidence' => ['required', 'file', 'max:1024', 'mimes:jpg,jpeg,png'],
-        ], $this->completionMessages());
-        $this->resetErrorBag('evidence');
-
-        return $this->evidence === null ? [] : [[
-            'name' => $this->evidence->getClientOriginalName(),
-            'size' => (int) $this->evidence->getSize(),
-            'previewUrl' => $this->evidence instanceof TemporaryUploadedFile ? $this->evidence->temporaryUrl() : '',
-        ]];
+        return $this->confirmMediaPickerUpload(
+            'evidence',
+            ['required', 'file', 'max:1024', 'mimes:jpg,jpeg,png'],
+            $this->completionMessages(),
+        );
     }
 
     public function complete(PickupService $service): void

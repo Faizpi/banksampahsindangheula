@@ -217,15 +217,19 @@
                                     @error('assistedConsent')
                                         <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
                                     @enderror
-                                    <div class="space-y-1.5">
-                                        <label for="assisted-evidence" class="block text-label font-semibold text-deep-green">Bukti persetujuan privat</label>
-                                        <input id="assisted-evidence" wire:model="assistedEvidence" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
-                                            class="block min-h-touch w-full rounded-xl border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus" />
-                                        @error('assistedEvidence')
-                                            <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
-                                        @enderror
-                                    </div>
-                                    <x-ui.button type="button" wire:click="recordAssistedService" wire:loading.attr="disabled">
+                                    <x-ui.media-picker
+                                        id="assisted-evidence"
+                                        property="assistedEvidence"
+                                        label="Bukti persetujuan privat"
+                                        hint="Foto JPEG, PNG, atau WebP dikompres menjadi JPEG maksimal 1 MB. PDF diterima maksimal 5 MB."
+                                        :allow-pdf="true"
+                                        remove-method="clearAssistedEvidence"
+                                        confirm-method="confirmAssistedEvidenceUpload"
+                                    />
+                                    @error('assistedEvidence')
+                                        <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                                    @enderror
+                                    <x-ui.button type="button" wire:click="recordAssistedService" wire:loading.attr="disabled" data-photo-picker-action>
                                         <span wire:loading.remove wire:target="recordAssistedService">Catat Layanan Berbantuan</span>
                                         <span wire:loading wire:target="recordAssistedService">Menyimpan...</span>
                                     </x-ui.button>
@@ -267,16 +271,21 @@
                                     @error('withdrawalConsent')
                                         <p class="sm:col-span-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
                                     @enderror
-                                    <div class="sm:col-span-2 space-y-1.5">
-                                        <label for="withdrawal-evidence" class="block text-label font-semibold text-deep-green">Bukti persetujuan pencairan</label>
-                                        <input id="withdrawal-evidence" wire:model="withdrawalEvidence" type="file" accept="image/jpeg,image/png,image/webp,application/pdf"
-                                            class="block min-h-touch w-full rounded-xl border-2 border-dashed border-border bg-surface p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus" />
-                                        @error('withdrawalEvidence')
-                                            <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
-                                        @enderror
-                                    </div>
+                                    <x-ui.media-picker
+                                        id="withdrawal-evidence"
+                                        property="withdrawalEvidence"
+                                        label="Bukti persetujuan pencairan"
+                                        hint="Foto JPEG, PNG, atau WebP dikompres menjadi JPEG maksimal 1 MB. PDF diterima maksimal 5 MB."
+                                        :allow-pdf="true"
+                                        remove-method="clearWithdrawalEvidence"
+                                        confirm-method="confirmWithdrawalEvidenceUpload"
+                                        class="sm:col-span-2"
+                                    />
+                                    @error('withdrawalEvidence')
+                                        <p class="sm:col-span-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                                    @enderror
                                     <div class="sm:col-span-2">
-                                        <x-ui.button type="button" wire:click="requestAssistedWithdrawal" wire:loading.attr="disabled" wire:target="requestAssistedWithdrawal" :disabled="$withdrawalBalanceInsufficient">
+                                        <x-ui.button type="button" wire:click="requestAssistedWithdrawal" wire:loading.attr="disabled" wire:target="requestAssistedWithdrawal" :disabled="$withdrawalBalanceInsufficient" data-photo-picker-action>
                                             <span wire:loading.remove wire:target="requestAssistedWithdrawal">Ajukan Pencairan Berbantuan</span>
                                             <span wire:loading wire:target="requestAssistedWithdrawal">Memproses...</span>
                                         </x-ui.button>

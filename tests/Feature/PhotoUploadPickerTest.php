@@ -5,86 +5,83 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Livewire\Citizen\PickupRequestForm;
+use App\Livewire\Officer\CustomerIdentification;
+use App\Livewire\Officer\DepositForm;
+use App\Livewire\Officer\GroceryTasks;
 use App\Livewire\Officer\PickupTask;
 use App\Livewire\Treasurer\WithdrawalPayments;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
 
 final class PhotoUploadPickerTest extends TestCase
 {
-    public function test_photo_picker_uploads_only_the_new_compressed_file(): void
+    public function test_media_picker_compresses_images_before_direct_livewire_upload_and_confirms_server_state(): void
     {
         $script = (string) file_get_contents(resource_path('js/app.js'));
 
-        self::assertStringContainsString('await uploadPhotoPickerFiles(picker, property, compressedFiles, input.multiple);', $script);
-        self::assertStringContainsString('wire.$uploadMultiple(property, files, () => resolve(), onError);', $script);
+        self::assertStringContainsString('preparedFiles.push(await preparePhotoPickerFile(file, picker));', $script);
+        self::assertStringContainsString('await uploadPhotoPickerFiles(picker, property, preparedFiles, input.multiple);', $script);
+        self::assertStringContainsString('wire.$uploadMultiple(property, files, () => resolve(), onError, onProgress);', $script);
         self::assertStringContainsString('const confirmedFiles = await wire.$call(confirmMethod);', $script);
         self::assertStringContainsString('return window.Livewire.find(componentId);', $script);
         self::assertStringContainsString('wire.$upload(', $script);
         self::assertStringContainsString('wire.$call(removeMethod, index)', $script);
-        self::assertStringContainsString('photoTrigger instanceof HTMLLabelElement || photoTrigger instanceof HTMLButtonElement', $script);
-        self::assertStringContainsString('Labels activate their associated file input natively.', $script);
+        self::assertStringContainsString("trigger.addEventListener('click'", $script);
+        self::assertStringContainsString("input.addEventListener('change'", $script);
+        self::assertStringContainsString('setPhotoPickerStatus(picker, `Mengunggah ${noun}… ${Math.round(progress)}%`', $script);
+        self::assertStringContainsString('input.click();', $script);
+        self::assertStringNotContainsString('photoPickerEventRoot', $script);
         self::assertStringNotContainsString('syncPhotoPickerInput', $script);
         self::assertStringNotContainsString('photoPickerSyncing', $script);
     }
 
-    public function test_each_custom_photo_picker_uses_only_its_direct_livewire_upload_property(): void
+    public function test_reusable_picker_exposes_camera_gallery_loading_progress_and_authoritative_preview(): void
     {
-        $citizenView = (string) file_get_contents(resource_path('views/livewire/citizen/pickup-request-form.blade.php'));
-        $officerView = (string) file_get_contents(resource_path('views/livewire/officer/pickup-task.blade.php'));
-        $treasurerView = (string) file_get_contents(resource_path('views/livewire/treasurer/withdrawal-payments.blade.php'));
+        $html = Blade::render(<<<'BLADE'
+            <x-ui.media-picker
+                id="proof"
+                property="proof"
+                label="Bukti transaksi"
+                hint="Foto dikompres sebelum upload."
+                :allow-pdf="true"
+                remove-method="clearProof"
+                confirm-method="confirmProofUpload"
+            />
+        BLADE);
 
-        self::assertStringContainsString('wire:ignore', $citizenView);
-        self::assertStringContainsString('data-photo-picker-property="photos"', $citizenView);
-        self::assertStringNotContainsString('wire:model="photos"', $citizenView);
-        self::assertStringContainsString('data-photo-picker-remove-method="removePhoto"', $citizenView);
-        self::assertStringContainsString('data-photo-picker-confirm-method="confirmPhotoUploads"', $citizenView);
-        self::assertStringContainsString('data-photo-picker-action', $citizenView);
-        self::assertStringContainsString('<label for="pickup-photos" data-photo-picker-trigger="camera"', $citizenView);
-        self::assertStringContainsString('<label for="pickup-photos" data-photo-picker-trigger="gallery"', $citizenView);
-        self::assertStringContainsString('Total berat (kg)', $citizenView);
-        self::assertStringContainsString('Jumlah wadah (opsional)', $citizenView);
-        self::assertStringContainsString('Jumlah wadah opsional, misalnya 2 kantong atau 1 karung, dan bukan pengali berat.', $citizenView);
-
-        self::assertStringContainsString('wire:ignore', $officerView);
-        self::assertStringContainsString('data-photo-picker-property="evidence"', $officerView);
-        self::assertStringNotContainsString('wire:model="evidence"', $officerView);
-        self::assertStringContainsString('data-photo-picker-remove-method="clearEvidence"', $officerView);
-        self::assertStringContainsString('data-photo-picker-confirm-method="confirmEvidenceUpload"', $officerView);
-        self::assertStringContainsString('<label for="pickup-evidence" data-photo-picker-trigger="camera"', $officerView);
-        self::assertStringContainsString('<label for="pickup-evidence" data-photo-picker-trigger="gallery"', $officerView);
-
-        self::assertStringContainsString('wire:ignore', $treasurerView);
-        self::assertStringContainsString('data-photo-picker-property="proof"', $treasurerView);
-        self::assertStringNotContainsString('wire:model="proof"', $treasurerView);
-        self::assertStringContainsString('data-photo-picker-remove-method="clearProof"', $treasurerView);
-        self::assertStringContainsString('data-photo-picker-confirm-method="confirmProofUpload"', $treasurerView);
-        self::assertStringContainsString('<label for="payment-proof" data-photo-picker-trigger="camera"', $treasurerView);
-        self::assertStringContainsString('<label for="payment-proof" data-photo-picker-trigger="gallery"', $treasurerView);
+        self::assertStringContainsString('wire:ignore', $html);
+        self::assertStringContainsString('data-photo-picker-trigger="camera"', $html);
+        self::assertStringContainsString('data-photo-picker-trigger="gallery"', $html);
+        self::assertStringContainsString('data-photo-picker-progress', $html);
+        self::assertStringContainsString('data-photo-picker-icon="busy"', $html);
+        self::assertStringContainsString('data-photo-picker-preview', $html);
+        self::assertStringContainsString('data-photo-picker-property="proof"', $html);
+        self::assertStringContainsString('accept="image/jpeg,image/png,image/webp,application/pdf"', $html);
+        self::assertStringContainsString('class="sr-only"', $html);
+        self::assertStringNotContainsString('wire:model', $html);
     }
 
-    public function test_no_custom_photo_picker_combines_manual_upload_with_wire_model(): void
+    public function test_every_livewire_evidence_upload_uses_the_shared_compressing_picker(): void
     {
-        $customInputs = [];
+        $views = [
+            'livewire/citizen/pickup-request-form.blade.php',
+            'livewire/officer/pickup-task.blade.php',
+            'livewire/treasurer/withdrawal-payments.blade.php',
+            'livewire/officer/deposit-form.blade.php',
+            'livewire/officer/grocery-tasks.blade.php',
+            'livewire/officer/customer-identification.blade.php',
+        ];
+        $contents = implode("\n", array_map(
+            static fn (string $view): string => (string) file_get_contents(resource_path("views/{$view}")),
+            $views,
+        ));
 
-        foreach (File::allFiles(resource_path('views')) as $view) {
-            $contents = (string) file_get_contents($view->getPathname());
-            preg_match_all('/<input\b(?=[^>]*\bdata-photo-picker-input\b)[^>]*>/i', $contents, $matches);
-
-            foreach ($matches[0] as $input) {
-                $customInputs[] = ['path' => $view->getRelativePathname(), 'input' => $input];
-            }
-        }
-
-        self::assertCount(3, $customInputs);
-        foreach ($customInputs as $customInput) {
-            self::assertStringNotContainsString(
-                'wire:model',
-                $customInput['input'],
-                "Custom photo picker [{$customInput['path']}] must use only the JavaScript uploader.",
-            );
-        }
+        self::assertSame(7, substr_count($contents, '<x-ui.media-picker'));
+        self::assertStringNotContainsString('wire:model="evidence" type="file"', $contents);
+        self::assertStringNotContainsString('wire:model="proof" type="file"', $contents);
+        self::assertStringNotContainsString('wire:model="assistedEvidence" type="file"', $contents);
+        self::assertStringNotContainsString('wire:model="withdrawalEvidence" type="file"', $contents);
     }
 
     public function test_removing_a_photo_updates_server_state_and_clears_the_stale_limit_error(): void
@@ -109,6 +106,9 @@ final class PhotoUploadPickerTest extends TestCase
         $citizenComponent = (string) file_get_contents(app_path('Livewire/Citizen/PickupRequestForm.php'));
         $officerComponent = (string) file_get_contents(app_path('Livewire/Officer/PickupTask.php'));
         $treasurerComponent = (string) file_get_contents(app_path('Livewire/Treasurer/WithdrawalPayments.php'));
+        $depositComponent = (string) file_get_contents(app_path('Livewire/Officer/DepositForm.php'));
+        $groceryComponent = (string) file_get_contents(app_path('Livewire/Officer/GroceryTasks.php'));
+        $identificationComponent = (string) file_get_contents(app_path('Livewire/Officer/CustomerIdentification.php'));
 
         self::assertStringContainsString('public function removePhoto(int $index): void', $citizenComponent);
         self::assertStringContainsString('public function updatedPhotos(): void', $citizenComponent);
@@ -117,6 +117,14 @@ final class PhotoUploadPickerTest extends TestCase
         self::assertStringContainsString('public function confirmEvidenceUpload(): array', $officerComponent);
         self::assertStringContainsString('public function clearProof(): void', $treasurerComponent);
         self::assertStringContainsString('public function confirmProofUpload(): array', $treasurerComponent);
+        self::assertStringContainsString('public function clearEvidence(): void', $depositComponent);
+        self::assertStringContainsString('public function confirmEvidenceUpload(): array', $depositComponent);
+        self::assertStringContainsString('public function clearProof(): void', $groceryComponent);
+        self::assertStringContainsString('public function confirmProofUpload(): array', $groceryComponent);
+        self::assertStringContainsString('public function clearAssistedEvidence(): void', $identificationComponent);
+        self::assertStringContainsString('public function confirmAssistedEvidenceUpload(): array', $identificationComponent);
+        self::assertStringContainsString('public function clearWithdrawalEvidence(): void', $identificationComponent);
+        self::assertStringContainsString('public function confirmWithdrawalEvidenceUpload(): array', $identificationComponent);
     }
 
     public function test_each_picker_confirms_the_authoritative_server_upload_before_showing_success(): void
@@ -146,5 +154,19 @@ final class PhotoUploadPickerTest extends TestCase
 
         self::assertSame('proof.jpg', $treasurer->confirmProofUpload()[0]['name']);
         self::assertFalse($treasurer->getErrorBag()->has('proof'));
+
+        $deposit = new DepositForm;
+        $deposit->evidence = UploadedFile::fake()->image('deposit.jpg');
+        self::assertSame('image/jpeg', $deposit->confirmEvidenceUpload()[0]['mimeType']);
+
+        $grocery = new GroceryTasks;
+        $grocery->proof = UploadedFile::fake()->image('handover.jpg');
+        self::assertSame('handover.jpg', $grocery->confirmProofUpload()[0]['name']);
+
+        $identification = new CustomerIdentification;
+        $identification->assistedEvidence = UploadedFile::fake()->image('assisted.jpg');
+        $identification->withdrawalEvidence = UploadedFile::fake()->image('withdrawal.jpg');
+        self::assertSame('assisted.jpg', $identification->confirmAssistedEvidenceUpload()[0]['name']);
+        self::assertSame('withdrawal.jpg', $identification->confirmWithdrawalEvidenceUpload()[0]['name']);
     }
 }

@@ -87,16 +87,20 @@
                     :options="['kartu_nasabah' => 'Kartu nasabah', 'nomor_nasabah' => 'Nomor nasabah']" />
                 <x-ui.input wire:model="recipientReference" label="Nomor/referensi penerima" name="recipientReference"
                     placeholder="Contoh CST-00000001" />
-                <div class="space-y-1.5">
-                    <label for="grocery-proof" class="block text-label font-semibold text-deep-green">Bukti serah-terima</label>
-                    <input id="grocery-proof" wire:model="proof" type="file"
-                        accept="image/jpeg,image/png,image/webp,application/pdf"
-                        class="block min-h-touch w-full rounded-xl border-2 border-dashed border-border bg-warm-canvas p-4 text-body text-text-secondary transition hover:border-forest-600 focus:outline-none focus:ring-2 focus:ring-focus">
-                    @error('proof')
-                        <p class="text-body-sm text-terracotta">{{ $message }}</p>
-                    @enderror
-                </div>
-                <x-ui.button type="button" wire:click="handover" wire:loading.attr="disabled">
+                <x-ui.media-picker
+                    id="grocery-proof"
+                    property="proof"
+                    label="Bukti serah-terima"
+                    hint="Foto JPEG, PNG, atau WebP dikompres menjadi JPEG maksimal 1 MB. PDF diterima maksimal 5 MB."
+                    :allow-pdf="true"
+                    remove-method="clearProof"
+                    confirm-method="confirmProofUpload"
+                    wire:key="grocery-proof-picker-{{ $selectedRedemptionId }}"
+                />
+                @error('proof')
+                    <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+                @enderror
+                <x-ui.button type="button" wire:click="handover" wire:loading.attr="disabled" data-photo-picker-action>
                     <span wire:loading.remove>Konfirmasi serah-terima</span>
                     <span wire:loading>Memproses...</span>
                 </x-ui.button>

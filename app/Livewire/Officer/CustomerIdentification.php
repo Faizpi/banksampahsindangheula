@@ -17,6 +17,7 @@ use App\Domain\MobileServices\Enums\MobileServiceStatus;
 use App\Domain\MobileServices\Models\MobileService;
 use App\Domain\Platform\Actions\StorePrivateMedia;
 use App\Domain\Withdrawals\Services\WithdrawalService;
+use App\Livewire\Concerns\InteractsWithMediaPicker;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Builder;
@@ -32,6 +33,7 @@ use Throwable;
 #[Layout('layouts.officer')]
 final class CustomerIdentification extends Component
 {
+    use InteractsWithMediaPicker;
     use WithFileUploads;
 
     public string $search = '';
@@ -156,6 +158,36 @@ final class CustomerIdentification extends Component
         }
     }
 
+    public function clearAssistedEvidence(): void
+    {
+        $this->clearMediaPickerUpload('assistedEvidence');
+    }
+
+    /** @return list<array{name: string, size: int, mimeType: string, previewUrl: string}> */
+    public function confirmAssistedEvidenceUpload(): array
+    {
+        return $this->confirmMediaPickerUpload(
+            'assistedEvidence',
+            ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
+            ['assistedEvidence.required' => 'Bukti privat wajib diunggah.'],
+        );
+    }
+
+    public function clearWithdrawalEvidence(): void
+    {
+        $this->clearMediaPickerUpload('withdrawalEvidence');
+    }
+
+    /** @return list<array{name: string, size: int, mimeType: string, previewUrl: string}> */
+    public function confirmWithdrawalEvidenceUpload(): array
+    {
+        return $this->confirmMediaPickerUpload(
+            'withdrawalEvidence',
+            ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
+            ['withdrawalEvidence.required' => 'Bukti privat wajib diunggah.'],
+        );
+    }
+
     public function recordAssistedService(
         AssistedCustomerServiceAction $service,
         StorePrivateMedia $mediaStore,
@@ -180,7 +212,7 @@ final class CustomerIdentification extends Component
         $actor = auth()->user();
         /** @var UploadedFile $evidenceFile */
         $evidenceFile = $this->assistedEvidence;
-        $media = $mediaStore->handle($evidenceFile, $actor);
+        $media = $mediaStore->handleEvidence($evidenceFile, $actor);
 
         try {
             $record = $service->record(
@@ -257,7 +289,7 @@ final class CustomerIdentification extends Component
         if ($this->assistedWithdrawalServiceId === null) {
             /** @var UploadedFile $evidenceFile */
             $evidenceFile = $this->withdrawalEvidence;
-            $media = $mediaStore->handle($evidenceFile, $actor);
+            $media = $mediaStore->handleEvidence($evidenceFile, $actor);
 
             try {
                 $record = $service->record(
@@ -338,6 +370,8 @@ final class CustomerIdentification extends Component
 
     private function resetCandidate(): void
     {
+        $this->clearAssistedEvidence();
+        $this->clearWithdrawalEvidence();
         $this->reset(['candidate', 'confirmed', 'selectedService', 'assistedRecorded', 'assistedServiceId', 'assistedConsent', 'assistedEvidence', 'mobileServiceId', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'assistedWithdrawalServiceId', 'assistedWithdrawalId']);
         $this->withdrawalDate = today('Asia/Jakarta')->addDay()->toDateString();
         $this->assistedWithdrawalIdempotencyKey = (string) str()->uuid();

@@ -70,6 +70,24 @@ final class StorePrivateMediaTest extends TestCase
         self::assertStringStartsWith("\xFF\xD8\xFF", $contents);
     }
 
+    public function test_it_normalizes_every_evidence_image_but_preserves_allowed_pdf_files(): void
+    {
+        Storage::fake('media_private');
+
+        $image = app(StorePrivateMedia::class)->handleEvidence(UploadedFile::fake()->image('evidence.png', 2400, 1800));
+        $imageContents = Storage::disk('media_private')->get($image->path);
+        $pdfContents = self::pdf();
+        $pdf = app(StorePrivateMedia::class)->handleEvidence($this->uploadedFile('evidence.pdf', $pdfContents));
+
+        self::assertSame('image/jpeg', $image->mime_type);
+        self::assertLessThanOrEqual(1024 * 1024, $image->size);
+        self::assertStringEndsWith('.jpg', $image->path);
+        self::assertStringStartsWith("\xFF\xD8\xFF", $imageContents);
+        self::assertSame('application/pdf', $pdf->mime_type);
+        self::assertStringEndsWith('.pdf', $pdf->path);
+        self::assertSame($pdfContents, Storage::disk('media_private')->get($pdf->path));
+    }
+
     public function test_it_rejects_an_extension_mismatch_without_storing_metadata_or_files(): void
     {
         Storage::fake('media_private');
@@ -153,7 +171,7 @@ final class StorePrivateMediaTest extends TestCase
 
     private static function png(): string
     {
-        return base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScL7wQAAAABJRU5ErkJggg==', true) ?: throw new \LogicException('Invalid PNG fixture.');
+        return base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=', true) ?: throw new \LogicException('Invalid PNG fixture.');
     }
 
     private static function webp(): string

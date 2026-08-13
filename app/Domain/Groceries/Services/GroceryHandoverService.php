@@ -59,7 +59,7 @@ final readonly class GroceryHandoverService
         $media = null;
 
         try {
-            $media = $this->mediaStore->handle($proof, $actor);
+            $media = $this->mediaStore->handleEvidence($proof, $actor);
 
             $result = DB::transaction(function () use ($actor, $redemption, $verification, $reference, $media, $idempotencyKey, $payloadHash): GroceryRedemption {
                 $existing = $this->existingIdempotency($actor, $idempotencyKey, $payloadHash);

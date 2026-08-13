@@ -585,72 +585,6 @@ document.addEventListener('click', (event) => {
         return;
     }
 
-    const photoTrigger = target?.closest('[data-photo-picker-trigger]');
-    const photoRemove = target?.closest('[data-photo-picker-remove]');
-
-    if (photoTrigger instanceof HTMLLabelElement || photoTrigger instanceof HTMLButtonElement) {
-        const picker = photoPickerFromTarget(photoTrigger);
-        const input = picker === null ? null : photoPickerInput(picker);
-
-        if (input === null) {
-            return;
-        }
-
-        if (photoTrigger.dataset.photoPickerTrigger === 'camera') {
-            input.setAttribute('capture', 'environment');
-        } else {
-            input.removeAttribute('capture');
-        }
-
-        // Labels activate their associated file input natively. This keeps the
-        // camera/gallery controls usable on mobile browsers that reject a
-        // programmatic input.click() from a delegated document listener.
-        if (photoTrigger instanceof HTMLLabelElement) {
-            return;
-        }
-
-        event.preventDefault();
-        input.click();
-
-        return;
-    }
-
-    if (photoRemove instanceof HTMLButtonElement) {
-        const picker = photoPickerFromTarget(photoRemove);
-        const input = picker === null ? null : photoPickerInput(picker);
-        const index = Number.parseInt(photoRemove.dataset.photoPickerRemove ?? '', 10);
-
-        if (input === null || !Number.isInteger(index) || index < 0) {
-            return;
-        }
-
-        event.preventDefault();
-        const removeMethod = picker.dataset.photoPickerRemoveMethod;
-        const wire = photoPickerWire(picker);
-        if (typeof removeMethod !== 'string' || removeMethod === '' || wire === null) {
-            setPhotoPickerStatus(picker, 'Foto tidak dapat dihapus. Muat ulang halaman lalu coba lagi.', true);
-
-            return;
-        }
-
-        const files = photoPickerFiles(input, picker);
-        const previousFiles = [...files];
-        files.splice(index, 1);
-        input._photoPickerFiles = files;
-        renderPhotoPickerPreview(picker, files);
-        setPhotoPickerStatus(picker, photoPickerStatusMessage(files.length, photoPickerMaxCount(picker)));
-        setPhotoPickerBusy(picker, true);
-        void wire.$call(removeMethod, index)
-            .catch(() => {
-                input._photoPickerFiles = previousFiles;
-                renderPhotoPickerPreview(picker, previousFiles);
-                setPhotoPickerStatus(picker, 'Foto tidak dapat dihapus. Coba lagi.', true);
-            })
-            .finally(() => setPhotoPickerBusy(picker, false));
-
-        return;
-    }
-
     const trigger = target?.closest('[data-public-navigation-trigger]');
 
     if (!(trigger instanceof HTMLElement)) {
@@ -729,11 +663,18 @@ function dispatchOfflineActionBlocked(source) {
     }
 }
 
-const PICKUP_PHOTO_MAX_COUNT = 2;
-const PICKUP_PHOTO_MAX_BYTES = 1024 * 1024;
-const PICKUP_PHOTO_MAX_DIMENSION = 2000;
-const PICKUP_PHOTO_QUALITIES = [0.86, 0.78, 0.7, 0.62, 0.54, 0.46];
-const PICKUP_PHOTO_MIME_TYPES = ['image/jpeg', 'image/png'];
+const PHOTO_PICKER_DEFAULT_MAX_COUNT = 2;
+const PHOTO_PICKER_MAX_BYTES = 1024 * 1024;
+const MEDIA_PICKER_MAX_BYTES = 5 * 1024 * 1024;
+const PHOTO_PICKER_MAX_DIMENSION = 2000;
+const PHOTO_PICKER_QUALITIES = [0.86, 0.78, 0.7, 0.62, 0.54, 0.46];
+const PHOTO_PICKER_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+const PHOTO_PICKER_EXTENSIONS = new Map([
+    ['jpg', 'image/jpeg'],
+    ['jpeg', 'image/jpeg'],
+    ['png', 'image/png'],
+    ['webp', 'image/webp'],
+]);
 
 function photoPickerFromTarget(target) {
     if (!(target instanceof Element)) {
@@ -754,13 +695,37 @@ function photoPickerInput(picker) {
 function photoPickerMaxCount(picker) {
     const configured = Number.parseInt(picker.dataset.photoPickerMax ?? '', 10);
 
-    return Number.isInteger(configured) && configured > 0 ? configured : PICKUP_PHOTO_MAX_COUNT;
+    return Number.isInteger(configured) && configured > 0 ? configured : PHOTO_PICKER_DEFAULT_MAX_COUNT;
 }
 
-function photoPickerStatusMessage(count, maxCount) {
-    return count === 0
-        ? 'Belum ada foto dipilih.'
-        : `${count} dari ${maxCount} foto siap dikirim.`;
+function photoPickerAllowsPdf(picker) {
+    return picker.dataset.photoPickerAllowPdf === 'true';
+}
+
+function photoPickerNoun(picker) {
+    return photoPickerAllowsPdf(picker) ? 'file' : 'foto';
+}
+
+function photoPickerStatusMessage(picker, count, maxCount) {
+    if (count === 0) {
+        return picker.dataset.photoPickerEmptyStatus
+            ?? (photoPickerAllowsPdf(picker) ? 'Belum ada file dipilih.' : 'Belum ada foto dipilih.');
+    }
+
+    return `${count} dari ${maxCount} ${photoPickerNoun(picker)} siap dipakai.`;
+}
+
+function normalizedPhotoPickerFile(file, picker) {
+    const fallbackName = photoPickerAllowsPdf(picker) ? 'Bukti unggahan' : 'Foto sampah';
+
+    return {
+        name: typeof file?.name === 'string' ? file.name : fallbackName,
+        size: Number.isFinite(Number(file?.size)) ? Number(file.size) : 0,
+        mimeType: typeof file?.mimeType === 'string'
+            ? file.mimeType
+            : (file instanceof File ? file.type : ''),
+        previewUrl: typeof file?.previewUrl === 'string' ? file.previewUrl : '',
+    };
 }
 
 function photoPickerFiles(input, picker) {
@@ -779,11 +744,7 @@ function photoPickerFiles(input, picker) {
     input._photoPickerFiles = Array.isArray(initialFiles)
         ? initialFiles
             .filter((file) => file !== null && typeof file === 'object')
-            .map((file) => ({
-                name: typeof file.name === 'string' ? file.name : 'Foto sampah',
-                size: Number.isFinite(Number(file.size)) ? Number(file.size) : 0,
-                previewUrl: typeof file.previewUrl === 'string' ? file.previewUrl : '',
-            }))
+            .map((file) => normalizedPhotoPickerFile(file, picker))
         : [];
 
     return input._photoPickerFiles;
@@ -817,19 +778,55 @@ function formatPhotoSize(bytes) {
         return `${bytes} B`;
     }
 
-    return `${(bytes / 1024).toFixed(0)} KB`;
-}
-
-function setPhotoPickerStatus(picker, message, isError = false) {
-    const status = photoPickerStatus(picker);
-
-    if (status === null) {
-        return;
+    if (bytes < 1024 * 1024) {
+        return `${Math.max(1, Math.round(bytes / 1024))} KB`;
     }
 
-    status.textContent = message;
-    status.classList.toggle('text-terracotta', isError);
-    status.classList.toggle('text-text-secondary', !isError);
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function setPhotoPickerStatus(picker, message, state = 'idle', progress = null) {
+    const status = photoPickerStatus(picker);
+    const feedback = picker.querySelector('[data-photo-picker-feedback]');
+    const progressTrack = picker.querySelector('[data-photo-picker-progress]');
+    const progressBar = picker.querySelector('[data-photo-picker-progress-bar]');
+
+    picker.dataset.photoPickerState = state;
+
+    if (status !== null) {
+        status.textContent = message;
+    }
+
+    if (feedback instanceof HTMLElement) {
+        feedback.classList.toggle('text-text-secondary', state === 'idle');
+        feedback.classList.toggle('text-sky-blue', state === 'busy');
+        feedback.classList.toggle('text-forest-700', state === 'ready');
+        feedback.classList.toggle('text-terracotta', state === 'error');
+    }
+
+    picker.querySelectorAll('[data-photo-picker-icon]').forEach((icon) => {
+        if (icon instanceof SVGElement) {
+            icon.classList.toggle('hidden', icon.dataset.photoPickerIcon !== state);
+        }
+    });
+
+    const numericProgress = Number(progress);
+    const hasProgress = state === 'busy' && Number.isFinite(numericProgress);
+    if (progressTrack instanceof HTMLElement) {
+        progressTrack.classList.toggle('hidden', !hasProgress);
+    }
+    if (progressBar instanceof HTMLElement) {
+        const percentage = hasProgress ? Math.min(100, Math.max(0, numericProgress)) : 0;
+        progressBar.style.width = `${percentage}%`;
+    }
+}
+
+function appendFilePlaceholder(summary, file) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'flex size-12 shrink-0 items-center justify-center rounded-sm border border-border bg-surface text-sky-blue';
+    placeholder.setAttribute('aria-hidden', 'true');
+    placeholder.innerHTML = '<svg viewBox="0 0 24 24" class="size-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></svg>';
+    summary.append(placeholder);
 }
 
 function renderPhotoPickerPreview(picker, files) {
@@ -848,16 +845,20 @@ function renderPhotoPickerPreview(picker, files) {
         const summary = document.createElement('div');
         summary.className = 'flex min-w-0 items-center gap-3';
 
+        const mimeType = file instanceof File ? file.type : file.mimeType;
         const imageSource = file instanceof File ? URL.createObjectURL(file) : file.previewUrl;
-        if (typeof imageSource === 'string' && imageSource !== '') {
+        if (typeof mimeType === 'string' && mimeType.startsWith('image/') && typeof imageSource === 'string' && imageSource !== '') {
             const image = document.createElement('img');
             image.className = 'size-12 shrink-0 rounded-sm border border-border bg-surface object-cover';
             image.src = imageSource;
             image.alt = `Pratinjau ${file.name}`;
             if (file instanceof File) {
                 image.addEventListener('load', () => URL.revokeObjectURL(imageSource), { once: true });
+                image.addEventListener('error', () => URL.revokeObjectURL(imageSource), { once: true });
             }
             summary.append(image);
+        } else {
+            appendFilePlaceholder(summary, file);
         }
 
         const details = document.createElement('div');
@@ -869,12 +870,12 @@ function renderPhotoPickerPreview(picker, files) {
 
         const size = document.createElement('p');
         size.className = 'text-caption text-text-secondary';
-        size.textContent = formatPhotoSize(file.size);
+        size.textContent = `${formatPhotoSize(file.size)} · siap dipakai`;
 
         const remove = document.createElement('button');
         remove.type = 'button';
         remove.dataset.photoPickerRemove = String(index);
-        remove.className = 'shrink-0 rounded-md px-2 py-1 text-label font-semibold text-terracotta hover:bg-danger-bg focus:outline-none focus:ring-2 focus:ring-focus';
+        remove.className = 'min-h-10 shrink-0 rounded-md px-3 text-label font-semibold text-terracotta hover:bg-danger-bg focus:outline-none focus:ring-2 focus:ring-focus disabled:cursor-wait disabled:bg-disabled-bg';
         remove.textContent = 'Hapus';
         remove.setAttribute('aria-label', `Hapus ${file.name}`);
 
@@ -889,20 +890,14 @@ function setPhotoPickerBusy(picker, isBusy) {
     picker.toggleAttribute('aria-busy', isBusy);
     picker.dataset.photoPickerBusy = isBusy ? 'true' : 'false';
 
-    picker.querySelectorAll('[data-photo-picker-trigger], [data-photo-picker-input]').forEach((element) => {
+    picker.querySelectorAll('[data-photo-picker-trigger], [data-photo-picker-input], [data-photo-picker-remove]').forEach((element) => {
         if (element instanceof HTMLButtonElement || element instanceof HTMLInputElement) {
             element.disabled = isBusy;
         }
-
-        if (element instanceof HTMLLabelElement) {
-            element.setAttribute('aria-disabled', String(isBusy));
-            element.classList.toggle('pointer-events-none', isBusy);
-            element.classList.toggle('opacity-60', isBusy);
-        }
     });
 
-    const form = picker.closest('form');
-    form?.querySelectorAll('[data-photo-picker-action]').forEach((element) => {
+    const componentRoot = picker.closest('[wire\\:id]');
+    componentRoot?.querySelectorAll('[data-photo-picker-action]').forEach((element) => {
         if (!(element instanceof HTMLButtonElement)) {
             return;
         }
@@ -919,17 +914,23 @@ function setPhotoPickerBusy(picker, isBusy) {
 
 function uploadPhotoPickerFiles(picker, property, files, multiple) {
     const wire = photoPickerWire(picker);
-    if (wire === null || typeof wire.$upload !== 'function' || typeof wire.$uploadMultiple !== 'function') {
+    const uploadMethod = multiple ? wire?.$uploadMultiple : wire?.$upload;
+    if (wire === null || typeof uploadMethod !== 'function') {
         return Promise.reject(new Error('Uploader belum siap. Muat ulang halaman lalu coba lagi.'));
     }
 
     return new Promise((resolve, reject) => {
-        const onError = () => reject(new Error('Foto gagal diunggah. Periksa koneksi lalu coba lagi.'));
+        const noun = photoPickerNoun(picker);
+        const onError = () => reject(new Error(`${noun[0].toUpperCase()}${noun.slice(1)} gagal diunggah. Periksa koneksi lalu coba lagi.`));
+        const onProgress = (event) => {
+            const progress = Number(event?.detail?.progress ?? event?.progress ?? 0);
+            setPhotoPickerStatus(picker, `Mengunggah ${noun}… ${Math.round(progress)}%`, 'busy', progress);
+        };
 
         if (multiple) {
-            wire.$uploadMultiple(property, files, () => resolve(), onError);
+            wire.$uploadMultiple(property, files, () => resolve(), onError, onProgress);
         } else {
-            wire.$upload(property, files[0], () => resolve(), onError);
+            wire.$upload(property, files[0], () => resolve(), onError, onProgress);
         }
     });
 }
@@ -939,44 +940,25 @@ async function confirmedPhotoPickerFiles(picker, fallbackFiles) {
     const wire = photoPickerWire(picker);
 
     if (typeof confirmMethod !== 'string' || confirmMethod === '' || wire === null) {
-        return fallbackFiles;
+        return fallbackFiles.map((file) => normalizedPhotoPickerFile(file, picker));
     }
 
     const confirmedFiles = await wire.$call(confirmMethod);
     if (!Array.isArray(confirmedFiles) || confirmedFiles.length === 0) {
-        throw new Error('Foto belum tersimpan di formulir. Muat ulang halaman lalu unggah kembali.');
+        throw new Error(`${photoPickerNoun(picker)[0].toUpperCase()}${photoPickerNoun(picker).slice(1)} belum tersimpan di formulir. Muat ulang halaman lalu unggah kembali.`);
     }
 
-    return confirmedFiles.map((file) => ({
-        name: typeof file?.name === 'string' ? file.name : 'Foto sampah',
-        size: Number.isFinite(Number(file?.size)) ? Number(file.size) : 0,
-        previewUrl: typeof file?.previewUrl === 'string' ? file.previewUrl : '',
-    }));
+    return confirmedFiles.map((file) => normalizedPhotoPickerFile(file, picker));
 }
 
-function hydratePhotoPicker(picker) {
-    const input = photoPickerInput(picker);
-    if (input === null) {
-        return;
+function photoPickerFileMimeType(file) {
+    if (PHOTO_PICKER_MIME_TYPES.includes(file.type)) {
+        return file.type;
     }
 
-    const files = photoPickerFiles(input, picker);
-    renderPhotoPickerPreview(picker, files);
-    setPhotoPickerStatus(picker, photoPickerStatusMessage(files.length, photoPickerMaxCount(picker)));
-}
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
 
-function hydratePhotoPickers(root = document) {
-    if (root instanceof HTMLElement && root.matches('[data-photo-picker]')) {
-        hydratePhotoPicker(root);
-    }
-
-    if (root instanceof Document || root instanceof HTMLElement) {
-        root.querySelectorAll('[data-photo-picker]').forEach((picker) => {
-            if (picker instanceof HTMLElement) {
-                hydratePhotoPicker(picker);
-            }
-        });
-    }
+    return PHOTO_PICKER_EXTENSIONS.get(extension) ?? file.type;
 }
 
 function loadPhotoImage(file) {
@@ -990,7 +972,7 @@ function loadPhotoImage(file) {
         };
         image.onerror = () => {
             URL.revokeObjectURL(url);
-            reject(new Error('Foto tidak dapat dibaca.'));
+            reject(new Error('Foto tidak dapat dibaca. Gunakan JPEG, PNG, atau WebP.'));
         };
         image.src = url;
     });
@@ -1001,12 +983,12 @@ function canvasBlob(canvas, quality) {
 }
 
 async function compressPickupPhoto(file) {
-    if (!PICKUP_PHOTO_MIME_TYPES.includes(file.type)) {
-        throw new Error('Gunakan foto JPEG atau PNG.');
+    if (!PHOTO_PICKER_MIME_TYPES.includes(photoPickerFileMimeType(file))) {
+        throw new Error('Gunakan foto JPEG, PNG, atau WebP.');
     }
 
     const image = await loadPhotoImage(file);
-    const scale = Math.min(1, PICKUP_PHOTO_MAX_DIMENSION / Math.max(image.naturalWidth, image.naturalHeight));
+    const scale = Math.min(1, PHOTO_PICKER_MAX_DIMENSION / Math.max(image.naturalWidth, image.naturalHeight));
     const baseWidth = Math.max(1, Math.round(image.naturalWidth * scale));
     const baseHeight = Math.max(1, Math.round(image.naturalHeight * scale));
 
@@ -1026,11 +1008,11 @@ async function compressPickupPhoto(file) {
         context.fillRect(0, 0, width, height);
         context.drawImage(image, 0, 0, width, height);
 
-        for (const quality of PICKUP_PHOTO_QUALITIES) {
+        for (const quality of PHOTO_PICKER_QUALITIES) {
             const blob = await canvasBlob(canvas, quality);
 
-            if (blob !== null && blob.size <= PICKUP_PHOTO_MAX_BYTES) {
-                const baseName = file.name.replace(/\.[^.]+$/, '') || 'foto-sampah';
+            if (blob !== null && blob.size <= PHOTO_PICKER_MAX_BYTES) {
+                const baseName = file.name.replace(/\.[^.]+$/, '') || 'foto';
 
                 return new File([blob], `${baseName}.jpg`, {
                     type: 'image/jpeg',
@@ -1040,21 +1022,30 @@ async function compressPickupPhoto(file) {
         }
     }
 
-    throw new Error('Foto terlalu besar untuk dikompres sampai 1 MB.');
+    throw new Error('Foto terlalu kompleks untuk dikompres sampai 1 MB. Coba foto lain.');
 }
 
-const photoPickerEventRoot = document.body ?? document.documentElement;
+async function preparePhotoPickerFile(file, picker) {
+    if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        if (!photoPickerAllowsPdf(picker)) {
+            throw new Error('Gunakan foto JPEG atau PNG.');
+        }
+        if (file.type !== 'application/pdf') {
+            throw new Error('File PDF tidak dapat dibaca. Pilih PDF yang valid.');
+        }
+        if (file.size > MEDIA_PICKER_MAX_BYTES) {
+            throw new Error('Ukuran PDF maksimal 5 MB.');
+        }
 
-photoPickerEventRoot.addEventListener('change', (event) => {
-    const input = event.target;
-
-    if (!(input instanceof HTMLInputElement) || !input.matches('[data-photo-picker-input]')) {
-        return;
+        return file;
     }
 
-    const picker = photoPickerFromTarget(input);
+    return compressPickupPhoto(file);
+}
+
+async function handlePhotoPickerChange(event, picker, input) {
     const property = input.dataset.photoPickerProperty;
-    if (picker === null || typeof property !== 'string' || property === '') {
+    if (typeof property !== 'string' || property === '') {
         return;
     }
 
@@ -1073,53 +1064,155 @@ photoPickerEventRoot.addEventListener('change', (event) => {
 
     event.stopImmediatePropagation();
 
-    void (async () => {
-        const maxCount = photoPickerMaxCount(picker);
-        const available = Math.max(0, maxCount - existingFiles.length);
-        const filesToProcess = selectedFiles.slice(0, available);
-        const compressedFiles = [];
+    const maxCount = photoPickerMaxCount(picker);
+    const available = Math.max(0, maxCount - existingFiles.length);
+    const filesToProcess = selectedFiles.slice(0, available);
+    const preparedFiles = [];
+    const noun = photoPickerNoun(picker);
 
-        if (available === 0) {
-            setPhotoPickerStatus(picker, `Maksimal ${maxCount} foto sudah dipilih. Hapus salah satu foto sebelum menambahkan lagi.`, true);
-            input.value = '';
+    if (available === 0) {
+        setPhotoPickerStatus(picker, `Maksimal ${maxCount} ${noun} sudah dipilih. Hapus yang lama sebelum menambahkan lagi.`, 'error');
+        input.value = '';
 
+        return;
+    }
+
+    setPhotoPickerBusy(picker, true);
+
+    try {
+        for (const [index, file] of filesToProcess.entries()) {
+            const isPdf = file.type === 'application/pdf';
+            setPhotoPickerStatus(
+                picker,
+                isPdf ? `Memeriksa file ${index + 1} dari ${filesToProcess.length}…` : `Mengompres foto ${index + 1} dari ${filesToProcess.length}…`,
+                'busy',
+            );
+            preparedFiles.push(await preparePhotoPickerFile(file, picker));
+        }
+
+        setPhotoPickerStatus(picker, `Menyiapkan upload ${preparedFiles.length} ${noun}…`, 'busy', 0);
+        await uploadPhotoPickerFiles(picker, property, preparedFiles, input.multiple);
+        setPhotoPickerStatus(picker, `Memastikan ${noun} tersimpan di formulir…`, 'busy');
+
+        const confirmedFiles = await confirmedPhotoPickerFiles(picker, [...existingFiles, ...preparedFiles]);
+        input._photoPickerFiles = confirmedFiles;
+        renderPhotoPickerPreview(picker, confirmedFiles);
+        setPhotoPickerStatus(picker, photoPickerStatusMessage(picker, confirmedFiles.length, maxCount), 'ready');
+
+        if (selectedFiles.length > filesToProcess.length) {
+            setPhotoPickerStatus(picker, `Maksimal ${maxCount} ${noun}. Hanya ${filesToProcess.length} ${noun} pertama yang ditambahkan.`, 'error');
+        }
+    } catch (error) {
+        setPhotoPickerStatus(picker, error instanceof Error ? error.message : `${noun[0].toUpperCase()}${noun.slice(1)} tidak dapat diproses.`, 'error');
+    } finally {
+        input.value = '';
+        setPhotoPickerBusy(picker, false);
+    }
+}
+
+function handlePhotoPickerRemove(event, picker, input) {
+    const target = event.target instanceof Element ? event.target.closest('[data-photo-picker-remove]') : null;
+    if (!(target instanceof HTMLButtonElement) || picker.dataset.photoPickerBusy === 'true') {
+        return;
+    }
+
+    const index = Number.parseInt(target.dataset.photoPickerRemove ?? '', 10);
+    const removeMethod = picker.dataset.photoPickerRemoveMethod;
+    const wire = photoPickerWire(picker);
+    if (!Number.isInteger(index) || index < 0 || typeof removeMethod !== 'string' || removeMethod === '' || wire === null) {
+        setPhotoPickerStatus(picker, 'File tidak dapat dihapus. Muat ulang halaman lalu coba lagi.', 'error');
+
+        return;
+    }
+
+    event.preventDefault();
+    const files = photoPickerFiles(input, picker);
+    const previousFiles = [...files];
+    const noun = photoPickerNoun(picker);
+    files.splice(index, 1);
+    input._photoPickerFiles = files;
+    renderPhotoPickerPreview(picker, files);
+    setPhotoPickerBusy(picker, true);
+    setPhotoPickerStatus(picker, `Menghapus ${noun}…`, 'busy');
+
+    void wire.$call(removeMethod, index)
+        .then(() => setPhotoPickerStatus(
+            picker,
+            photoPickerStatusMessage(picker, files.length, photoPickerMaxCount(picker)),
+            files.length === 0 ? 'idle' : 'ready',
+        ))
+        .catch(() => {
+            input._photoPickerFiles = previousFiles;
+            renderPhotoPickerPreview(picker, previousFiles);
+            setPhotoPickerStatus(picker, `${noun[0].toUpperCase()}${noun.slice(1)} tidak dapat dihapus. Coba lagi.`, 'error');
+        })
+        .finally(() => setPhotoPickerBusy(picker, false));
+}
+
+function hydratePhotoPicker(picker) {
+    if (picker.dataset.photoPickerInitialized === 'true') {
+        return;
+    }
+
+    const input = photoPickerInput(picker);
+    if (input === null) {
+        return;
+    }
+
+    picker.dataset.photoPickerInitialized = 'true';
+    picker.querySelectorAll('[data-photo-picker-trigger]').forEach((trigger) => {
+        if (!(trigger instanceof HTMLButtonElement)) {
             return;
         }
 
-        setPhotoPickerBusy(picker, true);
-        setPhotoPickerStatus(picker, 'Mengompres foto…');
-
-        try {
-            for (const file of filesToProcess) {
-                compressedFiles.push(await compressPickupPhoto(file));
+        trigger.addEventListener('click', () => {
+            if (picker.dataset.photoPickerBusy === 'true') {
+                return;
             }
 
-            setPhotoPickerStatus(picker, `Mengunggah ${compressedFiles.length} foto…`);
-            await uploadPhotoPickerFiles(picker, property, compressedFiles, input.multiple);
-            setPhotoPickerStatus(picker, 'Memastikan foto tersimpan di formulir…');
-
-            const confirmedFiles = await confirmedPhotoPickerFiles(picker, [...existingFiles, ...compressedFiles]);
-            input._photoPickerFiles = confirmedFiles;
-            renderPhotoPickerPreview(picker, confirmedFiles);
-            setPhotoPickerStatus(picker, photoPickerStatusMessage(confirmedFiles.length, maxCount));
-
-            if (selectedFiles.length > filesToProcess.length) {
-                setPhotoPickerStatus(picker, `Maksimal ${maxCount} foto. Hanya ${filesToProcess.length} foto pertama yang ditambahkan.`, true);
+            if (trigger.dataset.photoPickerTrigger === 'camera') {
+                input.setAttribute('capture', 'environment');
+            } else {
+                input.removeAttribute('capture');
             }
-        } catch (error) {
-            setPhotoPickerStatus(picker, error instanceof Error ? error.message : 'Foto tidak dapat diproses.', true);
-        } finally {
+
             input.value = '';
-            setPhotoPickerBusy(picker, false);
-        }
-    })();
-}, true);
+            input.click();
+        });
+    });
+    input.addEventListener('change', (event) => void handlePhotoPickerChange(event, picker, input), true);
+    picker.addEventListener('click', (event) => handlePhotoPickerRemove(event, picker, input));
+
+    const files = photoPickerFiles(input, picker);
+    renderPhotoPickerPreview(picker, files);
+    setPhotoPickerStatus(
+        picker,
+        photoPickerStatusMessage(picker, files.length, photoPickerMaxCount(picker)),
+        files.length === 0 ? 'idle' : 'ready',
+    );
+}
+
+function hydratePhotoPickers(root = document) {
+    if (root instanceof HTMLElement && root.matches('[data-photo-picker]')) {
+        hydratePhotoPicker(root);
+    }
+
+    if (root instanceof Document || root instanceof HTMLElement) {
+        root.querySelectorAll('[data-photo-picker]').forEach((picker) => {
+            if (picker instanceof HTMLElement) {
+                hydratePhotoPicker(picker);
+            }
+        });
+    }
+}
 
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => hydratePhotoPickers(), { once: true });
 } else {
     hydratePhotoPickers();
 }
+
+document.addEventListener('livewire:navigated', () => hydratePhotoPickers());
 
 const photoPickerObserver = new MutationObserver((records) => {
     records.forEach((record) => {

@@ -6,17 +6,18 @@ namespace App\Livewire\Treasurer;
 
 use App\Domain\Withdrawals\Models\WithdrawalRequest;
 use App\Domain\Withdrawals\Services\WithdrawalService;
+use App\Livewire\Concerns\InteractsWithMediaPicker;
 use App\Models\User;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 use Livewire\WithFileUploads;
 
 #[Layout('layouts.officer')]
 final class WithdrawalPayments extends Component
 {
+    use InteractsWithMediaPicker;
     use WithFileUploads;
 
     public string $recipientVerification = 'kartu_nasabah';
@@ -58,27 +59,17 @@ final class WithdrawalPayments extends Component
 
     public function clearProof(): void
     {
-        if ($this->proof instanceof TemporaryUploadedFile) {
-            $this->proof->delete();
-        }
-
-        $this->proof = null;
-        $this->resetErrorBag('proof');
+        $this->clearMediaPickerUpload('proof');
     }
 
-    /** @return list<array{name: string, size: int, previewUrl: string}> */
+    /** @return list<array{name: string, size: int, mimeType: string, previewUrl: string}> */
     public function confirmProofUpload(): array
     {
-        $this->validate([
-            'proof' => ['required', 'file', 'max:1024', 'mimes:jpg,jpeg,png'],
-        ], $this->proofMessages());
-        $this->resetErrorBag('proof');
-
-        return $this->proof === null ? [] : [[
-            'name' => $this->proof->getClientOriginalName(),
-            'size' => (int) $this->proof->getSize(),
-            'previewUrl' => $this->proof instanceof TemporaryUploadedFile ? $this->proof->temporaryUrl() : '',
-        ]];
+        return $this->confirmMediaPickerUpload(
+            'proof',
+            ['required', 'file', 'max:1024', 'mimes:jpg,jpeg,png'],
+            $this->proofMessages(),
+        );
     }
 
     public function pay(WithdrawalService $service): void

@@ -179,7 +179,7 @@ final readonly class DepositService
                     return $lockedDeposit->fresh(['items', 'media']);
                 });
             }
-            $media = $evidence === null ? null : $this->mediaStore->handle($evidence, $actor);
+            $media = $evidence === null ? null : $this->mediaStore->handleEvidence($evidence, $actor);
 
             $result = DB::transaction(function () use ($actor, $deposit, $idempotencyKey, $payloadHash, $items, $media, $assistedServiceId): Deposit {
                 $record = $assistedServiceId === null ? null : $this->assistedServices->lockForDepositLink($actor, $assistedServiceId);
