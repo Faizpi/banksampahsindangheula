@@ -74,10 +74,14 @@ final class LocalDataSeeder extends Seeder
         DeveloperUsersSeeder::requireDemoDataConfiguration();
 
         $now = CarbonImmutable::now('Asia/Jakarta');
+        // All supplemental demo accounts use the configured demo password.
+        // Reusing one bcrypt result keeps seed-demo-data below typical shared
+        // hosting web-request limits while preserving the same login behavior.
+        $passwordHash = Hash::make(DeveloperUsersSeeder::password());
         $admin = User::query()->where('email', DeveloperUsersSeeder::email('admin'))->firstOrFail();
         $regions = $this->seedRegions($admin);
-        $staff = $this->seedStaff($regions['areas']);
-        $customers = $this->seedCustomers($regions['rts']);
+        $staff = $this->seedStaff($regions['areas'], $passwordHash);
+        $customers = $this->seedCustomers($regions['rts'], $passwordHash);
         $master = $this->seedWasteMaster($admin);
         $prices = $this->seedPrices($master['types'], $master['conditions'], $admin, $now);
         $mobileServices = $this->seedMobileServices($regions, $staff, $master['types'], $now);
@@ -151,7 +155,7 @@ final class LocalDataSeeder extends Seeder
     /** @param list<ServiceArea> $areas
      * @return list<User>
      */
-    private function seedStaff(array $areas): array
+    private function seedStaff(array $areas, string $passwordHash): array
     {
         $role = Role::query()->where('name', 'petugas')->firstOrFail();
         $created = [];
@@ -166,7 +170,7 @@ final class LocalDataSeeder extends Seeder
                     'name' => $definition['name'],
                     'email' => $definition['email'],
                     'email_verified_at' => now(),
-                    'password' => Hash::make(DeveloperUsersSeeder::password()),
+                    'password' => $passwordHash,
                     'status' => UserStatus::Active,
                     'verified_at' => now(),
                     'terms_version' => (string) config('app.terms_version'),
@@ -194,7 +198,7 @@ final class LocalDataSeeder extends Seeder
     /** @param list<Rt> $rts
      * @return list<User>
      */
-    private function seedCustomers(array $rts): array
+    private function seedCustomers(array $rts, string $passwordHash): array
     {
         $role = Role::query()->where('name', 'warga')->firstOrFail();
         $customers = [User::query()->where('email', DeveloperUsersSeeder::email('warga'))->firstOrFail()];
@@ -207,7 +211,7 @@ final class LocalDataSeeder extends Seeder
                     'name' => $name,
                     'email' => 'warga.'.str_pad((string) $number, 3, '0', STR_PAD_LEFT).'@sindangheula.test',
                     'email_verified_at' => now(),
-                    'password' => Hash::make(DeveloperUsersSeeder::password()),
+                    'password' => $passwordHash,
                     'status' => UserStatus::Active,
                     'verified_at' => now(),
                     'terms_version' => (string) config('app.terms_version'),

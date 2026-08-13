@@ -162,6 +162,10 @@ final class DeveloperUsersSeeder extends Seeder
         self::requireDemoDataConfiguration();
 
         $this->call(RolesAndPermissionsSeeder::class);
+        // All generated accounts intentionally share the configured demo
+        // password. Hash it once so a web-based deployment on shared hosting
+        // does not spend its whole request budget repeating bcrypt work.
+        $passwordHash = Hash::make(self::password());
 
         foreach (self::ACCOUNTS as $roleName => $account) {
             $user = User::query()->updateOrCreate(
@@ -170,7 +174,7 @@ final class DeveloperUsersSeeder extends Seeder
                     'name' => self::DISPLAY_NAMES[$roleName],
                     'email' => $account['email'],
                     'email_verified_at' => now(),
-                    'password' => Hash::make(self::password()),
+                    'password' => $passwordHash,
                     'status' => UserStatus::Active,
                     'verified_at' => now(),
                     'terms_version' => (string) config('app.terms_version'),

@@ -196,6 +196,20 @@ final class DeveloperCredentialsTest extends TestCase
         self::assertTrue($this->devUser('superadmin')->canAccessPanel($this->backofficePanel()));
     }
 
+    public function test_public_mobile_schedule_renders_after_explicit_demo_data_is_seeded(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('app.demo_mode', true);
+        config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
+
+        $this->seed(DatabaseSeeder::class);
+
+        $this->get(route('public.mobile-schedule'))
+            ->assertOk()
+            ->assertSee('Jadwal aktif')
+            ->assertSee('Halaman Kantor Desa Sindangheula');
+    }
+
     private function loginViaPublicPhone(mixed $user): void
     {
         Livewire::test(LoginForm::class)
