@@ -94,6 +94,19 @@ SCHEDULER_TOPOLOGY=cron
 
 Verifikasi nama environment key terhadap config Laravel aktual sebelum deploy. Setelah environment privat dipasang, jalankan cache lifecycle pada root aplikasi: `php artisan optimize:clear`, `php artisan config:cache`, `php artisan route:cache`, dan `php artisan view:cache`. Cache yang dibangun harus berasal dari environment final dan tidak boleh menyimpan nilai secret dalam artefak evidence.
 
+### 5.1 Console deployment web (opsional)
+
+`public/deploy.php` adalah console terbatas untuk keadaan ketika SSH tidak praktis. Console ini **nonaktif secara default** dan tidak boleh diperlakukan sebagai terminal web umum.
+
+1. Pastikan domain sudah HTTPS dan document root tetap mengarah hanya ke `public/`.
+2. Buat token acak yang kuat lalu simpan secara privat pada environment production sebagai `DEPLOY_CONSOLE_TOKEN`; jangan masukkan token ke repository, dokumentasi, atau screenshot.
+3. Bila IP operator stabil, isi `DEPLOY_CONSOLE_ALLOWED_IPS` dengan daftar IP publik yang dipisahkan koma untuk membatasi akses lebih lanjut.
+4. Buka `/deploy.php`, masukkan token, lalu pilih salah satu aksi allowlist: pemeriksaan status migrasi, deployment (clear cache → migrasi `--force` → cache ulang), cache ulang, atau baca 200 baris log Laravel terbaru.
+5. Console tidak menjalankan custom command, tidak dapat menghapus log, dan tidak membuat storage link. Tetap lakukan backup pra-deploy serta gunakan SSH untuk `composer install` dan operasi di luar allowlist.
+6. Setelah kebutuhan sementara selesai, kosongkan `DEPLOY_CONSOLE_TOKEN` atau hapus file console dari release berikutnya untuk menonaktifkannya kembali.
+
+Token diproses hanya melalui POST dan seluruh output memakai `no-store`; namun log tetap dapat memuat informasi operasional. Batasi token hanya kepada operator berwenang dan jangan membagikan hasil log ke kanal publik.
+
 ## 6. Deployment pertama
 
 ### 6.1 Upload source

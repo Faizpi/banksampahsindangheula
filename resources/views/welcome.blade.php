@@ -162,7 +162,7 @@
                 id="mascot-stories-title"
                 eyebrow="Warga dan Lingkungan"
                 title="Kebiasaan kecil, dampak yang terlihat."
-                description="Maskot Sindangheula hadir di titik-titik yang paling dekat dengan keputusan warga: memilih, memahami, dan merawat hasilnya."
+                description="Bank Sampah Sindangheula mendampingi warga di setiap langkah: memilih, memahami, dan mengelola sampah secara bertanggung jawab."
             />
             <div class="mt-12 grid gap-6 md:grid-cols-3">
                 <article class="flex flex-col items-center rounded-2xl border border-border bg-surface p-6 text-center shadow-xs">
