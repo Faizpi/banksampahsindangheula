@@ -66,7 +66,7 @@
                         @php($recap = session('mobile-recap-'.$service->id))
                         <dl class="mt-4 grid gap-2 rounded-xl bg-warm-canvas p-4 text-body-sm sm:grid-cols-3">
                             <div><dt class="text-text-secondary">Transaksi</dt><dd class="font-bold text-deep-green">{{ $recap['transaction_count'] }}</dd></div>
-                            <div><dt class="text-text-secondary">Berat</dt><dd class="font-bold text-deep-green">{{ $recap['total_weight_kg'] }} kg</dd></div>
+                            <div><dt class="text-text-secondary">Berat</dt><dd class="font-bold text-deep-green">{{ \App\Support\WeightFormatter::format($recap['total_weight_kg']) }} kg</dd></div>
                             <div><dt class="text-text-secondary">Nilai</dt><dd class="font-bold text-deep-green">Rp {{ number_format($recap['total_value'], 0, ',', '.') }}</dd></div>
                         </dl>
                     @endif

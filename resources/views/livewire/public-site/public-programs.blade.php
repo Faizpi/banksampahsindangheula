@@ -56,11 +56,11 @@
                             <dl class="mt-6 grid gap-3 border-t border-border pt-4 text-body-sm">
                                 <div class="flex justify-between gap-4">
                                     <dt class="text-text-secondary">Progres bersih</dt>
-                                    <dd class="font-semibold tabular-nums text-deep-green">{{ $target['progress_kg'] }} kg</dd>
+                                    <dd class="font-semibold tabular-nums text-deep-green">{{ \App\Support\WeightFormatter::format($target['progress_kg']) }} kg</dd>
                                 </div>
                                 <div class="flex justify-between gap-4">
                                     <dt class="text-text-secondary">Sasaran</dt>
-                                    <dd class="font-semibold tabular-nums text-text-primary">{{ $target['target_weight_kg'] }} kg</dd>
+                                    <dd class="font-semibold tabular-nums text-text-primary">{{ \App\Support\WeightFormatter::format($target['target_weight_kg']) }} kg</dd>
                                 </div>
                             </dl>
                         </article>

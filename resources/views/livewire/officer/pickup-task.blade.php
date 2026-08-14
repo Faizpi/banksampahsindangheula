@@ -127,7 +127,7 @@
                         <dl class="mt-3 divide-y divide-border border-t border-border text-body-sm">
                             @foreach ($pricePreview['lines'] as $line)
                                 <div class="flex items-center justify-between gap-3 py-2">
-                                    <dt class="min-w-0"><span class="block font-semibold text-deep-green">{{ $line['name'] }}</span><span class="text-text-secondary">{{ $line['condition'] }} · {{ $line['weight'] }} kg</span></dt>
+                                    <dt class="min-w-0"><span class="block font-semibold text-deep-green">{{ $line['name'] }}</span><span class="text-text-secondary">{{ $line['condition'] }} · {{ \App\Support\WeightFormatter::format($line['weight']) }} kg</span></dt>
                                     <dd class="shrink-0 amount-tabular font-semibold text-deep-green">Rp {{ number_format($line['subtotal'], 0, ',', '.') }}</dd>
                                 </div>
                             @endforeach
