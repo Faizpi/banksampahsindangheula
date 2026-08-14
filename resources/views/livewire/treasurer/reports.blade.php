@@ -23,7 +23,7 @@
                     @if ($metric['format'] === 'currency')
                         Rp {{ number_format((int) $metrics[$metric['key']], 0, ',', '.') }}
                     @elseif ($metric['format'] === 'weight')
-                        {{ $metrics[$metric['key']] }} <span class="text-label font-semibold text-text-secondary">kg</span>
+                        {{ \App\Support\WeightFormatter::format($metrics[$metric['key']]) }} <span class="text-label font-semibold text-text-secondary">kg</span>
                     @else
                         {{ $metrics[$metric['key']] }}
                     @endif
