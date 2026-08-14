@@ -67,8 +67,8 @@ final class MobileServiceTest extends TestCase
             ]);
 
             $guard = app(MobileDepositGuard::class);
-            $guard->attach($staff, $deposit, $service, $type);
-            $guard->attach($staff, $deposit, $service, $type);
+            $guard->attach($staff, $deposit, $service, [$type]);
+            $guard->attach($staff, $deposit, $service, [$type]);
             $deposit->forceFill(['status' => Deposit::STATUS_FINAL, 'total_weight_kg' => '1.250', 'total_value' => 7_500])->save();
 
             self::assertSame($service->id, $deposit->fresh()->mobile_service_id);
@@ -134,6 +134,32 @@ final class MobileServiceTest extends TestCase
         }
     }
 
+    public function test_mobile_deposit_guard_rejects_any_unaccepted_waste_type_without_linking(): void
+    {
+        [$admin, $staff, $rt, $accepted] = $this->context();
+        $this->grant($staff, ['deposit.create']);
+        $rejected = WasteType::factory()->create();
+        $service = app(MobileServiceService::class)->create($admin, null, $rt->id, 'Balai RT 04', now()->subHour()->toDateTimeString(), now()->addHour()->toDateTimeString(), 20, '', [$staff->id], [$accepted->id]);
+        app(MobileServiceService::class)->transition($admin, $service, MobileServiceStatus::Published);
+        app(MobileServiceService::class)->transition($admin, $service, MobileServiceStatus::Open);
+        $deposit = Deposit::query()->create([
+            'deposit_number' => 'DEP-MOBILE-MULTI-REJECT-001',
+            'customer_id' => User::factory()->create()->id,
+            'staff_id' => $staff->id,
+            'method' => 'keliling',
+            'occurred_at' => now(),
+            'status' => Deposit::STATUS_DRAFT,
+        ]);
+
+        $this->expectException(ValidationException::class);
+        try {
+            app(MobileDepositGuard::class)->attach($staff, $deposit, $service, [$accepted, $rejected]);
+        } finally {
+            self::assertNull($deposit->fresh()->mobile_service_id);
+            self::assertSame(0, $service->fresh()->served_count);
+        }
+    }
+
     public function test_mobile_deposit_guard_rejects_expired_and_full_services(): void
     {
         [$admin, $staff, $rt, $type] = $this->context();
@@ -157,7 +183,7 @@ final class MobileServiceTest extends TestCase
                 ]);
 
                 try {
-                    $guard->attach($staff, $deposit, $service, $type);
+                    $guard->attach($staff, $deposit, $service, [$type]);
                     self::fail('Expected the mobile deposit guard to reject the service.');
                 } catch (ValidationException) {
                     self::assertNull($deposit->fresh()->mobile_service_id);

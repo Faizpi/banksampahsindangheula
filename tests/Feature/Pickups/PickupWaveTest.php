@@ -12,6 +12,7 @@ use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
+use App\Domain\Ledger\Models\IdempotencyKey;
 use App\Domain\Notifications\Events\NotificationRequested;
 use App\Domain\Pickups\Enums\PickupStatus;
 use App\Domain\Pickups\Exceptions\PickupCapacityUnavailable;
@@ -292,6 +293,30 @@ final class PickupWaveTest extends TestCase
 
         self::assertDatabaseCount('pickup_requests', 1);
         self::assertSame(PickupStatus::PendingReview, $existing->fresh()->status);
+    }
+
+    public function test_lane_b_reuses_an_expired_submission_key_without_stale_replay(): void
+    {
+        [$customer, $area, $type] = $this->context();
+        $this->grant($customer, ['pickup.request']);
+        $this->capacity($area, 3, '10.000');
+        $key = 'w5-expired-submission-key';
+        IdempotencyKey::query()->create([
+            'actor_id' => $customer->id,
+            'scope' => 'pickup.request',
+            'key' => $key,
+            'payload_hash' => hash('sha256', 'stale'),
+            'status' => 'succeeded',
+            'result_type' => PickupRequest::class,
+            'result_id' => 1,
+            'expires_at' => now()->subSecond(),
+        ]);
+
+        $pickup = app(PickupService::class)->submit($customer, $this->requestData($customer, $area), [['waste_type_id' => $type->id, 'estimated_quantity' => 1]], [UploadedFile::fake()->image('pickup.png')], $key);
+
+        self::assertSame(PickupStatus::PendingReview, $pickup->status);
+        self::assertSame(1, PickupRequest::query()->count());
+        self::assertSame(1, IdempotencyKey::query()->where('scope', 'pickup.request')->count());
     }
 
     public function test_lane_b_rejects_duplicate_idempotency_payload_and_rolls_back_capacity_request(): void

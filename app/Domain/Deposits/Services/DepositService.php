@@ -251,7 +251,7 @@ final readonly class DepositService
                 }
                 $token = QrToken::generate();
                 if ($locked->mobile_service_id !== null) {
-                    $this->mobileDepositGuard->attach($actor, $locked, MobileService::query()->findOrFail($locked->mobile_service_id), WasteType::query()->findOrFail($locked->items->first()->waste_type_id));
+                    $this->mobileDepositGuard->attach($actor, $locked, MobileService::query()->findOrFail($locked->mobile_service_id), $locked->items->map(fn ($item): WasteType => WasteType::query()->findOrFail($item->waste_type_id))->all());
                 }
                 $requiresReview = $this->requiresReview($total);
                 $locked->forceFill([
@@ -315,12 +315,7 @@ final readonly class DepositService
 
     private function existingIdempotency(User $actor, string $key, string $payloadHash): ?IdempotencyKey
     {
-        $existing = IdempotencyKey::query()
-            ->where('actor_id', $actor->id)
-            ->where('scope', 'deposit.finalize')
-            ->where('key', $key)
-            ->lockForUpdate()
-            ->first();
+        $existing = IdempotencyKey::activeForUpdate($actor->id, 'deposit.finalize', $key);
         if ($existing === null) {
             return null;
         }

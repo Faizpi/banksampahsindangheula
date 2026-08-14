@@ -170,7 +170,7 @@ final readonly class WithdrawalPaymentService
 
     private function existingIdempotency(User $actor, string $key, string $payloadHash): ?IdempotencyKey
     {
-        $existing = IdempotencyKey::query()->where('actor_id', $actor->id)->where('scope', self::SCOPE)->where('key', $key)->lockForUpdate()->first();
+        $existing = IdempotencyKey::activeForUpdate($actor->id, self::SCOPE, $key);
         if ($existing === null) {
             return null;
         }

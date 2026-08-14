@@ -13,6 +13,10 @@ final class StatusLabel
     private const LABELS = [
         'menunggu_verifikasi' => 'Menunggu verifikasi',
         'menunggu_pemeriksaan' => 'Menunggu pemeriksaan',
+        'menunggu_persetujuan' => 'Menunggu persetujuan',
+        'final' => 'Selesai',
+        'dikoreksi' => 'Dikoreksi',
+        'dibalik' => 'Dibatalkan',
         'disetujui' => 'Disetujui',
         'diterima' => 'Diterima',
         'dijadwalkan' => 'Dijadwalkan',

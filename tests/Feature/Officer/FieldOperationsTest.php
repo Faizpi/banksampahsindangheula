@@ -23,6 +23,7 @@ use App\Domain\WasteMaster\Models\WasteCondition;
 use App\Domain\WasteMaster\Models\WasteType;
 use App\Domain\WasteMaster\Models\WasteUnit;
 use App\Domain\WasteMaster\Support\WasteMasterMutationGuard;
+use App\Livewire\Officer\GroceryTasks;
 use App\Livewire\Officer\MobileServiceTasks;
 use App\Livewire\Officer\PickupTask;
 use App\Models\User;
@@ -80,6 +81,42 @@ final class FieldOperationsTest extends TestCase
             ->assertSee('Pilih dari galeri')
             ->assertSee('data-photo-picker-property="evidence"', escape: false)
             ->assertDontSee('wire:model="evidence"', escape: false);
+    }
+
+    public function test_officer_final_actions_require_native_confirmation_with_consequences(): void
+    {
+        $pickupOfficer = $this->userWith('pickup.view', 'pickup.execute', 'pickup.complete');
+        $this->wasteContext();
+        $pickup = $this->scheduledPickup($pickupOfficer);
+        $this->actingAs($pickupOfficer);
+
+        Livewire::test(PickupTask::class, ['pickup' => $pickup])
+            ->call('begin')
+            ->call('markPickedUp')
+            ->assertSee('wire:confirm="Finalkan setoran aktual? Berat dan nilai setoran akan dicatat, saldo nasabah akan bertambah, dan tugas penjemputan akan selesai."', escape: false);
+
+        $handoverOfficer = $this->userWith('grocery.handover');
+        $package = GroceryPackage::query()->create([
+            'code' => 'PAKET-KONFIRMASI-001',
+            'name' => 'Paket Konfirmasi',
+            'contents' => 'Bahan pokok',
+            'value' => 50_000,
+            'status' => 'aktif',
+        ]);
+        $redemption = GroceryRedemption::query()->create([
+            'request_number' => 'GRC-KONFIRMASI-001',
+            'customer_id' => User::factory()->create()->id,
+            'requested_by_id' => $handoverOfficer->id,
+            'grocery_package_id' => $package->id,
+            'value_snapshot' => $package->value,
+            'package_snapshot' => ['name' => $package->name, 'value' => $package->value],
+            'status' => GroceryStatus::ReadyForPickup,
+        ]);
+        $this->actingAs($handoverOfficer);
+
+        Livewire::test(GroceryTasks::class)
+            ->call('select', $redemption->id)
+            ->assertSee('wire:confirm="Konfirmasi serah-terima paket? Paket akan diserahkan, saldo warga akan dikurangi, dan status penukaran akan selesai."', escape: false);
     }
 
     public function test_pickup_task_rejects_invalid_actual_items_before_financial_service(): void

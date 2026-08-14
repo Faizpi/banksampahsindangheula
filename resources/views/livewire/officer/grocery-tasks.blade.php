@@ -100,7 +100,7 @@
                 @error('proof')
                     <p class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
                 @enderror
-                <x-ui.button type="button" wire:click="handover" wire:loading.attr="disabled" data-photo-picker-action>
+                <x-ui.button type="button" wire:click="handover" wire:confirm="Konfirmasi serah-terima paket? Paket akan diserahkan, saldo warga akan dikurangi, dan status penukaran akan selesai." wire:loading.attr="disabled" data-photo-picker-action>
                     <span wire:loading.remove>Konfirmasi serah-terima</span>
                     <span wire:loading>Memproses...</span>
                 </x-ui.button>

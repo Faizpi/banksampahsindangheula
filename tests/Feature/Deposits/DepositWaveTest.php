@@ -20,6 +20,7 @@ use App\Domain\Deposits\Services\DepositService;
 use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Ledger\Models\BalanceHold;
+use App\Domain\Ledger\Models\IdempotencyKey;
 use App\Domain\Ledger\Models\LedgerAccount;
 use App\Domain\Ledger\Models\LedgerEntry;
 use App\Domain\Ledger\Services\LedgerService;
@@ -66,6 +67,7 @@ final class DepositWaveTest extends TestCase
         self::assertSame('1.250', (string) $final->total_weight_kg);
         self::assertSame(4_166, $final->items->sole()->subtotal);
         self::assertSame(1, LedgerEntry::query()->count());
+        self::assertTrue(IdempotencyKey::query()->where('scope', 'deposit.finalize')->sole()->expires_at->isFuture());
         self::assertSame(1, AuditLog::query()->where('action', 'deposit.finalized')->count());
         Event::assertDispatched(NotificationRequested::class);
         $item = $final->items->sole();

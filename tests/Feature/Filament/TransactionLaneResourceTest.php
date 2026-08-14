@@ -25,6 +25,7 @@ use App\Domain\WasteMaster\Models\WasteCondition;
 use App\Domain\WasteMaster\Models\WasteType;
 use App\Filament\Resources\Deposits\Models\Deposits\DepositResource;
 use App\Filament\Resources\Deposits\Models\Deposits\Pages\ManageDeposits;
+use App\Filament\Resources\Groceries\Models\GroceryRedemptions\GroceryRedemptionResource;
 use App\Filament\Resources\Groceries\Models\GroceryRedemptions\Pages\ManageGroceryRedemptions;
 use App\Filament\Resources\Ledger\Models\BalanceHolds\BalanceHoldResource;
 use App\Filament\Resources\Ledger\Models\BalanceHolds\Pages\ManageBalanceHolds;
@@ -139,6 +140,51 @@ final class TransactionLaneResourceTest extends TestCase
 
         Livewire::test(ManageGroceryRedemptions::class)
             ->assertCanSeeTableRecords([$later, $earlier], inOrder: true);
+    }
+
+    public function test_grocery_redemption_resource_exposes_operational_triage_controls(): void
+    {
+        $customer = User::factory()->create();
+        $requester = User::factory()->create();
+        $package = GroceryPackage::query()->create([
+            'code' => 'GRC-TRIAGE',
+            'name' => 'Paket Triage',
+            'contents' => 'Beras dan minyak',
+            'value' => 50_000,
+            'status' => 'aktif',
+        ]);
+        $redemption = GroceryRedemption::query()->create([
+            'request_number' => 'GRC-TRIAGE-001',
+            'customer_id' => $customer->id,
+            'requested_by_id' => $requester->id,
+            'grocery_package_id' => $package->id,
+            'value_snapshot' => $package->value,
+            'package_snapshot' => ['code' => $package->code, 'name' => $package->name, 'contents' => $package->contents, 'value' => $package->value],
+            'status' => GroceryStatus::PendingVerification,
+        ]);
+        $admin = User::factory()->create();
+        $this->grant($admin, 'grocery-triage', 'backoffice.access', 'grocery.view', 'grocery.approve', 'grocery.prepare', 'user.view', 'user.view.all');
+        $this->actingAs($admin);
+
+        Livewire::test(ManageGroceryRedemptions::class)
+            ->assertCanSeeTableRecords([$redemption])
+            ->assertTableFilterExists('status')
+            ->assertTableFilterExists('grocery_package_id')
+            ->assertTableActionVisible('inspect', $redemption)
+            ->assertTableActionVisible('approve', $redemption)
+            ->assertTableActionVisible('reject', $redemption)
+            ->assertTableActionHidden('prepare', $redemption)
+            ->assertTableActionHidden('ready', $redemption)
+            ->mountTableAction('inspect', $redemption)
+            ->assertSchemaStateSet([
+                'package' => 'Paket Triage',
+                'held_amount' => 'Rp 50.000',
+                'status' => 'Menunggu verifikasi',
+                'customer' => $customer->name,
+                'requested_by' => $requester->name,
+            ]);
+
+        self::assertTrue(GroceryRedemptionResource::canViewAny());
     }
 
     public function test_missing_permission_and_missing_explicit_scope_fail_closed(): void

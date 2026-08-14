@@ -296,12 +296,7 @@ final readonly class TransactionCorrectionService
             return null;
         }
 
-        $existing = IdempotencyKey::query()
-            ->where('actor_id', $actor->id)
-            ->where('scope', $scope)
-            ->where('key', $key)
-            ->lockForUpdate()
-            ->first();
+        $existing = IdempotencyKey::activeForUpdate($actor->id, $scope, $key);
         if ($existing === null) {
             return null;
         }

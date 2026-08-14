@@ -105,7 +105,7 @@ final class WorkQueueDashboard extends Page
                 'count' => (clone $withdrawalQuery)->where('status', WithdrawalStatus::PendingVerification)->count(),
                 'description' => 'Periksa bukti dan dana yang ditahan.',
                 'cta' => 'Tinjau pencairan',
-                'href' => WithdrawalRequestResource::getUrl('index'),
+                'href' => WithdrawalRequestResource::getUrl('index', ['filters' => ['status' => ['value' => WithdrawalStatus::PendingVerification->value]]]),
             ];
             $queues[] = [
                 'label' => 'Pencairan belum ditugaskan',

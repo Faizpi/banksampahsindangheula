@@ -61,7 +61,7 @@ final readonly class DepositReviewService
         $payloadHash = hash('sha256', json_encode(['deposit_id' => $deposit->id, 'decision' => $approved ? 'approve' : 'reject', 'reason' => $reason], JSON_THROW_ON_ERROR));
 
         return DB::transaction(function () use ($actor, $deposit, $reason, $idempotencyKey, $scope, $payloadHash, $approved): Deposit {
-            $existing = IdempotencyKey::query()->where('actor_id', $actor->id)->where('scope', $scope)->where('key', $idempotencyKey)->lockForUpdate()->first();
+            $existing = IdempotencyKey::activeForUpdate($actor->id, $scope, $idempotencyKey);
             if ($existing !== null) {
                 if ($existing->payload_hash !== $payloadHash || $existing->result_id === null) {
                     throw ValidationException::withMessages(['idempotency_key' => 'Permintaan pemeriksaan sudah digunakan untuk data berbeda atau masih diproses.']);

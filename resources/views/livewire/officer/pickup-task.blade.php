@@ -142,7 +142,7 @@
                         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                         Tambah Detail Timbang
                     </button>
-                    <x-ui.button type="button" wire:click="complete" wire:loading.attr="disabled" data-photo-picker-action>
+                    <x-ui.button type="button" wire:click="complete" wire:confirm="Finalkan setoran aktual? Berat dan nilai setoran akan dicatat, saldo nasabah akan bertambah, dan tugas penjemputan akan selesai." wire:loading.attr="disabled" data-photo-picker-action>
                         <span wire:loading.remove>Finalkan Setoran Aktual</span>
                         <span wire:loading>Memproses...</span>
                     </x-ui.button>

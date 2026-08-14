@@ -83,12 +83,7 @@ final readonly class PickupService
 
         try {
             return DB::transaction(function () use ($actor, $customer, $area, $address, $selectedDate, $notes, $normalizedItems, $estimatedWeight, $photos, $idempotencyKey, $payloadHash, &$storedMedia): PickupRequest {
-                $existingKey = IdempotencyKey::query()
-                    ->where('actor_id', $actor->id)
-                    ->where('scope', self::IDEMPOTENCY_REQUEST_SCOPE)
-                    ->where('key', $idempotencyKey)
-                    ->lockForUpdate()
-                    ->first();
+                $existingKey = IdempotencyKey::activeForUpdate($actor->id, self::IDEMPOTENCY_REQUEST_SCOPE, $idempotencyKey);
 
                 if ($existingKey !== null) {
                     $this->assertSamePayload($existingKey, $payloadHash);
@@ -362,7 +357,7 @@ final readonly class PickupService
 
         try {
             return DB::transaction(function () use ($actor, $pickup, $normalized, $idempotencyKey, $payloadHash, $evidence, &$media): PickupRequest {
-                $existingKey = IdempotencyKey::query()->where('actor_id', $actor->id)->where('scope', self::IDEMPOTENCY_COMPLETE_SCOPE)->where('key', $idempotencyKey)->lockForUpdate()->first();
+                $existingKey = IdempotencyKey::activeForUpdate($actor->id, self::IDEMPOTENCY_COMPLETE_SCOPE, $idempotencyKey);
                 if ($existingKey !== null) {
                     $this->assertSamePayload($existingKey, $payloadHash);
 

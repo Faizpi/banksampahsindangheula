@@ -18,6 +18,7 @@ use App\Filament\Pages\TechnicalHealthPage;
 use App\Filament\Pages\TechnicalMaintenancePage;
 use App\Filament\Pages\TechnicalMediaRetentionPage;
 use App\Filament\Pages\TechnicalSettingsPage;
+use App\Filament\Pages\WorkQueueDashboard;
 use App\Filament\Resources\AuditReconciliation\Models\AuditLogs\AuditLogResource;
 use App\Filament\Resources\Communication\Models\Announcements\AnnouncementResource;
 use App\Filament\Resources\CustomersRegions\Models\Dusuns\DusunResource;
@@ -98,6 +99,24 @@ final class BackofficePanelTest extends TestCase
         self::assertContains(
             'Rekonsiliasi',
             $this->navigationLabelsForGroup($panel, 'Pengawasan'),
+        );
+    }
+
+    public function test_work_queue_links_pending_withdrawals_to_the_existing_status_filter(): void
+    {
+        $user = User::factory()->create();
+        $this->grant($user, 'withdrawal-reviewer', 'backoffice.access', 'withdrawal.approve', 'withdrawal.view');
+        $this->actingAs($user->fresh());
+
+        $page = app(WorkQueueDashboard::class);
+        $method = new \ReflectionMethod($page, 'getViewData');
+        $queues = $method->invoke($page)['queues'];
+        $pendingWithdrawal = collect($queues)->firstWhere('label', 'Pencairan menunggu keputusan');
+
+        self::assertIsArray($pendingWithdrawal);
+        self::assertSame(
+            WithdrawalRequestResource::getUrl('index', ['filters' => ['status' => ['value' => 'menunggu_verifikasi']]]),
+            $pendingWithdrawal['href'],
         );
     }
 
