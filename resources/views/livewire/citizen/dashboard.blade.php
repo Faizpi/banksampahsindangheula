@@ -159,7 +159,7 @@
     <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div class="space-y-2">
             <div class="flex items-center gap-2 text-label text-forest-600">
-                <x-public.icon name="leaf" class="size-4" />
+                <x-public.icon name="layout-dashboard" class="size-4" />
                 <span>Beranda Warga</span>
             </div>
             <h1 id="citizen-dashboard-title" class="text-h2 font-bold text-deep-green">
