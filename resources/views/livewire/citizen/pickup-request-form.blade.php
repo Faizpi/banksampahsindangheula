@@ -164,7 +164,7 @@
                     <div class="sm:col-span-2"><dt class="text-caption text-text-secondary">Alamat</dt><dd class="mt-1 text-body text-text-primary">{{ $address !== '' ? $address : 'Belum diisi' }}</dd></div>
                     <div><dt class="text-caption text-text-secondary">Jenis sampah</dt><dd class="mt-1 text-label font-bold text-deep-green">{{ count($items) }} jenis</dd></div>
                     <div><dt class="text-caption text-text-secondary">Foto</dt><dd class="mt-1 text-label font-bold text-deep-green">{{ count($photos) }} dari 2 foto</dd></div>
-                    <div><dt class="text-caption text-text-secondary">Perkiraan berat</dt><dd class="mt-1 text-label font-bold text-deep-green">{{ number_format($estimatedWeight, 3, ',', '.') }} kg</dd></div>
+                    <div><dt class="text-caption text-text-secondary">Perkiraan berat</dt><dd class="mt-1 text-label font-bold text-deep-green">{{ \App\Support\WeightFormatter::format($estimatedWeight) }} kg</dd></div>
                 </dl>
                 <div class="mt-5 border-t border-border pt-4">
                     <h3 class="text-label font-bold text-deep-green">Yang terjadi setelah dikirim</h3>

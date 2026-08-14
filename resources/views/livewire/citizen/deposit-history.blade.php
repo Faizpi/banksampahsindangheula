@@ -23,7 +23,7 @@
                         <p class="text-label font-semibold text-deep-green">{{ $deposit->deposit_number }}</p>
                         <p class="mt-0.5 text-caption text-text-secondary">
                             {{ $deposit->occurred_at->translatedFormat('d F Y, H:i') }}
-                            @if ($deposit->total_weight_kg) · {{ $deposit->total_weight_kg }} kg @endif
+                            @if ($deposit->total_weight_kg) · {{ \App\Support\WeightFormatter::format($deposit->total_weight_kg) }} kg @endif
                         </p>
                     </div>
                     <div class="flex items-center gap-2">

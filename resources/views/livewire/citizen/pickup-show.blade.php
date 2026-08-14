@@ -51,7 +51,7 @@
             <div class="rounded-lg bg-warm-canvas px-3 py-2">
                 <dt class="text-caption font-medium text-text-secondary">Perkiraan berat</dt>
                 <dd class="mt-0.5 font-semibold text-deep-green">
-                    {{ $pickup->estimated_weight_kg ?? '—' }} kg
+                    {{ \App\Support\WeightFormatter::format($pickup->estimated_weight_kg) }} kg
                     <span class="text-caption font-normal text-text-secondary">(bukan saldo)</span>
                 </dd>
             </div>
