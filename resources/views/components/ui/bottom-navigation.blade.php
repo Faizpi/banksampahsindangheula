@@ -10,7 +10,7 @@
     if (count(array_filter($items, fn (array $item): bool => (bool) ($item['active'] ?? false))) > 1) {
         throw new InvalidArgumentException('Bottom navigation supports at most one active item.');
     }
-    $allowedIcons = ['home', 'recycle', 'grid-2x2', 'history', 'user-round', 'scan-line', 'clipboard-list', 'wallet-cards'];
+    $allowedIcons = ['home', 'layout-dashboard', 'recycle', 'grid-2x2', 'history', 'user-round', 'scan-line', 'clipboard-list', 'wallet-cards'];
 @endphp
 
 <nav aria-label="{{ $label }}" {{ $attributes->class('fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-1/2 z-bottom-nav w-[calc(100%-1.5rem)] max-w-citizen -translate-x-1/2 rounded-full border border-border/90 bg-surface/95 p-1 shadow-sm backdrop-blur') }}>
@@ -34,6 +34,7 @@
                     <svg data-lucide="{{ $icon }}" viewBox="0 0 24 24" class="size-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         @switch($icon)
                             @case('home') <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/> @break
+                            @case('layout-dashboard') <rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/> @break
                             @case('recycle') <path d="m7 19-2 2-2-2M5 21v-4a4 4 0 0 1 4-4h8M17 5l2-2 2 2M19 3v4a4 4 0 0 1-4 4H7M7 5 5 3 3 5"/> @break
                             @case('history') <path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/> @break
                             @case('user-round') <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/> @break

@@ -71,9 +71,9 @@
     }
 
     $icons = [
-        'Tugas' => 'home',
+        'Tugas' => 'clipboard-list',
         'Setoran' => 'wallet-cards',
-        'Layanan' => 'grid-2x2',
+        'Layanan' => 'recycle',
         'Pembayaran' => 'wallet-cards',
         'Laporan' => 'clipboard-list',
         'Akun' => 'user-round',
