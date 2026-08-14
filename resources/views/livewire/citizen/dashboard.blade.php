@@ -169,7 +169,7 @@
         </div>
         <div class="flex shrink-0 items-center justify-center">
             <x-ui.mascot variant="2" bubble="Yuk pilah sampahmu hari ini!" bubblePosition="top"
-                class="h-28 w-auto sm:h-32" animate />
+                class="h-24 w-auto shrink-0 sm:h-28" animate />
         </div>
     </div>
 </section>
