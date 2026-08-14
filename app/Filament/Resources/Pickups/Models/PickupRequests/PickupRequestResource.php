@@ -12,6 +12,7 @@ use App\Domain\Pickups\Services\PickupService;
 use App\Filament\Resources\Pickups\Models\PickupRequests\Pages\ManagePickupRequests;
 use App\Models\User;
 use App\Support\StatusLabel;
+use App\Support\WeightFormatter;
 use BackedEnum;
 use Carbon\CarbonImmutable;
 use Filament\Actions\Action;
@@ -54,7 +55,7 @@ final class PickupRequestResource extends Resource
             DatePicker::make('selected_date')->label('Tanggal pilihan')->disabled(),
             Select::make('service_area_id')->label('Area pelayanan')->relationship('serviceArea', 'name')->disabled(),
             TextInput::make('status')->label('Status')->formatStateUsing(fn (PickupStatus|string|null $state): string => $state === null ? '—' : StatusLabel::for($state))->disabled(),
-            TextInput::make('estimated_weight_kg')->label('Perkiraan berat (kg)')->disabled(),
+            TextInput::make('estimated_weight_kg')->label('Perkiraan berat (kg)')->formatStateUsing(fn (?string $state): string => WeightFormatter::format($state))->disabled(),
             Textarea::make('address')->label('Alamat')->disabled(),
             Textarea::make('notes')->label('Catatan akses')->disabled()->rows(3),
         ]);
@@ -174,9 +175,9 @@ final class PickupRequestResource extends Resource
         return [
             'customer' => data_get($record->customer, 'name', 'Nasabah'),
             'area' => data_get($record->serviceArea, 'name', 'Area tidak tersedia'),
-            'capacity' => $capacity === null ? 'Belum ada konfigurasi kapasitas.' : sprintf('%s alamat · %s kg', $capacity->max_addresses ?? 'tanpa batas alamat', $capacity->max_weight_kg ?? 'tanpa batas berat'),
+            'capacity' => $capacity === null ? 'Belum ada konfigurasi kapasitas.' : sprintf('%s alamat · %s kg', $capacity->max_addresses ?? 'tanpa batas alamat', WeightFormatter::format($capacity->max_weight_kg)),
             'status' => StatusLabel::for($record->status),
-            'items' => $record->items->map(static fn ($item): string => sprintf('%s · %s kg · %s', data_get($item->wasteType, 'name', 'Jenis tidak tersedia'), $item->estimated_weight_kg ?? '—', $item->estimated_quantity === null ? 'jumlah —' : 'jumlah '.$item->estimated_quantity))->implode("\n"),
+            'items' => $record->items->map(static fn ($item): string => sprintf('%s · %s kg · %s', data_get($item->wasteType, 'name', 'Jenis tidak tersedia'), WeightFormatter::format($item->estimated_weight_kg), $item->estimated_quantity === null ? 'jumlah —' : 'jumlah '.$item->estimated_quantity))->implode("\n"),
             'notes' => $record->notes ?? 'Tidak ada catatan akses.',
             'evidence' => $record->media->map(static fn ($media): string => $media->original_name.' · '.$media->mime_type.' · '.$media->size.' byte')->implode("\n"),
             'timeline' => $record->statusHistory->sortBy('occurred_at')->map(static fn ($history): string => CarbonImmutable::parse($history->occurred_at, 'Asia/Jakarta')->format('d M Y H:i').' · '.StatusLabel::for($history->new_status).' · '.($history->reason ?? ''))->implode("\n"),

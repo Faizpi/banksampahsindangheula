@@ -12,6 +12,7 @@ use App\Domain\Deposits\Services\DepositReviewService;
 use App\Domain\Ledger\Models\LedgerEntry;
 use App\Filament\Resources\Deposits\Models\Deposits\Pages\ManageDeposits;
 use App\Models\User;
+use App\Support\WeightFormatter;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\FileUpload;
@@ -61,7 +62,7 @@ final class DepositResource extends Resource
                 TextInput::make('customer.name')->label('Nasabah')->disabled(),
                 TextInput::make('staff.name')->label('Petugas')->disabled(),
                 TextInput::make('status')->label('Status')->disabled(),
-                TextInput::make('total_weight_kg')->label('Berat total (kg)')->disabled(),
+                TextInput::make('total_weight_kg')->label('Berat total (kg)')->formatStateUsing(fn (?string $state): string => WeightFormatter::format($state))->disabled(),
                 TextInput::make('effective_total_value')->label('Nilai akhir')->disabled(),
                 Textarea::make('items')->label('Rincian saat transaksi')->disabled()->rows(8),
                 Textarea::make('ledgerEntries')->label('Riwayat mutasi saldo')->disabled()->rows(5),
@@ -79,7 +80,7 @@ final class DepositResource extends Resource
                 TextColumn::make('customer.name')->label('Nasabah')->searchable(),
                 TextColumn::make('occurred_at')->label('Waktu')->dateTime('d M Y H:i')->sortable(),
                 TextColumn::make('effective_total_value')->label('Nilai akhir')->state(fn (Deposit $record): int => $record->effectiveTotalValue())->money('IDR'),
-                TextColumn::make('total_weight_kg')->label('Berat (kg)')->sortable(),
+                TextColumn::make('total_weight_kg')->label('Berat (kg)')->formatStateUsing(fn (?string $state): string => WeightFormatter::format($state))->sortable(),
                 TextColumn::make('status')->label('Status')->badge(),
             ])
             ->filters([

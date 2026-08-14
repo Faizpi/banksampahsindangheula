@@ -9,6 +9,7 @@ use App\Domain\Pickups\Models\PickupCapacity;
 use App\Domain\Pickups\Services\PickupService;
 use App\Filament\Resources\Pickups\Models\PickupCapacities\Pages\ManagePickupCapacities;
 use App\Models\User;
+use App\Support\WeightFormatter;
 use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DatePicker;
@@ -59,7 +60,7 @@ final class PickupCapacityResource extends Resource
                 TextColumn::make('serviceArea.name')->label('Area')->searchable(),
                 TextColumn::make('service_date')->label('Tanggal')->date('d M Y')->sortable(),
                 TextColumn::make('max_addresses')->label('Alamat')->placeholder('Tanpa batas'),
-                TextColumn::make('max_weight_kg')->label('Berat')->suffix(' kg')->placeholder('Tanpa batas'),
+                TextColumn::make('max_weight_kg')->label('Berat')->formatStateUsing(fn (?string $state): string => WeightFormatter::format($state))->suffix(' kg')->placeholder('Tanpa batas'),
                 TextColumn::make('vehicle_label')->label('Kendaraan')->placeholder('Belum diisi'),
                 IconColumn::make('is_active')->label('Aktif')->boolean(),
             ])

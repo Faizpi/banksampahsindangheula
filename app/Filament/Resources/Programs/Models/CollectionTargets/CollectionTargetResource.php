@@ -13,6 +13,7 @@ use App\Domain\WasteMaster\Models\WasteCategory;
 use App\Domain\WasteMaster\Models\WasteType;
 use App\Filament\Resources\Programs\Models\CollectionTargets\Pages\ManageCollectionTargets;
 use App\Models\User;
+use App\Support\WeightFormatter;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Actions\EditAction;
@@ -76,8 +77,8 @@ final class CollectionTargetResource extends Resource
             TextColumn::make('name')->label('Nama')->searchable(),
             TextColumn::make('period_start')->label('Mulai')->date('d M Y')->sortable(),
             TextColumn::make('period_end')->label('Selesai')->date('d M Y')->sortable(),
-            TextColumn::make('target_weight_kg')->label('Target')->suffix(' kg'),
-            TextColumn::make('progress')->label('Progres')->suffix(' kg')->state(fn (CollectionTarget $record): string => app(TargetProgressService::class)->progress($record)),
+            TextColumn::make('target_weight_kg')->label('Target')->formatStateUsing(fn (?string $state): string => WeightFormatter::format($state))->suffix(' kg'),
+            TextColumn::make('progress')->label('Progres')->formatStateUsing(fn (?string $state): string => WeightFormatter::format($state))->suffix(' kg')->state(fn (CollectionTarget $record): string => app(TargetProgressService::class)->progress($record)),
             TextColumn::make('status')->label('Status')->badge(),
         ])->recordActions([
             EditAction::make()->visible(fn (CollectionTarget $record): bool => $record->status === TargetStatus::Draft)->using(fn (CollectionTarget $record, array $data): CollectionTarget => self::service()->update(self::actor(), $record, (string) $data['name'], (string) $data['purpose'], (string) $data['period_start'], (string) $data['period_end'], (string) $data['target_weight_kg'], (bool) ($data['is_public'] ?? false), $data['scopes'] ?? [])),
