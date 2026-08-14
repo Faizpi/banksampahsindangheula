@@ -22,6 +22,8 @@
         'eye'           => 'eye',
         'eye-off'       => 'eye-off',
         'file-check'    => 'file-check',
+        'grid-2x2'      => 'grid-2x2',
+        'home'          => 'home',
         'leaf'          => 'leaf',
         'layout-dashboard' => 'layout-dashboard',
         'loader-circle' => 'loader-circle',
@@ -97,6 +99,12 @@
             @break
         @case('file-check')
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 15l2 2 4-4"/>
+            @break
+        @case('home')
+            <path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/>
+            @break
+        @case('grid-2x2')
+            <rect width="6" height="6" x="3" y="3" rx="1"/><rect width="6" height="6" x="15" y="3" rx="1"/><rect width="6" height="6" x="3" y="15" rx="1"/><rect width="6" height="6" x="15" y="15" rx="1"/>
             @break
         @case('leaf')
             <path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5.3 18 2 18 2c1 5.5-.5 10.5-4.5 12.5"/><path d="M2 21c0-3 1.85-5.36 5.08-6.94C9.3 12.98 12 12 16 12"/>

@@ -33,10 +33,10 @@
     }
 
     $icons = [
-        'Beranda' => 'layout-dashboard',
+        'Beranda' => 'home',
         'Setoran' => 'wallet-cards',
-        'Layanan' => 'recycle',
-        'Kartu Nasabah' => 'user-round',
+        'Layanan' => 'grid-2x2',
+        'Kartu Nasabah' => 'scan-line',
         'Akun' => 'user-round',
     ];
 
