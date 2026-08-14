@@ -53,7 +53,7 @@ final class AuditLogResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->recordTitleAttribute('action')->columns([
+        return $table->recordTitleAttribute('action')->defaultSort('occurred_at', 'desc')->columns([
             TextColumn::make('occurred_at')->label('Waktu')->dateTime('d M Y H:i')->sortable(),
             TextColumn::make('action')->label('Tindakan')->searchable(),
             TextColumn::make('actor_type')->label('Pelaku'),

@@ -50,6 +50,7 @@ final class CitizenVerificationResource extends Resource
     {
         return $table
             ->recordTitleAttribute('name')
+            ->defaultSort('created_at', 'desc')
             ->columns([
                 TextColumn::make('name')->label('Nama')->searchable(),
                 TextColumn::make('customerProfile.customer_number')->label('Nomor nasabah')->searchable(),

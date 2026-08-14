@@ -66,6 +66,7 @@ final class LedgerEntryResource extends Resource
     {
         return $table
             ->recordTitleAttribute('entry_number')
+            ->defaultSort('effective_at', 'desc')
             ->columns([
                 TextColumn::make('entry_number')->label('Nomor')->searchable()->sortable(),
                 TextColumn::make('account.user.name')->label('Nasabah')->searchable(),

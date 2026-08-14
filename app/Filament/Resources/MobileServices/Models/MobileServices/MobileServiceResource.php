@@ -67,7 +67,7 @@ final class MobileServiceResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->recordTitleAttribute('service_number')->columns([
+        return $table->recordTitleAttribute('service_number')->defaultSort('starts_at', 'desc')->columns([
             TextColumn::make('service_number')->label('Nomor')->searchable()->sortable(),
             TextColumn::make('point')->label('Titik')->searchable(),
             TextColumn::make('rt.name')->label('RT')->placeholder('RW'),

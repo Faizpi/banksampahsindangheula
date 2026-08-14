@@ -57,6 +57,7 @@ final class SessionInventoryResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            ->defaultSort('last_activity', 'desc')
             ->columns([
                 TextColumn::make('last_activity')
                     ->label('Aktivitas terakhir')

@@ -65,6 +65,7 @@ final class PickupRequestResource extends Resource
     {
         return $table
             ->recordTitleAttribute('request_number')
+            ->defaultSort('selected_date', 'desc')
             ->columns([
                 TextColumn::make('request_number')->label('Nomor')->searchable()->sortable(),
                 TextColumn::make('customer.name')->label('Nasabah')->searchable(),

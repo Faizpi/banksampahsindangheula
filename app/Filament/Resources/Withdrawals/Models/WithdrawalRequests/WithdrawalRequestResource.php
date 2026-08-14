@@ -59,6 +59,7 @@ final class WithdrawalRequestResource extends Resource
     {
         return $table
             ->recordTitleAttribute('request_number')
+            ->defaultSort('expires_at', 'desc')
             ->columns([
                 TextColumn::make('request_number')->label('Nomor')->searchable()->sortable(),
                 TextColumn::make('customer.name')->label('Nasabah')->searchable(),

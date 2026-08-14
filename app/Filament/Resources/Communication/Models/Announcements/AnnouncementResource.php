@@ -63,7 +63,7 @@ final class AnnouncementResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->recordTitleAttribute('title')->columns([
+        return $table->recordTitleAttribute('title')->defaultSort('publish_start', 'desc')->columns([
             TextColumn::make('announcement_number')->label('Nomor')->searchable()->sortable(),
             TextColumn::make('title')->label('Judul')->searchable(),
             TextColumn::make('audience')->label('Audiens')->badge(),

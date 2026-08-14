@@ -64,6 +64,7 @@ final class BalanceHoldResource extends Resource
     {
         return $table
             ->recordTitleAttribute('hold_number')
+            ->defaultSort('held_at', 'desc')
             ->columns([
                 TextColumn::make('hold_number')->label('Nomor')->searchable()->sortable(),
                 TextColumn::make('account.user.name')->label('Nasabah')->searchable(),

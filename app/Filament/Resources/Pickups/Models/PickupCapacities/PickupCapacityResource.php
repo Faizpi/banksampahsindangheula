@@ -56,6 +56,7 @@ final class PickupCapacityResource extends Resource
     {
         return $table
             ->recordTitleAttribute('service_date')
+            ->defaultSort('service_date', 'desc')
             ->columns([
                 TextColumn::make('serviceArea.name')->label('Area')->searchable(),
                 TextColumn::make('service_date')->label('Tanggal')->date('d M Y')->sortable(),

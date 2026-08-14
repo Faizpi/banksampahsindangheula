@@ -72,7 +72,7 @@ final class CollectionTargetResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->recordTitleAttribute('name')->columns([
+        return $table->recordTitleAttribute('name')->defaultSort('period_start', 'desc')->columns([
             TextColumn::make('target_number')->label('Nomor')->searchable()->sortable(),
             TextColumn::make('name')->label('Nama')->searchable(),
             TextColumn::make('period_start')->label('Mulai')->date('d M Y')->sortable(),

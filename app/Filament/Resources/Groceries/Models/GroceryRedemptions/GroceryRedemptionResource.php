@@ -45,7 +45,7 @@ final class GroceryRedemptionResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->recordTitleAttribute('request_number')->columns([
+        return $table->recordTitleAttribute('request_number')->defaultSort('created_at', 'desc')->columns([
             TextColumn::make('request_number')->label('Nomor')->searchable()->sortable(),
             TextColumn::make('customer.name')->label('Nasabah')->searchable(),
             TextColumn::make('package.name')->label('Paket')->searchable(),

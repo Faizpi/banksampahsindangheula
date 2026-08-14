@@ -75,6 +75,7 @@ final class DepositResource extends Resource
     {
         return $table
             ->recordTitleAttribute('deposit_number')
+            ->defaultSort('occurred_at', 'desc')
             ->columns([
                 TextColumn::make('deposit_number')->label('Nomor')->searchable()->sortable(),
                 TextColumn::make('customer.name')->label('Nasabah')->searchable(),
