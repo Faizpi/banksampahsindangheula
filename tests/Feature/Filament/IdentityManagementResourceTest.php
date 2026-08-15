@@ -14,6 +14,7 @@ use App\Domain\CustomersRegions\Support\RegionMutationGuard;
 use App\Domain\Identity\Actions\ManageRoles;
 use App\Domain\Identity\Actions\ManageStaffProfile;
 use App\Domain\Identity\Actions\ManageUsers;
+use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\CustomerProfile;
 use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
@@ -36,6 +37,30 @@ use Tests\TestCase;
 final class IdentityManagementResourceTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_internal_user_creation_activates_the_selected_role_account_without_exposing_password(): void
+    {
+        $actor = User::factory()->create();
+        $role = Role::query()->create(['name' => 'petugas']);
+        $this->grant($actor, 'internal-user-creator', 'user.create');
+
+        $created = app(ManageUsers::class)->create($actor->fresh(), [
+            'name' => 'Petugas Internal',
+            'phone' => '6281234567890',
+            'email' => 'petugas@example.test',
+            'password' => 'rahasia-yang-kuat',
+            'password_confirmation' => 'rahasia-yang-kuat',
+            'role_id' => $role->id,
+        ]);
+
+        self::assertSame(UserStatus::Active, $created->status);
+        self::assertTrue(Hash::check('rahasia-yang-kuat', (string) $created->password));
+        self::assertSame([$role->id], $created->roles()->pluck('roles.id')->all());
+        self::assertNull($created->customerProfile);
+        $audit = AuditLog::query()->where('action', 'identity.user.created')->sole();
+        self::assertSame(['status' => UserStatus::Active->value, 'role_id' => $role->id], $audit->new_values);
+        self::assertStringNotContainsString('rahasia-yang-kuat', json_encode($audit->new_values, JSON_THROW_ON_ERROR));
+    }
 
     public function test_user_and_customer_queries_apply_own_area_and_all_scope_before_loading_records(): void
     {
@@ -220,9 +245,11 @@ final class IdentityManagementResourceTest extends TestCase
         Livewire::test(ManageUsersPage::class)
             ->assertActionVisible(TestAction::make('manageStaffProfile')->table($target))
             ->callAction(TestAction::make('manageStaffProfile')->table($target), data: [
-                'service_area_id' => $area->id,
-                'active_from' => '2026-01-01',
-                'active_to' => '2026-12-31',
+                'service_areas' => [[
+                    'service_area_id' => $area->id,
+                    'active_from' => '2026-01-01',
+                    'active_to' => '2026-12-31',
+                ]],
             ]);
 
         $profile = $target->fresh(['staffProfile.serviceArea'])->staffProfile;
