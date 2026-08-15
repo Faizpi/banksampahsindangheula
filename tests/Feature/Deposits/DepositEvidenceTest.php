@@ -114,6 +114,30 @@ final class DepositEvidenceTest extends TestCase
         self::assertDatabaseCount('ledger_entries', 1);
     }
 
+    public function test_deposit_finalization_disarms_confirmation_after_success_and_cannot_replay_financial_effect(): void
+    {
+        Storage::fake('media_private');
+        [$staff, $customer, $type, $condition] = $this->pricedContext();
+        $this->grant($staff, ['deposit.create', 'deposit.update-draft', 'deposit.finalize', 'customer.view', 'user.view', 'user.view.all']);
+
+        $draft = app(DepositService::class)->createDraft($staff, $customer);
+        app(DepositService::class)->replaceDraftItems($staff, $draft, [['waste_type_id' => $type->id, 'condition_id' => $condition->id, 'weight_kg' => '1.000']]);
+
+        Livewire::actingAs($staff)
+            ->withQueryParams(['draftId' => $draft->id])
+            ->test(DepositForm::class, ['customerId' => $customer->id])
+            ->set('evidence', UploadedFile::fake()->image('deposit-proof.png', 1, 1))
+            ->call('reviewFinalization')
+            ->call('finalize')
+            ->assertHasNoErrors()
+            ->assertSet('finalizationReviewOpen', false)
+            ->call('finalize')
+            ->assertHasErrors(['items']);
+
+        self::assertDatabaseCount('deposits', 1);
+        self::assertDatabaseCount('ledger_entries', 1);
+    }
+
     public function test_deposit_form_rejects_resume_for_another_officer(): void
     {
         [$staff, $customer] = $this->context();
