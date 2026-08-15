@@ -77,48 +77,6 @@
         @apply rounded-xl border border-border bg-warm-canvas p-5 sm:p-6;
     }
 
-    .backoffice-section-nav {
-        @apply border-b border-border;
-    }
-
-    .backoffice-section-nav > div {
-        @apply gap-2 sm:gap-4;
-    }
-
-    .backoffice-section-nav a {
-        @apply inline-flex min-h-12 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-semibold text-text-secondary transition duration-180 hover:border-primary-500 hover:bg-primary-50 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2;
-    }
-
-    .backoffice-section-nav a[aria-current='page'] {
-        @apply border-primary-700 bg-primary-50 text-primary-800;
-    }
-
-    .backoffice-section-nav svg {
-        @apply size-5 shrink-0;
-    }
-
-    .backoffice-empty-state {
-        @apply mt-4 flex items-start gap-3 rounded-xl border border-border bg-surface p-5 text-sm text-text-secondary;
-    }
-
-    .backoffice-empty-state svg {
-        @apply mt-0.5 size-5 shrink-0 text-primary-700;
-    }
-
-    .backoffice-alert {
-        @apply flex items-start gap-3 rounded-lg border px-4 py-3 text-sm font-semibold;
-    }
-
-    .backoffice-alert svg {
-        @apply mt-0.5 size-5 shrink-0;
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-        .backoffice-section-nav a {
-            transition-duration: 0ms;
-        }
-    }
-
     .fi-btn,
     .fi-icon-btn {
         min-height: var(--spacing-admin-control);
