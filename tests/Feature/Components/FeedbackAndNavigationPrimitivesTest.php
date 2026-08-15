@@ -23,6 +23,28 @@ final class FeedbackAndNavigationPrimitivesTest extends TestCase
         self::assertStringContainsString('data-lucide="clock-3"', $fallback);
     }
 
+    public function test_success_state_renders_each_receipt_field_separately(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-ui.success-state
+                title="Setoran pickup berhasil"
+                reference="DPS-20260815-ABC12345"
+                value="Rp 25.000"
+                time="15 Agustus 2026, 10:30"
+                status="selesai"
+            />
+        BLADE);
+
+        self::assertStringContainsString('Nomor bukti', $html);
+        self::assertStringContainsString('DPS-20260815-ABC12345', $html);
+        self::assertStringContainsString('Nilai', $html);
+        self::assertStringContainsString('Rp 25.000', $html);
+        self::assertStringContainsString('Waktu', $html);
+        self::assertStringContainsString('15 Agustus 2026, 10:30', $html);
+        self::assertStringContainsString('Status', $html);
+        self::assertStringContainsString('data-status="pending"', $html);
+    }
+
     public function test_panel_renders_flat_semantic_surface_and_relevant_states(): void
     {
         $html = Blade::render(<<<'BLADE'
