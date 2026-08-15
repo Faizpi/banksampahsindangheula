@@ -1,20 +1,25 @@
 <x-filament-panels::page>
     <section class="backoffice-page-intro" aria-labelledby="directory-title">
+        <div class="flex items-center gap-4">
+            <img src="{{ asset('images/landing/mascot-6.png') }}" alt="Maskot badak membantu menemukan data warga dan pengguna" class="h-20 w-20 shrink-0 object-contain sm:h-24 sm:w-24">
+            <div>
         <p class="text-sm font-semibold text-forest-700">Data identitas</p>
         <h2 id="directory-title" class="mt-1 text-2xl font-bold text-deep-green">Satu pintu untuk warga dan pengguna</h2>
         <p class="mt-2 max-w-2xl text-sm text-text-secondary">Pilih sudut pandang yang sesuai. Data tetap memakai izin dan alur kerja masing-masing, tanpa menampilkan dua menu yang membingungkan.</p>
+            </div>
+        </div>
     </section>
 
-    <nav class="backoffice-section-nav mt-6 overflow-x-auto" aria-label="Bagian direktori">
-        <div class="flex min-w-max">
+    <nav class="mt-6 overflow-x-auto border-b border-border" aria-label="Bagian direktori">
+        <div class="flex min-w-max gap-2 sm:gap-4">
             @if ($canViewCustomers)
-                <a href="{{ \App\Filament\Resources\Identity\Models\Customers\CustomerResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-users" aria-hidden="true" />Nasabah</a>
+                <a href="{{ \App\Filament\Resources\Identity\Models\Customers\CustomerResource::getUrl('index') }}" class="inline-flex min-h-12 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-semibold text-text-secondary transition hover:border-primary-500 hover:bg-primary-50 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"><x-filament::icon icon="heroicon-o-users" class="size-5 shrink-0" aria-hidden="true" /><span>Nasabah</span></a>
             @endif
             @if ($canViewUsers)
-                <a href="{{ \App\Filament\Resources\Identity\Models\Users\UserResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-user-circle" aria-hidden="true" />Pengguna &amp; peran</a>
+                <a href="{{ \App\Filament\Resources\Identity\Models\Users\UserResource::getUrl('index') }}" class="inline-flex min-h-12 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-semibold text-text-secondary transition hover:border-primary-500 hover:bg-primary-50 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"><x-filament::icon icon="heroicon-o-user-circle" class="size-5 shrink-0" aria-hidden="true" /><span>Pengguna &amp; peran</span></a>
             @endif
             @if ($canVerifyCitizens)
-                <a href="{{ \App\Filament\Resources\Identity\Models\CitizenVerifications\CitizenVerificationResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-check-badge" aria-hidden="true" />Verifikasi warga</a>
+                <a href="{{ \App\Filament\Resources\Identity\Models\CitizenVerifications\CitizenVerificationResource::getUrl('index') }}" class="inline-flex min-h-12 items-center gap-2 border-b-2 border-transparent px-3 text-sm font-semibold text-text-secondary transition hover:border-primary-500 hover:bg-primary-50 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2"><x-filament::icon icon="heroicon-o-check-badge" class="size-5 shrink-0" aria-hidden="true" /><span>Verifikasi warga</span></a>
             @endif
         </div>
     </nav>
