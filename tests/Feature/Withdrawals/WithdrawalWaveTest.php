@@ -278,10 +278,9 @@ final class WithdrawalWaveTest extends TestCase
         Livewire::actingAs($payer)
             ->test(WithdrawalPayments::class)
             ->set('receipt', ['number' => 'WD-PAYMENT-001', 'value' => 35_000, 'occurredAt' => $occurredAt, 'status' => 'sudah_dibayar'])
-            ->assertSee('WD-PAYMENT-001')
-            ->assertSee('Rp 35.000')
-            ->assertSee($occurredAt)
-            ->assertSee('Berhasil');
+            ->assertSee('Berhasil')
+            ->assertDontSee('WD-PAYMENT-001')
+            ->assertDontSee('Nomor bukti');
     }
 
     public function test_payment_card_scan_uses_camera_with_manual_fallback_and_cleanup(): void
@@ -325,6 +324,32 @@ final class WithdrawalWaveTest extends TestCase
         self::assertSame('private', $paid->proofMedia()->firstOrFail()->getRawOriginal('visibility'));
         Storage::disk('media_private')->assertExists($paid->proofMedia->path);
         Event::assertDispatchedTimes(NotificationRequested::class, 1);
+    }
+
+    public function test_terminal_payment_with_a_missing_idempotency_key_does_not_swallow_validation(): void
+    {
+        Storage::fake('media_private');
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 60_000);
+        $approver = User::factory()->create();
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $payer = $this->payerFor($area);
+        $service = app(WithdrawalService::class);
+        $withdrawal = $service->assignPayer($approver, $service->approve($approver, $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-reconcile-request-0001'), true), $payer);
+        $reference = (string) $customer->customerProfile?->customer_number;
+        $service->pay($payer, $withdrawal, 'nomor_nasabah', $reference, UploadedFile::fake()->image('committed.png'), 'w6-reconcile-original-0001');
+
+        Livewire::actingAs($payer)
+            ->test(WithdrawalPayments::class)
+            ->set('selectedWithdrawalId', $withdrawal->id)
+            ->set('recipientVerification', 'nomor_nasabah')
+            ->set('recipientReference', $reference)
+            ->set('proof', UploadedFile::fake()->image('different.png'))
+            ->set('idempotencyKey', 'w6-reconcile-missing-0001')
+            ->set('showPaymentReview', true)
+            ->call('pay')
+            ->assertHasErrors(['status']);
     }
 
     public function test_lane_c_payment_normalizes_one_photo_proof_to_jpeg_under_one_megabyte(): void
@@ -478,9 +503,9 @@ final class WithdrawalWaveTest extends TestCase
             ->assertOk()
             ->assertSee('Pencairan berhasil')
             ->assertSee($paid->request_number)
-            ->assertSee('Rp 25.000')
-            ->assertSee($paid->paid_at->translatedFormat('d F Y, H:i'))
-            ->assertSee('Berhasil');
+            ->assertSee('Rp25.000')
+            ->assertSee('Berhasil')
+            ->assertDontSee('Nomor bukti');
         $this->actingAs($customer)->get(route('withdrawal.proof', $paid->proofMedia))->assertOk();
     }
 

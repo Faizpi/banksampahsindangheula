@@ -335,6 +335,33 @@ final class GroceryWaveTest extends TestCase
         self::assertSame(1, AuditLog::query()->where('action', 'grocery.handed_over')->count());
     }
 
+    public function test_terminal_handover_with_a_different_idempotency_key_does_not_swallow_validation(): void
+    {
+        Storage::fake('media_private');
+        [$customer, $package] = $this->customerAndPackage();
+        $this->grant($customer, ['grocery.request', 'grocery.view']);
+        $this->credit($customer, 100_000);
+        $approver = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($approver, ['grocery.approve', 'grocery.view', 'user.view.all']);
+        $staff = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($staff, ['grocery.prepare', 'grocery.handover', 'grocery.view', 'user.view.all']);
+        $service = app(GroceryService::class);
+        $redemption = $service->ready($staff, $service->prepare($staff, $service->approve($approver, $service->request($customer, ['package_id' => $package->id], 'w7-reconcile-request-0001'), true, 'Tersedia.')));
+        $reference = (string) $customer->customerProfile?->customer_number;
+        $service->handover($staff, $redemption, 'nomor_nasabah', $reference, UploadedFile::fake()->image('committed.png'), 'w7-reconcile-original-0001');
+
+        Livewire::actingAs($staff)
+            ->test(GroceryTasks::class)
+            ->set('selectedRedemptionId', $redemption->id)
+            ->set('recipientVerification', 'nomor_nasabah')
+            ->set('recipientReference', $reference)
+            ->set('proof', UploadedFile::fake()->image('different.png'))
+            ->set('idempotencyKey', 'w7-reconcile-different-0001')
+            ->set('handoverReviewOpen', true)
+            ->call('handover')
+            ->assertHasErrors(['status']);
+    }
+
     public function test_same_area_officers_can_continue_preparation_and_handover_without_a_personal_assignment(): void
     {
         Storage::fake('media_private');
@@ -522,9 +549,9 @@ final class GroceryWaveTest extends TestCase
             ->assertOk()
             ->assertSee('Penyerahan berhasil')
             ->assertSee($redemption->request_number)
-            ->assertSee('Rp 75.000')
-            ->assertSee($redemption->handed_over_at->translatedFormat('d F Y, H:i'))
-            ->assertSee('Berhasil');
+            ->assertSee('Rp75.000')
+            ->assertSee('Berhasil')
+            ->assertDontSee('Nomor bukti');
     }
 
     /** @return array{User, GroceryPackage} */

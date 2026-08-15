@@ -9,14 +9,17 @@ use App\Domain\CustomersRegions\Actions\ManageCustomerIdentity;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryRedemption;
 use App\Domain\Groceries\Services\GroceryService;
+use App\Domain\Ledger\Models\IdempotencyKey;
 use App\Livewire\Concerns\InteractsWithMediaPicker;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Validation\ValidationException;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithFileUploads;
+use Throwable;
 
 #[Layout('layouts.officer')]
 final class GroceryTasks extends Component
@@ -164,8 +167,69 @@ final class GroceryTasks extends Component
 
             return;
         }
-        $completed = $service->handover($actor, $this->redemption((int) $this->selectedRedemptionId), $this->recipientVerification, $this->recipientReference, $this->proof, $this->idempotencyKey);
-        $this->receipt = ['number' => (string) $completed->request_number, 'value' => (int) $completed->value_snapshot, 'occurredAt' => $completed->handed_over_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $completed->status->value];
+        $redemptionId = (int) $this->selectedRedemptionId;
+        $payloadHash = $this->handoverPayloadHash($redemptionId);
+
+        try {
+            $completed = $service->handover($actor, $this->redemption($redemptionId), $this->recipientVerification, $this->recipientReference, $this->proof, $this->idempotencyKey);
+        } catch (Throwable $exception) {
+            if ($exception instanceof AuthorizationException) {
+                throw $exception;
+            }
+
+            $completed = GroceryRedemption::query()->with(['proofMedia', 'receiptLedgerEntry'])->find($redemptionId);
+            if (! $completed instanceof GroceryRedemption
+                || $completed->status !== GroceryStatus::Completed
+                || $completed->proof_media_id === null
+                || $completed->receipt_ledger_entry_id === null
+                || $completed->proofMedia === null
+                || $completed->receiptLedgerEntry === null
+                || ! $this->hasSucceededIdempotency($actor, 'grocery.handover', $this->idempotencyKey, $payloadHash, GroceryRedemption::class, $redemptionId)) {
+                throw $exception;
+            }
+        }
+
+        $this->completeHandoverSuccessState($completed);
+    }
+
+    private function handoverPayloadHash(int $redemptionId): ?string
+    {
+        if (! $this->proof instanceof UploadedFile) {
+            return null;
+        }
+        $checksum = hash_file('sha256', $this->proof->getRealPath());
+        if (! is_string($checksum)) {
+            return null;
+        }
+        $payload = [
+            'redemption_id' => $redemptionId,
+            'verification' => strtolower(trim($this->recipientVerification)),
+            'reference' => trim($this->recipientReference),
+            'proof_checksum' => $checksum,
+        ];
+        ksort($payload);
+
+        return hash('sha256', json_encode($payload, JSON_THROW_ON_ERROR));
+    }
+
+    private function hasSucceededIdempotency(User $actor, string $scope, string $key, ?string $payloadHash, string $resultType, int $resultId): bool
+    {
+        return $payloadHash !== null && IdempotencyKey::query()
+            ->where('actor_id', $actor->id)
+            ->where('scope', $scope)
+            ->where('key', $key)
+            ->where('status', 'succeeded')
+            ->where('payload_hash', $payloadHash)
+            ->where('result_type', $resultType)
+            ->where('result_id', $resultId)
+            ->exists();
+    }
+
+    private function completeHandoverSuccessState(GroceryRedemption $completed): void
+    {
+        $this->receipt = $completed->handed_over_at === null
+            ? null
+            : ['number' => (string) $completed->request_number, 'value' => (int) $completed->value_snapshot, 'occurredAt' => $completed->handed_over_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $completed->status->value];
         session()->flash('success', 'Handover tercatat dan saldo warga berhasil dikurangi.');
         $this->reset(['selectedRedemptionId', 'recipientReference', 'proof', 'scannerOpen', 'handoverReviewOpen', 'resolvedCustomerName']);
         $this->idempotencyKey = (string) str()->uuid();

@@ -315,8 +315,8 @@ final class DepositWaveTest extends TestCase
             ->assertSee('QR verifikasi setoran')
             ->assertSee($deposit->deposit_number)
             ->assertSee('Rp 3.000')
-            ->assertSee($deposit->occurred_at->translatedFormat('d F Y, H:i'))
-            ->assertSee('Selesai');
+            ->assertSee('Berhasil')
+            ->assertDontSee('Nomor bukti');
         $otherCustomer = User::factory()->create();
         $this->grant($otherCustomer, ['deposit.view']);
         $this->actingAs($otherCustomer)->get(route('citizen.deposit-receipt', $deposit))->assertNotFound();

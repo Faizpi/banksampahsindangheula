@@ -6,6 +6,7 @@ namespace App\Livewire\Officer;
 
 use App\Domain\Deposits\Data\DepositItemInput;
 use App\Domain\Deposits\Models\Deposit;
+use App\Domain\Ledger\Models\IdempotencyKey;
 use App\Domain\Pickups\Enums\PickupStatus;
 use App\Domain\Pickups\Models\PickupRequest;
 use App\Domain\Pickups\Services\PickupService;
@@ -14,6 +15,7 @@ use App\Domain\WasteMaster\Models\WasteType;
 use App\Domain\WasteMaster\Services\ResolveWastePrice;
 use App\Livewire\Concerns\InteractsWithMediaPicker;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
@@ -159,9 +161,74 @@ final class PickupTask extends Component
             return;
         }
 
-        $this->pickup = $service->complete($actor, $this->pickup, array_map(static fn (array $item): DepositItemInput => DepositItemInput::fromArray($item), $this->actualItems), $this->idempotencyKey, $this->evidence);
+        $pickupId = $this->pickup->id;
+        $items = array_map(static fn (array $item): DepositItemInput => DepositItemInput::fromArray($item), $this->actualItems);
+        $payloadHash = $this->completionPayloadHash($pickupId, $items);
+
+        try {
+            $this->pickup = $service->complete($actor, $this->pickup, $items, $this->idempotencyKey, $this->evidence);
+        } catch (Throwable $exception) {
+            if ($exception instanceof AuthorizationException) {
+                throw $exception;
+            }
+
+            $durablePickup = PickupRequest::query()->with('deposit.ledgerEntries')->find($pickupId);
+            $deposit = $durablePickup?->deposit;
+            if (! $durablePickup instanceof PickupRequest
+                || $durablePickup->status !== PickupStatus::Completed
+                || ! $deposit instanceof Deposit
+                || $deposit->pickup_request_id !== $durablePickup->id
+                || ! $deposit->isFinal()
+                || $deposit->ledgerEntries->isEmpty()
+                || ! $this->hasSucceededIdempotency($actor, 'pickup.complete', $this->idempotencyKey, $payloadHash, PickupRequest::class, $pickupId)) {
+                throw $exception;
+            }
+
+            $this->pickup = $durablePickup;
+            $this->completeSuccessState();
+
+            return;
+        }
+
+        $this->completeSuccessState();
+    }
+
+    /** @param list<DepositItemInput> $items */
+    private function completionPayloadHash(int $pickupId, array $items): ?string
+    {
+        $checksum = null;
+        if ($this->evidence instanceof UploadedFile) {
+            $value = hash_file('sha256', $this->evidence->getRealPath());
+            if (! is_string($value)) {
+                return null;
+            }
+            $checksum = $value;
+        }
+
+        return hash('sha256', json_encode([
+            'pickup' => $pickupId,
+            'items' => array_map(static fn (DepositItemInput $item): array => [$item->wasteTypeId, $item->conditionId, $item->weightKg], $items),
+            'evidence_checksum' => $checksum,
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    private function hasSucceededIdempotency(User $actor, string $scope, string $key, ?string $payloadHash, string $resultType, int $resultId): bool
+    {
+        return $payloadHash !== null && IdempotencyKey::query()
+            ->where('actor_id', $actor->id)
+            ->where('scope', $scope)
+            ->where('key', $key)
+            ->where('status', 'succeeded')
+            ->where('payload_hash', $payloadHash)
+            ->where('result_type', $resultType)
+            ->where('result_id', $resultId)
+            ->exists();
+    }
+
+    private function completeSuccessState(): void
+    {
         $deposit = $this->pickup->deposit;
-        $this->receipt = $deposit instanceof Deposit
+        $this->receipt = $deposit instanceof Deposit && $deposit->occurred_at !== null
             ? ['number' => (string) $deposit->deposit_number, 'value' => (int) $deposit->total_value, 'occurredAt' => $deposit->occurred_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $deposit->status->value]
             : null;
         $this->evidence = null;
