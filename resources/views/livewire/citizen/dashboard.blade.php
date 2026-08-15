@@ -123,7 +123,7 @@
                 <a href="{{ route('citizen.grocery.show', $redemption) }}" class="flex items-center justify-between rounded-xl border border-border bg-surface p-4 shadow-xs transition hover:border-harvest-gold hover:shadow-sm">
                     <div class="flex items-center gap-3">
                         <div class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-warning-bg text-harvest-gold">
-                            <x-public.icon name="package" class="size-4" />
+                            <x-public.icon name="package-open" class="size-4" />
                         </div>
                         <div>
                             <p class="text-label font-semibold text-deep-green">Tukar Sembako</p>
