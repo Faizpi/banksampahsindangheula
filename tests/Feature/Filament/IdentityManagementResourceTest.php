@@ -215,6 +215,59 @@ final class IdentityManagementResourceTest extends TestCase
         self::assertSame('Area PERSISTED-STAFF', $record->staffProfile->serviceArea->name);
     }
 
+    public function test_user_view_action_maps_persisted_context_into_flat_modal_state(): void
+    {
+        $actor = User::factory()->create();
+        $target = User::factory()->create(['phone' => '628123456789', 'email' => 'stored@example.test']);
+        $target->customerProfile()->create(['customer_number' => 'NSB-00000001', 'rt_id' => $this->createRt('VIEW')->id, 'address' => 'Alamat tersimpan']);
+        $target->roles()->attach(Role::factory()->create(['name' => 'petugas']));
+        [$area] = $this->areaWithRt('VIEW-STAFF');
+        $target->staffProfile()->create(['staff_number' => 'STF-00000001', 'service_area_id' => $area->id]);
+        $this->grant($actor, 'view-action-reader', 'user.view', 'user.view.all');
+        $this->actingAs($actor->fresh());
+
+        Livewire::test(ManageUsersPage::class)
+            ->mountTableAction('view', $target->fresh())
+            ->assertTableActionDataSet([
+                'phone' => '628123456789',
+                'email' => 'stored@example.test',
+                'role_label' => 'petugas',
+                'customer_number' => 'NSB-00000001',
+                'staff_number' => 'STF-00000001',
+                'service_area_names' => 'Area VIEW-STAFF',
+            ]);
+    }
+
+    public function test_user_create_action_creates_user_and_reports_domain_validation_errors(): void
+    {
+        $actor = User::factory()->create();
+        $role = Role::factory()->create(['name' => 'petugas']);
+        $this->grant($actor, 'create-action-user', 'user.create');
+        $this->actingAs($actor->fresh());
+
+        $created = app(ManageUsers::class)->create($actor->fresh(), [
+            'name' => 'Pengguna Baru',
+            'phone' => '628123456789',
+            'email' => 'baru@example.test',
+            'password' => 'password-kuat-123',
+            'password_confirmation' => 'password-kuat-123',
+            'role_id' => $role->id,
+        ]);
+
+        self::assertSame(UserStatus::Active, $created->status);
+        $this->assertDatabaseHas('users', ['name' => 'Pengguna Baru', 'email' => 'baru@example.test', 'status' => UserStatus::Active->value]);
+
+        $this->expectException(ValidationException::class);
+        app(ManageUsers::class)->create($actor->fresh(), [
+            'name' => 'Tanpa Peran',
+            'phone' => '628123456780',
+            'email' => 'invalid-role@example.test',
+            'password' => 'password-kuat-123',
+            'password_confirmation' => 'password-kuat-123',
+            'role_id' => 999999,
+        ]);
+    }
+
     public function test_filament_role_assignment_accepts_a_single_scalar_role_id(): void
     {
         $actor = User::factory()->create();
