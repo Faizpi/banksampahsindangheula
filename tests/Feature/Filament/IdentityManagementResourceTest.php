@@ -238,6 +238,43 @@ final class IdentityManagementResourceTest extends TestCase
             ]);
     }
 
+    public function test_user_create_action_dehydrates_confirmation_for_create_and_rejects_mismatch_at_field_level(): void
+    {
+        $actor = User::factory()->create();
+        $role = Role::factory()->create(['name' => 'petugas']);
+        $this->grant($actor, 'create-action-password-confirmation', 'user.create');
+        $this->actingAs($actor->fresh());
+
+        $created = app(ManageUsers::class)->create($actor->fresh(), [
+            'name' => 'Konfirmasi Cocok',
+            'phone' => '628123456789',
+            'email' => 'cocok@example.test',
+            'password' => 'Password12345',
+            'password_confirmation' => 'Password12345',
+            'role_id' => $role->id,
+        ]);
+        self::assertTrue(Hash::check('Password12345', (string) $created->password));
+        $audit = AuditLog::query()->where('action', 'identity.user.created')->sole();
+        self::assertArrayNotHasKey('password_confirmation', $audit->new_values);
+        self::assertStringNotContainsString('Password12345', json_encode($audit->new_values, JSON_THROW_ON_ERROR));
+
+        try {
+            app(ManageUsers::class)->create($actor->fresh(), [
+                'name' => 'Konfirmasi Salah',
+                'phone' => '628123456780',
+                'email' => 'salah@example.test',
+                'password' => 'Password12345',
+                'password_confirmation' => 'Password54321',
+                'role_id' => $role->id,
+            ]);
+            self::fail('Expected password confirmation validation failure.');
+        } catch (ValidationException $exception) {
+            self::assertArrayHasKey('password', $exception->errors());
+        }
+
+        $this->assertDatabaseMissing('users', ['email' => 'salah@example.test']);
+    }
+
     public function test_user_create_action_creates_user_and_reports_domain_validation_errors(): void
     {
         $actor = User::factory()->create();
