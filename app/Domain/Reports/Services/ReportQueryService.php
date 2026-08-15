@@ -8,6 +8,7 @@ use App\Authorization\PermissionChecker;
 use App\Domain\Deposits\Models\Deposit;
 use App\Domain\Groceries\Models\GroceryRedemption;
 use App\Domain\Identity\Enums\UserStatus;
+use App\Domain\Identity\Models\StaffServiceArea;
 use App\Domain\Pickups\Models\PickupRequest;
 use App\Domain\Reports\Enums\ReportType;
 use App\Domain\Withdrawals\Models\WithdrawalRequest;
@@ -336,21 +337,29 @@ final readonly class ReportQueryService
         if ($this->permissions->allows($actor, 'user.view.all')) {
             return;
         }
-        $areaId = $actor->staffProfile?->service_area_id;
-        if ($areaId !== null) {
-            $query->where(function (Builder $scope) use ($actor, $type, $areaId): void {
-                if (in_array($type, [ReportType::Deposits, ReportType::Participation], true)) {
-                    $scope->where('staff_id', $actor->id)->orWhereHas('customer.customerProfile.rt.serviceAreas', static fn (Builder $area): Builder => $area->whereKey($areaId));
-                } elseif ($type === ReportType::Pickups) {
-                    $scope->where('service_area_id', $areaId)->orWhere('customer_id', $actor->id);
-                } else {
-                    $scope->where('customer_id', $actor->id)->orWhereHas('customer.customerProfile.rt.serviceAreas', static fn (Builder $area): Builder => $area->whereKey($areaId));
-                }
-            });
+        $today = today()->toDateString();
+        $areaIds = StaffServiceArea::query()
+            ->where('staff_profile_user_id', $actor->id)
+            ->where(static fn (Builder $dates): Builder => $dates->whereNull('active_from')->orWhere('active_from', '<=', $today))
+            ->where(static fn (Builder $dates): Builder => $dates->whereNull('active_to')->orWhere('active_to', '>=', $today))
+            ->whereHas('serviceArea', static fn (Builder $area): Builder => $area->where('is_active', true))
+            ->pluck('service_area_id')
+            ->map(static fn (mixed $id): int => (int) $id)
+            ->all();
+        if ($areaIds === []) {
+            $query->where('customer_id', $actor->id);
 
             return;
         }
-        $query->where('customer_id', $actor->id);
+        $query->where(function (Builder $scope) use ($actor, $type, $areaIds): void {
+            if (in_array($type, [ReportType::Deposits, ReportType::Participation], true)) {
+                $scope->where('staff_id', $actor->id)->orWhereHas('customer.customerProfile.rt.serviceAreas', static fn (Builder $area): Builder => $area->whereIn('service_areas.id', $areaIds));
+            } elseif ($type === ReportType::Pickups) {
+                $scope->whereIn('service_area_id', $areaIds)->orWhere('customer_id', $actor->id);
+            } else {
+                $scope->where('customer_id', $actor->id)->orWhereHas('customer.customerProfile.rt.serviceAreas', static fn (Builder $area): Builder => $area->whereIn('service_areas.id', $areaIds));
+            }
+        });
     }
 
     /**

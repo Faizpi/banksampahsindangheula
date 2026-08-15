@@ -7,6 +7,7 @@ namespace App\Domain\Withdrawals\Services;
 use App\Authorization\PermissionChecker;
 use App\Domain\AuditReconciliation\Services\AuditLogger;
 use App\Domain\Identity\Enums\UserStatus;
+use App\Domain\Identity\Models\StaffServiceArea;
 use App\Domain\Identity\Queries\VisibleUsers;
 use App\Domain\Ledger\Models\BalanceHold;
 use App\Domain\Ledger\Services\LedgerService;
@@ -103,16 +104,18 @@ final readonly class WithdrawalDecisionService
 
     private function isStaffInArea(User $payer, WithdrawalRequest $withdrawal): bool
     {
-        $profile = $payer->staffProfile;
         $customerProfile = $withdrawal->customerProfile()->with('rt')->first();
-        if ($profile === null || $profile->service_area_id === null || $customerProfile === null || $customerProfile->rt === null) {
+        if ($customerProfile?->rt === null) {
             return false;
         }
         $today = today()->toDateString();
 
-        return $customerProfile->rt->serviceAreas()->where('is_active', true)->whereKey($profile->service_area_id)->exists()
-            && ($profile->active_from === null || $profile->active_from->toDateString() <= $today)
-            && ($profile->active_to === null || $profile->active_to->toDateString() >= $today);
+        return StaffServiceArea::query()
+            ->where('staff_profile_user_id', $payer->id)
+            ->where(static fn ($dates) => $dates->whereNull('active_from')->orWhereDate('active_from', '<=', $today))
+            ->where(static fn ($dates) => $dates->whereNull('active_to')->orWhereDate('active_to', '>=', $today))
+            ->whereHas('serviceArea', static fn ($area) => $area->where('is_active', true)->whereHas('rts', static fn ($rts) => $rts->whereKey($customerProfile->rt->id)))
+            ->exists();
     }
 
     private function releaseHold(WithdrawalRequest $withdrawal): void

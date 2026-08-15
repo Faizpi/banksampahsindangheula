@@ -142,7 +142,7 @@ final class PickupRequestResource extends Resource
                     ->visible(fn (PickupRequest $record): bool => $record->status->value === 'diterima')
                     ->authorize('schedule')
                     ->schema([
-                        Select::make('assigned_staff_id')->label('Petugas penjemputan')->helperText('Hanya petugas aktif pada area penjemputan ini yang dapat dipilih.')->options(fn (PickupRequest $record): array => User::query()->where('status', 'aktif')->whereHas('roles', fn (Builder $roles): Builder => $roles->where('name', 'petugas'))->whereHas('staffProfile', fn (Builder $profile): Builder => $profile->where('service_area_id', $record->service_area_id)->where(fn (Builder $dates): Builder => $dates->whereNull('active_from')->orWhere('active_from', '<=', today()))->where(fn (Builder $dates): Builder => $dates->whereNull('active_to')->orWhere('active_to', '>=', today()))->whereHas('serviceArea', fn (Builder $area): Builder => $area->where('is_active', true)))->orderBy('name')->pluck('name', 'id')->all())->required(),
+                        Select::make('assigned_staff_id')->label('Petugas penjemputan')->helperText('Hanya petugas aktif pada area penjemputan ini yang dapat dipilih.')->options(fn (PickupRequest $record): array => User::query()->where('status', 'aktif')->whereHas('roles', fn (Builder $roles): Builder => $roles->where('name', 'petugas'))->whereHas('staffProfile.serviceAreas', fn (Builder $assignments): Builder => $assignments->where('service_area_id', $record->service_area_id)->where(fn (Builder $dates): Builder => $dates->whereNull('active_from')->orWhere('active_from', '<=', today()))->where(fn (Builder $dates): Builder => $dates->whereNull('active_to')->orWhere('active_to', '>=', today()))->whereHas('serviceArea', fn (Builder $area): Builder => $area->where('is_active', true)))->orderBy('name')->pluck('name', 'id')->all())->required(),
                         DatePicker::make('scheduled_date')->label('Tanggal jadwal')->helperText('Pilih hari ini atau tanggal mendatang dalam horizon penjemputan.')->minDate(today('Asia/Jakarta'))->required(),
                     ])
                     ->action(function (PickupRequest $record, array $data): ?PickupRequest {
@@ -160,7 +160,12 @@ final class PickupRequestResource extends Resource
     /** @return Builder<PickupRequest> */
     public static function getEloquentQuery(): Builder
     {
-        return PickupRequest::query()->with(['customer', 'serviceArea', 'assignedStaff']);
+        $actor = auth()->user();
+        if (! $actor instanceof User) {
+            return PickupRequest::query()->whereKey([]);
+        }
+
+        return app(PickupService::class)->visibleFor($actor)->with(['customer', 'serviceArea', 'assignedStaff']);
     }
 
     /** @return array<string, PageRegistration> */

@@ -11,7 +11,7 @@ use App\Domain\Deposits\Data\DepositItemInput;
 use App\Domain\Deposits\Services\DepositService;
 use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\CustomerProfile;
-use App\Domain\Identity\Models\StaffProfile;
+use App\Domain\Identity\Models\StaffServiceArea;
 use App\Domain\Identity\Queries\VisibleUsers;
 use App\Domain\Ledger\Models\IdempotencyKey;
 use App\Domain\Notifications\Data\NotificationPayload;
@@ -688,15 +688,15 @@ final readonly class PickupService
 
     private function isStaffInArea(User $actor, PickupRequest $pickup): bool
     {
-        $profile = $actor->staffProfile;
-        if (! $profile instanceof StaffProfile || $profile->service_area_id !== $pickup->service_area_id) {
-            return false;
-        }
         $today = today()->toDateString();
 
-        return $profile->serviceArea?->is_active === true
-            && ($profile->active_from === null || $profile->active_from->toDateString() <= $today)
-            && ($profile->active_to === null || $profile->active_to->toDateString() >= $today);
+        return StaffServiceArea::query()
+            ->where('staff_profile_user_id', $actor->id)
+            ->where('service_area_id', $pickup->service_area_id)
+            ->where(static fn (Builder $dates): Builder => $dates->whereNull('active_from')->orWhereDate('active_from', '<=', $today))
+            ->where(static fn (Builder $dates): Builder => $dates->whereNull('active_to')->orWhereDate('active_to', '>=', $today))
+            ->whereHas('serviceArea', static fn (Builder $area): Builder => $area->where('is_active', true))
+            ->exists();
     }
 
     /**

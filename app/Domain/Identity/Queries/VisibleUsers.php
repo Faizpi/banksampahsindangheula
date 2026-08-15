@@ -35,8 +35,9 @@ final readonly class VisibleUsers
                         $rts->where('is_active', true)
                             ->whereHas('serviceAreas', function (Builder $serviceAreas) use ($actor, $today): void {
                                 $serviceAreas->where('is_active', true)
-                                    ->whereHas('staffProfiles', function (Builder $staffProfiles) use ($actor, $today): void {
-                                        $staffProfiles->where('user_id', $actor->getKey())
+                                    ->whereHas('staffProfiles.serviceAreas', function (Builder $assignments) use ($actor, $today): void {
+                                        $assignments->where('staff_profile_user_id', $actor->getKey())
+                                            ->whereColumn('staff_service_areas.service_area_id', 'service_areas.id')
                                             ->where(static function (Builder $dates) use ($today): void {
                                                 $dates->whereNull('active_from')->orWhere('active_from', '<=', $today);
                                             })
@@ -85,8 +86,9 @@ final readonly class VisibleUsers
         return $query
             ->whereHas('serviceAreas', static fn (Builder $serviceAreas): Builder => $serviceAreas
                 ->where('is_active', true)
-                ->whereHas('staffProfiles', static fn (Builder $staffProfiles): Builder => $staffProfiles
-                    ->where('user_id', $actor->getKey())
+                ->whereHas('staffProfiles.serviceAreas', static fn (Builder $assignments): Builder => $assignments
+                    ->where('staff_profile_user_id', $actor->getKey())
+                    ->whereColumn('staff_service_areas.service_area_id', 'service_areas.id')
                     ->where(static function (Builder $dates) use ($today): void {
                         $dates->whereNull('active_from')->orWhere('active_from', '<=', $today);
                     })
