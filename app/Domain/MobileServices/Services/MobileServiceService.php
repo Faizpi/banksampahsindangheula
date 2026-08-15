@@ -146,7 +146,12 @@ final readonly class MobileServiceService
     public function publicQuery(): Builder
     {
         return MobileService::query()
-            ->select(['id', 'service_number', 'rt_id', 'point', 'starts_at', 'ends_at', 'status', 'capacity', 'served_count', 'notes'])
+            ->select(['id', 'service_number', 'rw_id', 'rt_id', 'point', 'starts_at', 'ends_at', 'status', 'capacity', 'served_count', 'notes'])
+            ->with([
+                'rt:id,rw_id,name',
+                'rw:id,name',
+                'wasteTypes:id,name',
+            ])
             ->whereIn('status', [MobileServiceStatus::Published, MobileServiceStatus::Open])
             ->where('ends_at', '>=', now())
             ->orderBy('starts_at');
