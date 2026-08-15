@@ -391,7 +391,18 @@ final readonly class PickupService
             });
         } catch (Throwable $exception) {
             if ($media instanceof Media) {
-                $this->deleteStoredMedia($media);
+                $durablePickup = PickupRequest::query()->with('media')->find($pickup->id);
+                $durableMedia = Media::query()->find($media->id);
+                $isCommittedEvidence = $durablePickup instanceof PickupRequest
+                    && $durablePickup->status === PickupStatus::Completed
+                    && $durablePickup->deposit_id !== null
+                    && $durableMedia instanceof Media
+                    && $durableMedia->attachable_type === PickupRequest::class
+                    && $durableMedia->attachable_id === $durablePickup->id;
+
+                if (! $isCommittedEvidence) {
+                    $this->deleteStoredMedia($media);
+                }
             }
 
             throw $exception;

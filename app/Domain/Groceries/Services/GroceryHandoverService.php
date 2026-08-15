@@ -105,7 +105,19 @@ final readonly class GroceryHandoverService
             return $result;
         } catch (\Throwable $exception) {
             if ($media instanceof Media) {
-                $this->deleteMedia($media);
+                $durableRedemption = GroceryRedemption::query()->find($redemption->id);
+                $durableMedia = Media::query()->find($media->id);
+                $isCommittedEvidence = $durableRedemption instanceof GroceryRedemption
+                    && $durableRedemption->status === GroceryStatus::Completed
+                    && $durableRedemption->receipt_ledger_entry_id !== null
+                    && $durableRedemption->proof_media_id === $media->id
+                    && $durableMedia instanceof Media
+                    && $durableMedia->attachable_type === GroceryRedemption::class
+                    && $durableMedia->attachable_id === $durableRedemption->id;
+
+                if (! $isCommittedEvidence) {
+                    $this->deleteMedia($media);
+                }
             }
             throw $exception;
         }
