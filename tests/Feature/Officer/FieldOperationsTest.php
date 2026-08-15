@@ -68,6 +68,15 @@ final class FieldOperationsTest extends TestCase
         self::assertDatabaseCount('deposits', 0);
     }
 
+    public function test_pickup_success_projection_treats_deposit_status_as_a_string(): void
+    {
+        $source = file_get_contents(app_path('Livewire/Officer/PickupTask.php'));
+
+        self::assertIsString($source);
+        self::assertStringContainsString("'status' => (string) \$deposit->status", $source);
+        self::assertStringNotContainsString('$deposit->status->value', $source);
+    }
+
     public function test_officer_success_receipts_render_all_transaction_facts(): void
     {
         $officer = $this->userWith('pickup.view', 'pickup.execute', 'pickup.complete', 'grocery.handover');

@@ -227,9 +227,12 @@ final class PickupTask extends Component
 
     private function completeSuccessState(): void
     {
-        $deposit = $this->pickup->deposit;
+        $deposit = $this->pickup->deposit()->first();
+        if ($deposit instanceof Deposit) {
+            $this->pickup->setRelation('deposit', $deposit);
+        }
         $this->receipt = $deposit instanceof Deposit && $deposit->occurred_at !== null
-            ? ['number' => (string) $deposit->deposit_number, 'value' => (int) $deposit->total_value, 'occurredAt' => $deposit->occurred_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $deposit->status->value]
+            ? ['number' => (string) $deposit->deposit_number, 'value' => (int) $deposit->total_value, 'occurredAt' => $deposit->occurred_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => (string) $deposit->status]
             : null;
         $this->evidence = null;
         $this->completionDialogOpen = false;
