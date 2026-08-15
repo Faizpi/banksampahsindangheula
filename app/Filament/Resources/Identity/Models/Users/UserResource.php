@@ -100,10 +100,14 @@ final class UserResource extends Resource
                     ->icon(Heroicon::OutlinedUserGroup)
                     ->authorize(fn (User $record): bool => auth()->user() instanceof User && auth()->user()->can('manageUpdate', $record) && app(PermissionChecker::class)->allows(auth()->user(), 'role.manage'))
                     ->schema([
-                        Select::make('role_ids')->label('Peran')->options(fn (): array => Role::query()->orderBy('name')->pluck('name', 'id')->all())->multiple()->preload()->required(),
+                        Select::make('role_ids')->label('Peran')->options(fn (): array => Role::query()->orderBy('name')->pluck('name', 'id')->all())->preload()->required(),
                         Textarea::make('reason')->label('Alasan perubahan peran')->required()->minLength(10)->maxLength(1000)->rows(3),
                     ])
-                    ->fillForm(fn (User $record): array => ['role_ids' => $record->roles()->pluck('roles.id')->all()])
+                    ->fillForm(function (User $record): array {
+                        $roleIds = $record->roles()->pluck('roles.id')->all();
+
+                        return ['role_ids' => count($roleIds) === 1 ? $roleIds[0] : null];
+                    })
                     ->requiresConfirmation()
                     ->modalHeading(fn (User $record): string => "Atur peran {$record->name}?")
                     ->modalDescription('Peran menentukan izin yang tersedia bagi pengguna ini. Perubahan akan dicatat pada audit log.')
