@@ -169,7 +169,13 @@
     @endif
 
     @if ($receipt)
-        <x-ui.success-state title="Setoran pickup berhasil" description="{{ $receipt['number'] }} · Rp {{ number_format($receipt['value'], 0, ',', '.') }} · {{ $receipt['occurredAt'] }} · Status: {{ $receipt['status'] }}" />
+        <x-ui.success-state
+            title="Setoran pickup berhasil"
+            :reference="$receipt['number']"
+            :value="'Rp '.number_format($receipt['value'], 0, ',', '.')"
+            :time="$receipt['occurredAt']"
+            :status="$receipt['status']"
+        />
     @endif
 
     @if ($completionDialogOpen)
