@@ -128,6 +128,12 @@ final class WithdrawalPayments extends Component
 
     public function pay(WithdrawalService $service): void
     {
+        if (! $this->showPaymentReview) {
+            $this->addError('selectedWithdrawalId', 'Tinjau lalu konfirmasi pembayaran sebelum melanjutkan.');
+
+            return;
+        }
+
         /** @var User $actor */
         $actor = auth()->user();
         $withdrawal = WithdrawalRequest::query()->findOrFail($this->selectedWithdrawalId);

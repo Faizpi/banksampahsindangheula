@@ -245,6 +245,30 @@ final class WithdrawalWaveTest extends TestCase
             ->assertSee('Nomor nasabah adalah kode unik warga.');
     }
 
+    public function test_payment_requires_review_confirmation_before_any_financial_effect(): void
+    {
+        Storage::fake('media_private');
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 50_000);
+        $approver = User::factory()->create();
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $payer = $this->payerFor($area);
+        $service = app(WithdrawalService::class);
+        $withdrawal = $service->assignPayer($approver, $service->approve($approver, $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-confirmation-request-0001'), true), $payer);
+
+        Livewire::actingAs($payer)
+            ->test(WithdrawalPayments::class)
+            ->call('select', $withdrawal->id)
+            ->set('recipientReference', (string) $customer->customerProfile?->customer_number)
+            ->set('proof', UploadedFile::fake()->image('payment-proof.png'))
+            ->call('pay')
+            ->assertHasErrors(['selectedWithdrawalId']);
+
+        self::assertSame(WithdrawalStatus::ReadyForPickup, $withdrawal->fresh()->status);
+        self::assertSame(0, LedgerEntry::query()->where('source_type', WithdrawalRequest::class)->where('direction', LedgerEntry::DIRECTION_OUT)->count());
+    }
+
     public function test_treasurer_success_receipt_renders_all_payment_facts(): void
     {
         $payer = User::factory()->create(['status' => UserStatus::Active]);
