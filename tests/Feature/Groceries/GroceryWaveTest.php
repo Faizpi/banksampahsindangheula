@@ -518,7 +518,13 @@ final class GroceryWaveTest extends TestCase
         }
         $this->actingAs($other)->get(route('citizen.grocery.show', $redemption))->assertNotFound();
         $this->actingAs($other)->get(route('grocery.proof', $media))->assertNotFound();
-        $this->actingAs($customer)->get(route('citizen.grocery.receipt', $redemption))->assertOk()->assertSee('Penyerahan berhasil');
+        $this->actingAs($customer)->get(route('citizen.grocery.receipt', $redemption))
+            ->assertOk()
+            ->assertSee('Penyerahan berhasil')
+            ->assertSee($redemption->request_number)
+            ->assertSee('Rp 75.000')
+            ->assertSee($redemption->handed_over_at->translatedFormat('d F Y, H:i'))
+            ->assertSee('Berhasil');
     }
 
     /** @return array{User, GroceryPackage} */

@@ -310,7 +310,13 @@ final class DepositWaveTest extends TestCase
         $token = $deposit->verificationToken();
         self::assertIsString($token);
 
-        $this->actingAs($customer)->get(route('citizen.deposit-receipt', $deposit))->assertOk()->assertSee('QR verifikasi setoran');
+        $this->actingAs($customer)->get(route('citizen.deposit-receipt', $deposit))
+            ->assertOk()
+            ->assertSee('QR verifikasi setoran')
+            ->assertSee($deposit->deposit_number)
+            ->assertSee('Rp 3.000')
+            ->assertSee($deposit->occurred_at->translatedFormat('d F Y, H:i'))
+            ->assertSee('Selesai');
         $otherCustomer = User::factory()->create();
         $this->grant($otherCustomer, ['deposit.view']);
         $this->actingAs($otherCustomer)->get(route('citizen.deposit-receipt', $deposit))->assertNotFound();

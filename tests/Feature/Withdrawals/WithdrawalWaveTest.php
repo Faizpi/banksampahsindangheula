@@ -435,7 +435,13 @@ final class WithdrawalWaveTest extends TestCase
         $this->actingAs($other)->get(route('citizen.withdrawal.show', $paid))->assertNotFound();
         $this->actingAs($other)->get(route('withdrawal.proof', $paid->proofMedia))->assertNotFound();
         $this->actingAs($customer)->get(route('citizen.withdrawal.show', $paid))->assertOk()->assertSee($paid->request_number);
-        $this->actingAs($customer)->get(route('citizen.withdrawal.receipt', $paid))->assertOk()->assertSee('Pencairan berhasil');
+        $this->actingAs($customer)->get(route('citizen.withdrawal.receipt', $paid))
+            ->assertOk()
+            ->assertSee('Pencairan berhasil')
+            ->assertSee($paid->request_number)
+            ->assertSee('Rp 25.000')
+            ->assertSee($paid->paid_at->translatedFormat('d F Y, H:i'))
+            ->assertSee('Berhasil');
         $this->actingAs($customer)->get(route('withdrawal.proof', $paid->proofMedia))->assertOk();
     }
 
