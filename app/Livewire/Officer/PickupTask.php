@@ -162,7 +162,7 @@ final class PickupTask extends Component
         $this->pickup = $service->complete($actor, $this->pickup, array_map(static fn (array $item): DepositItemInput => DepositItemInput::fromArray($item), $this->actualItems), $this->idempotencyKey, $this->evidence);
         $deposit = $this->pickup->deposit;
         $this->receipt = $deposit instanceof Deposit
-            ? ['number' => $deposit->deposit_number, 'value' => (int) $deposit->total_value, 'occurredAt' => $deposit->occurred_at->translatedFormat('d F Y, H:i'), 'status' => $deposit->status]
+            ? ['number' => (string) $deposit->deposit_number, 'value' => (int) $deposit->total_value, 'occurredAt' => $deposit->occurred_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $deposit->status->value]
             : null;
         $this->evidence = null;
         $this->completionDialogOpen = false;

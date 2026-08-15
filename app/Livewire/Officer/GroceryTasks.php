@@ -165,7 +165,7 @@ final class GroceryTasks extends Component
             return;
         }
         $completed = $service->handover($actor, $this->redemption((int) $this->selectedRedemptionId), $this->recipientVerification, $this->recipientReference, $this->proof, $this->idempotencyKey);
-        $this->receipt = ['number' => $completed->request_number, 'value' => $completed->value_snapshot, 'occurredAt' => now('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $completed->status->value];
+        $this->receipt = ['number' => (string) $completed->request_number, 'value' => (int) $completed->value_snapshot, 'occurredAt' => $completed->handed_over_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $completed->status->value];
         session()->flash('success', 'Handover tercatat dan saldo warga berhasil dikurangi.');
         $this->reset(['selectedRedemptionId', 'recipientReference', 'proof', 'scannerOpen', 'handoverReviewOpen', 'resolvedCustomerName']);
         $this->idempotencyKey = (string) str()->uuid();

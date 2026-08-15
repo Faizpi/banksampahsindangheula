@@ -103,7 +103,11 @@ final class DepositEvidenceTest extends TestCase
             ->call('finalize')
             ->assertHasNoErrors()
             ->assertSet('draft.id', $draft->id)
-            ->assertSet('draft.status', Deposit::STATUS_FINAL);
+            ->assertSet('draft.status', Deposit::STATUS_FINAL)
+            ->assertSee($draft->fresh()->deposit_number)
+            ->assertSee('Rp '.number_format((int) $draft->fresh()->total_value, 0, ',', '.'))
+            ->assertSee($draft->fresh()->occurred_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'))
+            ->assertSee('Berhasil');
 
         self::assertDatabaseCount('deposits', 1);
         self::assertDatabaseHas('deposits', ['id' => $draft->id, 'status' => Deposit::STATUS_FINAL]);

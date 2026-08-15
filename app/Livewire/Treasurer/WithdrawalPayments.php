@@ -133,7 +133,7 @@ final class WithdrawalPayments extends Component
         $withdrawal = WithdrawalRequest::query()->findOrFail($this->selectedWithdrawalId);
         $this->validatePaymentFields();
         $paid = $service->pay($actor, $withdrawal, $this->recipientVerification, $this->recipientReference, $this->proof, $this->idempotencyKey);
-        $this->receipt = ['number' => $paid->request_number, 'value' => $paid->amount, 'occurredAt' => now('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $paid->status->value];
+        $this->receipt = ['number' => (string) $paid->request_number, 'value' => (int) $paid->amount, 'occurredAt' => $paid->paid_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => $paid->status->value];
         session()->flash('success', 'Pembayaran tercatat dan saldo keluar dibuat.');
         $this->reset(['selectedWithdrawalId', 'recipientReference', 'proof', 'showPaymentReview', 'scannerOpen', 'resolvedCustomerName']);
         $this->recipientVerification = 'kartu_nasabah';

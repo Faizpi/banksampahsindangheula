@@ -245,6 +245,21 @@ final class WithdrawalWaveTest extends TestCase
             ->assertSee('Nomor nasabah adalah kode unik warga.');
     }
 
+    public function test_treasurer_success_receipt_renders_all_payment_facts(): void
+    {
+        $payer = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($payer, ['withdrawal.pay']);
+        $occurredAt = '15 Agustus 2026, 10:30';
+
+        Livewire::actingAs($payer)
+            ->test(WithdrawalPayments::class)
+            ->set('receipt', ['number' => 'WD-PAYMENT-001', 'value' => 35_000, 'occurredAt' => $occurredAt, 'status' => 'sudah_dibayar'])
+            ->assertSee('WD-PAYMENT-001')
+            ->assertSee('Rp 35.000')
+            ->assertSee($occurredAt)
+            ->assertSee('Berhasil');
+    }
+
     public function test_payment_card_scan_uses_camera_with_manual_fallback_and_cleanup(): void
     {
         $view = file_get_contents(resource_path('views/livewire/treasurer/withdrawal-payments.blade.php'));

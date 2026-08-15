@@ -68,6 +68,29 @@ final class FieldOperationsTest extends TestCase
         self::assertDatabaseCount('deposits', 0);
     }
 
+    public function test_officer_success_receipts_render_all_transaction_facts(): void
+    {
+        $officer = $this->userWith('pickup.view', 'pickup.execute', 'pickup.complete', 'grocery.handover');
+        $pickup = $this->scheduledPickup($officer);
+        $occurredAt = '15 Agustus 2026, 10:30';
+
+        Livewire::actingAs($officer)
+            ->test(PickupTask::class, ['pickup' => $pickup])
+            ->set('receipt', ['number' => 'STR-PICKUP-001', 'value' => 125_000, 'occurredAt' => $occurredAt, 'status' => 'final'])
+            ->assertSee('STR-PICKUP-001')
+            ->assertSee('Rp 125.000')
+            ->assertSee($occurredAt)
+            ->assertSee('Berhasil');
+
+        Livewire::actingAs($officer)
+            ->test(GroceryTasks::class)
+            ->set('receipt', ['number' => 'GRC-HANDOVER-001', 'value' => 50_000, 'occurredAt' => $occurredAt, 'status' => 'selesai'])
+            ->assertSee('GRC-HANDOVER-001')
+            ->assertSee('Rp 50.000')
+            ->assertSee($occurredAt)
+            ->assertSee('Berhasil');
+    }
+
     public function test_pickup_task_exposes_placeholders_and_photo_capture_controls(): void
     {
         $officer = $this->userWith('pickup.view', 'pickup.execute', 'pickup.complete');
