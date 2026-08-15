@@ -59,6 +59,9 @@ final class FieldOperationsTest extends TestCase
             ->call('markPickedUp')
             ->set('actualItems', [['waste_type_id' => (string) $type->id, 'condition_id' => (string) $condition->id, 'weight_kg' => '1.000']])
             ->call('complete')
+            ->assertHasErrors('actualItems')
+            ->assertSee('Tinjau lalu konfirmasi finalisasi sebelum menyelesaikan tugas.')
+            ->call('reviewCompletion')
             ->assertHasErrors('evidence');
 
         self::assertSame(PickupStatus::PickedUp, $pickup->fresh()->status);
@@ -83,17 +86,18 @@ final class FieldOperationsTest extends TestCase
             ->assertDontSee('wire:model="evidence"', escape: false);
     }
 
-    public function test_officer_final_actions_require_native_confirmation_with_consequences(): void
+    public function test_officer_final_actions_require_a_review_dialog_with_consequences(): void
     {
         $pickupOfficer = $this->userWith('pickup.view', 'pickup.execute', 'pickup.complete');
-        $this->wasteContext();
+        [$type, $condition] = $this->wasteContext();
         $pickup = $this->scheduledPickup($pickupOfficer);
         $this->actingAs($pickupOfficer);
 
         Livewire::test(PickupTask::class, ['pickup' => $pickup])
             ->call('begin')
             ->call('markPickedUp')
-            ->assertSee('wire:confirm="Finalkan setoran aktual? Berat dan nilai setoran akan dicatat, saldo nasabah akan bertambah, dan tugas penjemputan akan selesai."', escape: false);
+            ->assertSee('Review Finalisasi')
+            ->assertSee('Harga aktif dan subtotal akan dihitung ulang server saat finalisasi.');
 
         $handoverOfficer = $this->userWith('grocery.handover');
         $package = GroceryPackage::query()->create([
@@ -116,7 +120,7 @@ final class FieldOperationsTest extends TestCase
 
         Livewire::test(GroceryTasks::class)
             ->call('select', $redemption->id)
-            ->assertSee('wire:confirm="Konfirmasi serah-terima paket? Paket akan diserahkan, saldo warga akan dikurangi, dan status penukaran akan selesai."', escape: false);
+            ->assertSee('Tinjau serah-terima');
     }
 
     public function test_pickup_task_rejects_invalid_actual_items_before_financial_service(): void
@@ -130,7 +134,7 @@ final class FieldOperationsTest extends TestCase
             ->call('begin')
             ->call('markPickedUp')
             ->set('actualItems', [['waste_type_id' => '', 'condition_id' => '', 'weight_kg' => 'not-a-weight']])
-            ->call('complete')
+            ->call('reviewCompletion')
             ->assertHasErrors(['actualItems.0.waste_type_id', 'actualItems.0.condition_id', 'actualItems.0.weight_kg'])
             ->assertSee('Jenis sampah wajib dipilih.')
             ->assertSee('Kondisi sampah wajib dipilih.');
