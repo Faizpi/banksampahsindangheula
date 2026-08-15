@@ -78,7 +78,7 @@ final class UserResource extends Resource
                 TextInput::make('phone')->label('Nomor telepon')->required()->regex('/^62[0-9]{8,16}$/')->maxLength(20),
                 TextInput::make('email')->label('Email')->email()->nullable(),
                 TextInput::make('password')->label('Kata sandi')->password()->revealable()->required(fn (string $operation): bool => $operation === 'create')->minLength(10)->dehydrated(fn (?string $state): bool => filled($state)),
-                TextInput::make('password_confirmation')->label('Konfirmasi kata sandi')->password()->revealable()->required(fn (string $operation): bool => $operation === 'create')->same('password')->dehydrated(false),
+                TextInput::make('password_confirmation')->label('Konfirmasi kata sandi')->password()->revealable()->required(fn (string $operation): bool => $operation === 'create')->same('password')->dehydrated(fn (string $operation): bool => $operation === 'create'),
                 Select::make('role_id')->label('Peran')->options(fn (): array => Role::query()->orderByRaw("CASE name WHEN 'superadmin' THEN 1 WHEN 'admin' THEN 2 WHEN 'bendahara' THEN 3 WHEN 'petugas' THEN 4 WHEN 'warga' THEN 5 ELSE 6 END")->orderBy('name')->pluck('name', 'id')->all())->required(fn (string $operation): bool => $operation === 'create')->dehydrated(fn (string $operation): bool => $operation === 'create'),
             ])->columns(2),
         ]);
