@@ -23,7 +23,7 @@ final class FeedbackAndNavigationPrimitivesTest extends TestCase
         self::assertStringContainsString('data-lucide="clock-3"', $fallback);
     }
 
-    public function test_success_state_renders_each_receipt_field_separately(): void
+    public function test_success_state_renders_only_an_accessible_success_status(): void
     {
         $html = Blade::render(<<<'BLADE'
             <x-ui.success-state
@@ -35,14 +35,18 @@ final class FeedbackAndNavigationPrimitivesTest extends TestCase
             />
         BLADE);
 
-        self::assertStringContainsString('Nomor bukti', $html);
-        self::assertStringContainsString('DPS-20260815-ABC12345', $html);
-        self::assertStringContainsString('Nilai', $html);
-        self::assertStringContainsString('Rp 25.000', $html);
-        self::assertStringContainsString('Waktu', $html);
-        self::assertStringContainsString('15 Agustus 2026, 10:30', $html);
+        self::assertStringContainsString('data-success-receipt', $html);
+        self::assertStringContainsString('data-lucide="circle-check"', $html);
+        self::assertStringContainsString('Setoran pickup berhasil', $html);
         self::assertStringContainsString('Status', $html);
-        self::assertStringContainsString('data-status="pending"', $html);
+        self::assertStringContainsString('Berhasil', $html);
+        self::assertStringContainsString('data-status="success"', $html);
+        self::assertStringNotContainsString('Nomor bukti', $html);
+        self::assertStringNotContainsString('DPS-20260815-ABC12345', $html);
+        self::assertStringNotContainsString('Nilai', $html);
+        self::assertStringNotContainsString('Rp 25.000', $html);
+        self::assertStringNotContainsString('Waktu', $html);
+        self::assertStringNotContainsString('15 Agustus 2026, 10:30', $html);
     }
 
     public function test_panel_renders_flat_semantic_surface_and_relevant_states(): void
