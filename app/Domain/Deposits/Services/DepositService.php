@@ -274,7 +274,7 @@ final readonly class DepositService
                         type: 'deposit.finalized',
                         title: 'Setoran selesai',
                         body: 'Setoran '.$locked->deposit_number.' telah selesai diproses.',
-                        reference: '/setoran/'.$locked->deposit_number,
+                        reference: '/warga/setoran/'.$locked->id,
                         dedupeKey: NotificationDedupeKey::for('deposit.finalized:'.$locked->deposit_number, $locked->customer_id, 'deposit-finalized-v1'),
                     ));
                 }
