@@ -123,6 +123,19 @@ final class FieldOperationsTest extends TestCase
             ->assertSee('Tinjau serah-terima');
     }
 
+    public function test_grocery_handover_card_scan_uses_camera_with_manual_fallback_and_cleanup(): void
+    {
+        $view = file_get_contents(resource_path('views/livewire/officer/grocery-tasks.blade.php'));
+
+        self::assertIsString($view);
+        self::assertStringContainsString("'BarcodeDetector' in window", $view);
+        self::assertStringContainsString('navigator.mediaDevices?.getUserMedia', $view);
+        self::assertStringContainsString('$wire.scanCustomerCard(rawValue)', $view);
+        self::assertStringContainsString('stream?.getTracks().forEach((track) => track.stop())', $view);
+        self::assertStringContainsString('wire:model="scanToken"', $view);
+        self::assertStringContainsString('$wire.closeScanner()', $view);
+    }
+
     public function test_pickup_task_rejects_invalid_actual_items_before_financial_service(): void
     {
         $officer = $this->userWith('pickup.view', 'pickup.execute', 'pickup.complete');

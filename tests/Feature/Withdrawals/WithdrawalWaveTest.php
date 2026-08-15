@@ -245,6 +245,19 @@ final class WithdrawalWaveTest extends TestCase
             ->assertSee('Nomor nasabah adalah kode unik warga.');
     }
 
+    public function test_payment_card_scan_uses_camera_with_manual_fallback_and_cleanup(): void
+    {
+        $view = file_get_contents(resource_path('views/livewire/treasurer/withdrawal-payments.blade.php'));
+
+        self::assertIsString($view);
+        self::assertStringContainsString("'BarcodeDetector' in window", $view);
+        self::assertStringContainsString('navigator.mediaDevices?.getUserMedia', $view);
+        self::assertStringContainsString('$wire.scanCustomerCard(rawValue)', $view);
+        self::assertStringContainsString('stream?.getTracks().forEach((track) => track.stop())', $view);
+        self::assertStringContainsString('wire:model="scanToken"', $view);
+        self::assertStringContainsString('$wire.closeScanner()', $view);
+    }
+
     public function test_lane_c_payment_verifies_recipient_keeps_proof_private_and_posts_one_outgoing_entry(): void
     {
         Storage::fake('media_private');
