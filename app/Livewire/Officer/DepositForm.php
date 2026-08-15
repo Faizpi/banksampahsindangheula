@@ -162,9 +162,28 @@ final class DepositForm extends Component
         $customer = User::query()->findOrFail($this->customerId);
         $this->draft ??= $service->createDraft($actor, $customer, $this->mobileServiceId === null ? 'langsung' : 'keliling', null, $this->mobileServiceId === null ? null : MobileService::query()->findOrFail($this->mobileServiceId));
         $mobileService = $this->mobileServiceId === null ? null : MobileService::query()->findOrFail($this->mobileServiceId);
-        $this->draft = $this->assistedServiceId === null
-            ? $service->finalize($actor, $this->draft, $this->idempotencyKey, $this->items, $this->evidence, $mobileService)
-            : $service->finalizeAndLinkAssisted($actor, $this->draft, $this->idempotencyKey, $this->assistedServiceId, $this->items, $this->evidence, $mobileService);
+        $draftId = $this->draft->id;
+
+        try {
+            $this->draft = $this->assistedServiceId === null
+                ? $service->finalize($actor, $this->draft, $this->idempotencyKey, $this->items, $this->evidence, $mobileService)
+                : $service->finalizeAndLinkAssisted($actor, $this->draft, $this->idempotencyKey, $this->assistedServiceId, $this->items, $this->evidence, $mobileService);
+        } catch (Throwable $exception) {
+            $durableDraft = Deposit::query()->find($draftId);
+            if (! $durableDraft instanceof Deposit || $durableDraft->isDraft()) {
+                throw $exception;
+            }
+
+            $this->draft = $durableDraft->fresh('items');
+            $this->evidence = null;
+            $this->finalizationReviewOpen = false;
+            session()->flash('success', $this->draft->isPendingReview()
+                ? 'Setoran berhasil dicatat dan menunggu persetujuan pemeriksa.'
+                : 'Setoran berhasil difinalisasi.');
+
+            return;
+        }
+
         $this->evidence = null;
         $this->finalizationReviewOpen = false;
         session()->flash('success', $this->draft->isPendingReview()
