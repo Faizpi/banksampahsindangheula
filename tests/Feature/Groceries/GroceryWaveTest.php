@@ -21,6 +21,7 @@ use App\Domain\Ledger\Models\LedgerEntry;
 use App\Domain\Ledger\Services\LedgerService;
 use App\Domain\Notifications\Events\NotificationRequested;
 use App\Livewire\Citizen\GroceryRequestForm;
+use App\Livewire\Citizen\GroceryShow;
 use App\Livewire\Officer\GroceryTasks;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -275,6 +276,32 @@ final class GroceryWaveTest extends TestCase
         self::assertSame(0, LedgerEntry::query()->where('source_type', GroceryRedemption::class)->count());
         self::assertSame(100_000, $customer->ledgerAccount()->firstOrFail()->fresh()->availableBalance());
         self::assertSame(1, AuditLog::query()->where('action', 'grocery.rejected')->count());
+    }
+
+    public function test_ready_redemption_shows_citizen_handover_guidance_and_notification(): void
+    {
+        Event::fake([NotificationRequested::class]);
+        [$customer, $package] = $this->customerAndPackage();
+        $this->grant($customer, ['grocery.request', 'grocery.view']);
+        $this->credit($customer, 100_000);
+        $approver = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($approver, ['grocery.approve', 'grocery.view', 'user.view.all']);
+        $officer = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($officer, ['grocery.prepare', 'grocery.view', 'user.view.all']);
+        $service = app(GroceryService::class);
+        $redemption = $service->approve($approver, $service->request($customer, ['package_id' => $package->id], 'w7-ready-guidance-request-0001'), true, 'Paket tersedia.');
+        $ready = $service->ready($officer, $service->prepare($officer, $redemption));
+
+        Livewire::actingAs($customer)
+            ->test(GroceryShow::class, ['redemption' => $ready])
+            ->assertSee('Langkah selanjutnya')
+            ->assertSee('Bawa kartu nasabah atau siapkan nomor nasabah Anda')
+            ->assertSee('tunggu petugas melakukan serah-terima paket');
+
+        Event::assertDispatched(NotificationRequested::class, function (NotificationRequested $event): bool {
+            return str_contains($event->payload->body, 'Bawa kartu nasabah atau siapkan nomor nasabah Anda')
+                && str_contains($event->payload->body, 'tunggu petugas melakukan serah-terima paket');
+        });
     }
 
     public function test_lane_c_approval_prepare_ready_and_handover_convert_hold_once_with_private_proof(): void
