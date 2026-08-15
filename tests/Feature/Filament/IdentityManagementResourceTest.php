@@ -89,9 +89,16 @@ final class IdentityManagementResourceTest extends TestCase
         self::assertSame([$newer->id, $older->id], CustomerResource::getEloquentQuery()->latest('created_at')->pluck('id')->all());
     }
 
-    public function test_pickup_review_exposes_private_proof_links(): void
+    public function test_pickup_review_uses_authorized_media_route_for_image_thumbnails(): void
     {
-        self::assertStringContainsString("route('pickup.media'", file_get_contents(app_path('Filament/Resources/Pickups/Models/PickupRequests/PickupRequestResource.php')));
+        $resource = file_get_contents(app_path('Filament/Resources/Pickups/Models/PickupRequests/PickupRequestResource.php'));
+
+        self::assertIsString($resource);
+        self::assertStringContainsString("route('pickup.media'", $resource);
+        self::assertStringContainsString('str_starts_with($media->mime_type, \'image/\')', $resource);
+        self::assertStringContainsString('<img class="h-24 w-24', $resource);
+        self::assertStringNotContainsString('Storage::url(', $resource);
+        self::assertStringNotContainsString('public_path(', $resource);
     }
 
     public function test_customer_resource_actions_use_domain_identity_action_without_exposing_qr_token(): void

@@ -194,13 +194,27 @@ final class PickupRequestResource extends Resource
             return new HtmlString('Tidak ada bukti foto.');
         }
 
-        $links = $record->media->map(static fn ($media): string => sprintf(
-            '<a class="text-primary-600 underline" href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
-            e(route('pickup.media', $media)),
-            e($media->original_name),
-        ))->implode('<br>');
+        $thumbnails = $record->media->map(static function ($media): string {
+            $mediaUrl = e(route('pickup.media', $media));
+            $originalName = e($media->original_name);
 
-        return new HtmlString($links);
+            if (! str_starts_with($media->mime_type, 'image/')) {
+                return sprintf(
+                    '<a class="text-primary-600 underline" href="%s" target="_blank" rel="noopener noreferrer">%s</a>',
+                    $mediaUrl,
+                    $originalName,
+                );
+            }
+
+            return sprintf(
+                '<a class="block" href="%s" target="_blank" rel="noopener noreferrer"><img class="h-24 w-24 rounded-lg border border-gray-200 object-cover" src="%s" alt="Bukti foto %s"></a>',
+                $mediaUrl,
+                $mediaUrl,
+                $originalName,
+            );
+        })->implode('');
+
+        return new HtmlString('<div class="flex flex-wrap gap-3">'.$thumbnails.'</div>');
     }
 
     private static function notifyCapacityUnavailable(PickupCapacityUnavailable $exception): void
