@@ -8,6 +8,8 @@ use App\Domain\Identity\Actions\ManageUsers as ManageUsersAction;
 use App\Filament\Resources\Identity\Models\Users\UserResource;
 use App\Models\User;
 use Filament\Actions\CreateAction;
+use Filament\Notifications\Notification;
+use Illuminate\Validation\ValidationException;
 use Filament\Resources\Pages\ManageRecords;
 
 final class ManageUsers extends ManageRecords
@@ -17,7 +19,26 @@ final class ManageUsers extends ManageRecords
     protected function getHeaderActions(): array
     {
         return [
-            CreateAction::make()->label('Pengguna baru')->using(fn (array $data): User => app(ManageUsersAction::class)->create(auth()->user(), $data)),
+            CreateAction::make()
+                ->label('Pengguna baru')
+                ->using(function (array $data): User {
+                    $actor = auth()->user();
+                    if (! $actor instanceof User) {
+                        throw new \LogicException('Pengguna terautentikasi tidak valid.');
+                    }
+
+                    try {
+                        return app(ManageUsersAction::class)->create($actor, $data);
+                    } catch (ValidationException $exception) {
+                        Notification::make()
+                            ->title('Pengguna tidak dapat dibuat')
+                            ->body(implode(' ', $exception->validator->errors()->all()))
+                            ->danger()
+                            ->send();
+
+                        throw $exception;
+                    }
+                }),
         ];
     }
 }

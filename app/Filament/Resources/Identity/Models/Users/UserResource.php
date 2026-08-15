@@ -100,11 +100,27 @@ final class UserResource extends Resource
                     TextInput::make('status')->label('Status'),
                     TextInput::make('phone')->label('Nomor telepon'),
                     TextInput::make('email')->label('Email')->placeholder('Tidak tersedia'),
-                    TextInput::make('roles.name')->label('Peran')->placeholder('Belum diatur'),
-                    TextInput::make('customerProfile.customer_number')->label('Nomor nasabah')->placeholder('Belum terbit'),
-                    TextInput::make('staffProfile.staff_number')->label('Nomor petugas')->placeholder('Belum dibuat'),
-                    TextInput::make('staffProfile.serviceAreas')->label('Area pelayanan')->formatStateUsing(fn (User $record): string => $record->staffProfile?->serviceAreas->map(fn ($assignment): string => $assignment->serviceArea?->name ?? '')->filter()->implode(', ') ?: 'Belum diatur'),
-                ]),
+                    TextInput::make('role_label')->label('Peran')->placeholder('Belum diatur'),
+                    TextInput::make('customer_number')->label('Nomor nasabah')->placeholder('Belum terbit'),
+                    TextInput::make('staff_number')->label('Nomor petugas')->placeholder('Belum dibuat'),
+                    TextInput::make('service_area_names')->label('Area pelayanan')->placeholder('Belum diatur'),
+                ])->fillForm(function (User $record): array {
+                    $record->loadMissing(['roles', 'customerProfile', 'staffProfile.serviceAreas.serviceArea']);
+
+                    return [
+                        'name' => $record->name,
+                        'status' => $record->status->value,
+                        'phone' => $record->phone,
+                        'email' => $record->email,
+                        'role_label' => $record->roles->pluck('name')->implode(', ') ?: null,
+                        'customer_number' => $record->customerProfile?->customer_number,
+                        'staff_number' => $record->staffProfile?->staff_number,
+                        'service_area_names' => $record->staffProfile?->serviceAreas
+                            ->map(fn ($assignment): string => $assignment->serviceArea?->name ?? '')
+                            ->filter()
+                            ->implode(', ') ?: null,
+                    ];
+                }),
                 EditAction::make()->label('Ubah')->authorize('manageUpdate')->using(fn (User $record, array $data): User => app(ManageUsers::class)->update(self::actor(), $record, $data)),
                 Action::make('assignRoles')
                     ->label('Atur peran')
