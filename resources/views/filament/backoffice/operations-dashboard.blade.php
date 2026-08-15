@@ -5,23 +5,23 @@
         <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">Pilih satu area kerja. Kontrol berisiko tidak lagi ditumpuk dalam satu halaman panjang.</p>
     </section>
 
-    <nav class="mt-6 overflow-x-auto border-b border-gray-200" aria-label="Bagian kontrol teknis">
-        <div class="flex min-w-max gap-6">
-            <a href="{{ \App\Filament\Pages\TechnicalHealthPage::getUrl() }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Health</a>
+    <nav class="backoffice-section-nav mt-6 overflow-x-auto" aria-label="Bagian kontrol teknis">
+        <div class="flex min-w-max">
+            <a href="{{ \App\Filament\Pages\TechnicalHealthPage::getUrl() }}"><x-filament::icon icon="heroicon-o-heart" aria-hidden="true" />Health</a>
             @if ($canManageSettings)
-                <a href="{{ \App\Filament\Pages\TechnicalSettingsPage::getUrl() }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Pengaturan</a>
+                <a href="{{ \App\Filament\Pages\TechnicalSettingsPage::getUrl() }}"><x-filament::icon icon="heroicon-o-cog-6-tooth" aria-hidden="true" />Pengaturan</a>
             @endif
             @if ($canManageMaintenance)
-                <a href="{{ \App\Filament\Pages\TechnicalMaintenancePage::getUrl() }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Pemeliharaan</a>
+                <a href="{{ \App\Filament\Pages\TechnicalMaintenancePage::getUrl() }}"><x-filament::icon icon="heroicon-o-wrench-screwdriver" aria-hidden="true" />Pemeliharaan</a>
             @endif
             @if ($canViewBackups || $canRunBackup || $canRestoreBackup)
-                <a href="{{ \App\Filament\Pages\TechnicalBackupsPage::getUrl() }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Cadangan</a>
+                <a href="{{ \App\Filament\Pages\TechnicalBackupsPage::getUrl() }}"><x-filament::icon icon="heroicon-o-archive-box" aria-hidden="true" />Cadangan</a>
             @endif
             @if ($canExecuteRetention)
-                <a href="{{ \App\Filament\Pages\TechnicalAuditRetentionPage::getUrl() }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Retensi audit</a>
+                <a href="{{ \App\Filament\Pages\TechnicalAuditRetentionPage::getUrl() }}"><x-filament::icon icon="heroicon-o-clock" aria-hidden="true" />Retensi audit</a>
             @endif
             @if ($canExecuteMediaRetention)
-                <a href="{{ \App\Filament\Pages\TechnicalMediaRetentionPage::getUrl() }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Retensi foto</a>
+                <a href="{{ \App\Filament\Pages\TechnicalMediaRetentionPage::getUrl() }}"><x-filament::icon icon="heroicon-o-photo" aria-hidden="true" />Retensi foto</a>
             @endif
         </div>
     </nav>

@@ -10,7 +10,7 @@
                 <dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:text-right"><div><dt class="text-text-secondary">Lingkungan</dt><dd class="font-bold text-deep-green">{{ $environment }}</dd></div><div><dt class="text-text-secondary">Area aktif</dt><dd class="font-bold text-deep-green">{{ $activeAreas ?? 'Tidak tersedia' }}</dd></div></dl>
             </div>
             @if ($maintenanceEnabled)
-                <p class="mt-5 rounded-lg border border-warning-300 bg-warning-100 px-3 py-2 text-sm font-semibold text-warning-950">Pemeliharaan aktif. Pastikan pekerjaan yang sedang berjalan aman sebelum melanjutkan.</p>
+                <p class="backoffice-alert mt-5 border-warning-300 bg-warning-100 text-warning-950"><x-filament::icon icon="heroicon-o-exclamation-triangle" aria-hidden="true" />Pemeliharaan aktif. Pastikan pekerjaan yang sedang berjalan aman sebelum melanjutkan.</p>
             @endif
         </section>
 
@@ -19,14 +19,9 @@
             @php($hasPendingQueue = collect($queues)->contains(fn (array $queue): bool => $queue['count'] > 0))
             @php($pendingQueues = collect($queues)->filter(fn (array $queue): bool => $queue['count'] > 0))
             @if (! $hasVisibleQueues)
-                <div class="mt-4 rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700">
-                    Tidak ada antrean yang tersedia untuk peran ini.
-                </div>
+                    <div class="backoffice-empty-state"><x-filament::icon icon="heroicon-o-queue-list" aria-hidden="true" /><p>Tidak ada antrean yang tersedia untuk peran ini.</p></div>
             @elseif (collect($queues)->every(fn (array $queue): bool => $queue['count'] === 0))
-                <div class="mt-4 rounded-xl border border-success-200 bg-success-50 p-5 text-sm text-success-900">
-                    <strong>Semua antrean prioritas selesai.</strong>
-                    <span class="block mt-1">Tidak ada pekerjaan mendesak saat ini.</span>
-                </div>
+                    <div class="backoffice-alert mt-4 border-success-200 bg-success-50 text-success-900"><x-filament::icon icon="heroicon-o-check-circle" aria-hidden="true" /><div><strong>Semua antrean prioritas selesai.</strong><span class="mt-1 block font-normal">Tidak ada pekerjaan mendesak saat ini.</span></div></div>
             @endif
             @if ($hasPendingQueue)
                 <div class="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

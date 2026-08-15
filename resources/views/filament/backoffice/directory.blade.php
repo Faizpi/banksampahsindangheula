@@ -5,19 +5,22 @@
         <p class="mt-2 max-w-2xl text-sm text-text-secondary">Pilih sudut pandang yang sesuai. Data tetap memakai izin dan alur kerja masing-masing, tanpa menampilkan dua menu yang membingungkan.</p>
     </section>
 
-    <nav class="mt-6 overflow-x-auto border-b border-gray-200" aria-label="Bagian direktori">
-        <div class="flex min-w-max gap-6">
+    <nav class="backoffice-section-nav mt-6 overflow-x-auto" aria-label="Bagian direktori">
+        <div class="flex min-w-max">
             @if ($canViewCustomers)
-                <a href="{{ \App\Filament\Resources\Identity\Models\Customers\CustomerResource::getUrl('index') }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Nasabah</a>
+                <a href="{{ \App\Filament\Resources\Identity\Models\Customers\CustomerResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-users" aria-hidden="true" />Nasabah</a>
             @endif
             @if ($canViewUsers)
-                <a href="{{ \App\Filament\Resources\Identity\Models\Users\UserResource::getUrl('index') }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Pengguna &amp; peran</a>
+                <a href="{{ \App\Filament\Resources\Identity\Models\Users\UserResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-user-circle" aria-hidden="true" />Pengguna &amp; peran</a>
             @endif
             @if ($canVerifyCitizens)
-                <a href="{{ \App\Filament\Resources\Identity\Models\CitizenVerifications\CitizenVerificationResource::getUrl('index') }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Verifikasi warga</a>
+                <a href="{{ \App\Filament\Resources\Identity\Models\CitizenVerifications\CitizenVerificationResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-check-badge" aria-hidden="true" />Verifikasi warga</a>
             @endif
         </div>
     </nav>
 
-    <p class="mt-4 max-w-2xl text-sm leading-6 text-gray-600">Gunakan Nasabah untuk identitas, kartu, QR, dan data wilayah. Gunakan Pengguna &amp; peran untuk akun dan akses. Verifikasi warga hanya berisi pendaftaran yang menunggu keputusan.</p>
+    <div class="mt-4 flex items-start gap-3 rounded-lg border border-info-200 bg-info-50 px-4 py-3 text-sm leading-6 text-info-950">
+        <x-filament::icon icon="heroicon-o-information-circle" class="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+        <p>Gunakan Nasabah untuk identitas, kartu, QR, dan data wilayah. Gunakan Pengguna &amp; peran untuk akun dan akses. Verifikasi warga hanya berisi pendaftaran yang menunggu keputusan.</p>
+    </div>
 </x-filament-panels::page>

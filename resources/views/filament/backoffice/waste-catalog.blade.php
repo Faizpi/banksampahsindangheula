@@ -5,13 +5,13 @@
         <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">Kelola kategori, jenis, kondisi, satuan, dan harga dari satu area yang mudah ditemukan.</p>
     </section>
 
-    <nav class="mt-6 overflow-x-auto border-b border-gray-200" aria-label="Bagian katalog sampah">
-        <div class="flex min-w-max gap-6">
-            @if ($canViewCategories)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WasteCategories\WasteCategoryResource::getUrl('index') }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Kategori</a>@endif
-            @if ($canViewTypes)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WasteTypes\WasteTypeResource::getUrl('index') }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Jenis</a>@endif
-            @if ($canViewConditions)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WasteConditions\WasteConditionResource::getUrl('index') }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Kondisi</a>@endif
-            @if ($canViewPrices)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WastePrices\WastePriceResource::getUrl('index') }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Harga</a>@endif
-            @if ($canViewUnits)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WasteUnits\WasteUnitResource::getUrl('index') }}" class="inline-flex min-h-12 items-center border-b-2 border-transparent px-1 text-sm font-semibold text-gray-700 hover:border-primary-500 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-600 focus-visible:ring-offset-2">Satuan</a>@endif
+    <nav class="backoffice-section-nav mt-6 overflow-x-auto" aria-label="Bagian katalog sampah">
+        <div class="flex min-w-max">
+            @if ($canViewCategories)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WasteCategories\WasteCategoryResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-squares-2x2" aria-hidden="true" />Kategori</a>@endif
+            @if ($canViewTypes)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WasteTypes\WasteTypeResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-tag" aria-hidden="true" />Jenis</a>@endif
+            @if ($canViewConditions)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WasteConditions\WasteConditionResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-clipboard-document-check" aria-hidden="true" />Kondisi</a>@endif
+            @if ($canViewPrices)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WastePrices\WastePriceResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-banknotes" aria-hidden="true" />Harga</a>@endif
+            @if ($canViewUnits)<a href="{{ \App\Filament\Resources\WasteMaster\Models\WasteUnits\WasteUnitResource::getUrl('index') }}"><x-filament::icon icon="heroicon-o-scale" aria-hidden="true" />Satuan</a>@endif
         </div>
     </nav>
 </x-filament-panels::page>
