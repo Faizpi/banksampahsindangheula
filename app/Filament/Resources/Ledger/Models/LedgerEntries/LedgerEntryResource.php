@@ -121,8 +121,17 @@ final class LedgerEntryResource extends Resource
                         Textarea::make('relationship')->label('Mutasi terkait')->disabled()->rows(3),
                     ])
                     ->fillForm(fn (LedgerEntry $record): array => [
-                        'source' => json_encode(['source_type' => $record->source_type, 'source_id' => $record->source_id, 'source_key' => $record->source_key], JSON_PRETTY_PRINT),
-                        'relationship' => json_encode(['related_entry_id' => $record->related_entry_id, 'balance_after' => $record->balance_after], JSON_PRETTY_PRINT),
+                        'source' => sprintf(
+                            'Jenis sumber: %s\nID sumber: %s\nReferensi transaksi: %s',
+                            $record->source_type === null ? 'Tidak tersedia' : class_basename($record->source_type),
+                            $record->source_id ?? 'Tidak tersedia',
+                            $record->source_key,
+                        ),
+                        'relationship' => sprintf(
+                            'Mutasi terkait: %s\nSaldo setelah mutasi: Rp %s',
+                            $record->related_entry_id ?? 'Tidak ada',
+                            number_format((int) $record->balance_after, 0, ',', '.'),
+                        ),
                     ]),
             ]);
     }

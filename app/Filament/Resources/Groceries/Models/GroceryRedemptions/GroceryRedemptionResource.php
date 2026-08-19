@@ -128,7 +128,12 @@ final class GroceryRedemptionResource extends Resource
             'requested_by' => $record->requestedBy?->name ?? 'Tidak tersedia',
             'approver' => $record->approver?->name ?? 'Belum disetujui',
             'prepared_by' => $record->preparedBy?->name ?? 'Belum mulai disiapkan',
-            'snapshot' => json_encode($record->package_snapshot, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: 'Tidak tersedia',
+            'snapshot' => implode("\n", array_filter([
+                'Kode paket: '.data_get($record->package_snapshot, 'code', 'Tidak tersedia'),
+                'Nama paket: '.data_get($record->package_snapshot, 'name', 'Tidak tersedia'),
+                'Isi paket: '.data_get($record->package_snapshot, 'contents', 'Tidak tersedia'),
+                'Nilai paket: Rp '.number_format((int) data_get($record->package_snapshot, 'value', $record->value_snapshot), 0, ',', '.'),
+            ])),
         ];
     }
 
