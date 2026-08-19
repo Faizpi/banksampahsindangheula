@@ -1,12 +1,33 @@
 @props(['title', 'reference' => null, 'value' => null, 'time' => null, 'status' => 'success', 'viewHref' => null, 'printHref' => null, 'description' => null])
 
-<x-ui.panel data-success-receipt state="success">
+@php
+    $isPending = in_array($status, ['pending', 'menunggu_persetujuan'], true);
+    $badgeStatus = $isPending ? 'pending' : 'success';
+    $badgeLabel = $isPending ? 'Menunggu persetujuan' : 'Berhasil';
+    $panelState = $isPending ? 'default' : 'success';
+    $iconClasses = $isPending ? 'text-harvest-gold' : 'text-forest-600';
+@endphp
+
+<x-ui.panel data-success-receipt :state="$panelState">
     <div class="flex gap-3">
-        <svg data-lucide="circle-check" viewBox="0 0 24 24" class="size-8 shrink-0 text-forest-600" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 2.5 2.5L16 9"/></svg>
+        <x-public.icon :name="$isPending ? 'clock-3' : 'circle-check'" size="size-8" class="shrink-0 {{ $iconClasses }}" />
         <div class="min-w-0 flex-1">
             <h2 class="text-title text-deep-green">{{ $title }}</h2>
             <p class="mt-2 text-label text-text-secondary">Status</p>
-            <div class="mt-1"><x-ui.status-badge status="success">Berhasil</x-ui.status-badge></div>
+            <div class="mt-1"><x-ui.status-badge :status="$badgeStatus">{{ $badgeLabel }}</x-ui.status-badge></div>
+            @if ($reference || $value || $time)
+                <dl class="mt-4 grid gap-3 border-t border-border pt-3 text-body-sm sm:grid-cols-3">
+                    @if ($reference)
+                        <div><dt class="text-caption text-text-secondary">Referensi</dt><dd class="mt-0.5 font-semibold text-deep-green">{{ $reference }}</dd></div>
+                    @endif
+                    @if ($value)
+                        <div><dt class="text-caption text-text-secondary">Nilai</dt><dd class="mt-0.5 amount-tabular font-semibold text-deep-green">{{ $value }}</dd></div>
+                    @endif
+                    @if ($time)
+                        <div><dt class="text-caption text-text-secondary">Waktu</dt><dd class="mt-0.5 font-semibold text-deep-green">{{ $time }}</dd></div>
+                    @endif
+                </dl>
+            @endif
             @if ($description)
                 <p class="mt-3 text-body text-text-secondary">{{ $description }}</p>
             @endif

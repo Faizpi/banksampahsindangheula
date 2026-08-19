@@ -106,10 +106,9 @@ final class DepositEvidenceTest extends TestCase
             ->assertSet('draft.status', Deposit::STATUS_FINAL)
             ->assertSee('Setoran berhasil difinalisasi.')
             ->assertSee('Berhasil')
-            ->assertDontSee($draft->fresh()->deposit_number)
-            ->assertDontSee('Nomor bukti')
-            ->assertDontSee('Nilai')
-            ->assertDontSee('Waktu');
+            ->assertSee($draft->fresh()->deposit_number)
+            ->assertSee('Nilai')
+            ->assertSee('Waktu');
 
         self::assertDatabaseCount('deposits', 1);
         self::assertDatabaseHas('deposits', ['id' => $draft->id, 'status' => Deposit::STATUS_FINAL]);

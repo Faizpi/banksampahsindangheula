@@ -132,7 +132,7 @@
                                     <button type="button" wire:click="removeItem({{ $index }})" class="inline-flex min-h-touch w-full items-center justify-center rounded-md border-2 border-terracotta px-4 text-label font-bold text-terracotta transition hover:bg-danger-bg">Hapus</button>
                                 </div>
                             @endif
-                            <p class="text-body-sm text-text-secondary md:col-span-4">Isi total berat untuk jenis ini. Jumlah wadah opsional, misalnya 2 kantong atau 1 karung, dan bukan pengali berat.</p>
+                            <p class="text-body-sm text-text-secondary md:col-span-4">Isi total berat untuk jenis ini. Jumlah wadah dapat dikosongkan bila tidak diketahui, misalnya 2 kantong atau 1 karung, dan bukan pengali berat.</p>
                         </div>
                     @endforeach
                     <button type="button" wire:click="addItem" class="inline-flex min-h-touch items-center gap-2 justify-self-start rounded-md border-2 border-forest-600 px-4 text-label font-bold text-forest-700 transition hover:bg-success-bg">
