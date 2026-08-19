@@ -279,8 +279,9 @@ final class WithdrawalWaveTest extends TestCase
             ->test(WithdrawalPayments::class)
             ->set('receipt', ['number' => 'WD-PAYMENT-001', 'value' => 35_000, 'occurredAt' => $occurredAt, 'status' => 'sudah_dibayar'])
             ->assertSee('Berhasil')
-            ->assertDontSee('WD-PAYMENT-001')
-            ->assertDontSee('Nomor bukti');
+            ->assertSee('WD-PAYMENT-001')
+            ->assertSee('Rp 35.000')
+            ->assertSee($occurredAt);
     }
 
     public function test_payment_card_scan_uses_camera_with_manual_fallback_and_cleanup(): void

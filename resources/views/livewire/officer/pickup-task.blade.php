@@ -176,6 +176,7 @@
             :value="'Rp '.number_format($receipt['value'], 0, ',', '.')"
             :time="$receipt['occurredAt']"
             :status="$receipt['status']"
+            :description="session('success')"
         />
     @endif
 

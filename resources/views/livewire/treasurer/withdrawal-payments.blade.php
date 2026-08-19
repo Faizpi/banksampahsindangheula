@@ -15,9 +15,6 @@
         <x-ui.mascot variant="12" bubble="Bayar tepat waktu!" bubblePosition="top" class="h-28 w-auto shrink-0" />
     </div>
 
-    @if (session('success'))
-        <x-ui.success-state title="Pembayaran berhasil" :description="session('success')" />
-    @endif
     @if ($receipt)
         <x-ui.success-state
             title="Pembayaran tercatat"
@@ -25,7 +22,10 @@
             :value="'Rp '.number_format($receipt['value'], 0, ',', '.')"
             :time="$receipt['occurredAt']"
             :status="$receipt['status']"
+            :description="session('success')"
         />
+    @elseif (session('success'))
+        <x-ui.success-state title="Pembayaran berhasil" :description="session('success')" />
     @endif
 
     {{-- Withdrawal List --}}

@@ -87,15 +87,17 @@ final class FieldOperationsTest extends TestCase
             ->test(PickupTask::class, ['pickup' => $pickup])
             ->set('receipt', ['number' => 'STR-PICKUP-001', 'value' => 125_000, 'occurredAt' => $occurredAt, 'status' => 'final'])
             ->assertSee('Berhasil')
-            ->assertDontSee('STR-PICKUP-001')
-            ->assertDontSee('Nomor bukti');
+            ->assertSee('STR-PICKUP-001')
+            ->assertSee('Rp 125.000')
+            ->assertSee($occurredAt);
 
         Livewire::actingAs($officer)
             ->test(GroceryTasks::class)
             ->set('receipt', ['number' => 'GRC-HANDOVER-001', 'value' => 50_000, 'occurredAt' => $occurredAt, 'status' => 'selesai'])
             ->assertSee('Berhasil')
-            ->assertDontSee('GRC-HANDOVER-001')
-            ->assertDontSee('Nomor bukti');
+            ->assertSee('GRC-HANDOVER-001')
+            ->assertSee('Rp 50.000')
+            ->assertSee($occurredAt);
     }
 
     public function test_pickup_task_exposes_placeholders_and_photo_capture_controls(): void
