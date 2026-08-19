@@ -1,17 +1,14 @@
-@props([
-    'label' => 'Navigasi halaman',
-    'paginator' => null,
-    'currentPage' => 1,
-    'lastPage' => 1,
-    'from' => 0,
-    'to' => 0,
-    'total' => 0,
-    'previousUrl' => null,
-    'nextUrl' => null,
-    'pages' => [],
-])
-
 @php
+    $label = 'Navigasi halaman';
+    $currentPage = 1;
+    $lastPage = 1;
+    $from = 0;
+    $to = 0;
+    $total = 0;
+    $previousUrl = null;
+    $nextUrl = null;
+    $pages = [];
+
     if ($paginator instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
         $currentPage = $paginator->currentPage();
         $lastPage = $paginator->lastPage();
@@ -58,7 +55,7 @@
     ksort($normalizedPages);
 @endphp
 
-<nav aria-label="{{ $label }}" {{ $attributes->class('flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between') }}>
+<nav aria-label="{{ $label }}" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
     <div aria-live="polite">
         <p class="text-body-sm text-text-primary">Menampilkan {{ $normalizedFrom }}–{{ $normalizedTo }} dari {{ $normalizedTotal }} hasil</p>
         <p class="text-caption text-text-secondary">Halaman {{ $normalizedCurrentPage }} dari {{ $normalizedLastPage }}</p>
