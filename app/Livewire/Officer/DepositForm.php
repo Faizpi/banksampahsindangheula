@@ -91,6 +91,21 @@ final class DepositForm extends Component
         $this->idempotencyKey = (string) str()->uuid();
     }
 
+    public function startNewDeposit(): void
+    {
+        if (! $this->draft?->isFinal() && ! $this->draft?->isPendingReview()) {
+            return;
+        }
+
+        $this->draft = null;
+        $this->items = [];
+        $this->evidence = null;
+        $this->finalizationReviewOpen = false;
+        $this->idempotencyKey = (string) str()->uuid();
+        $this->resetValidation();
+        session()->forget('success');
+    }
+
     public function addItem(): void
     {
         $this->items[] = ['waste_type_id' => '', 'condition_id' => '', 'weight_kg' => ''];
