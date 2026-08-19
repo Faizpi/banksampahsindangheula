@@ -38,7 +38,7 @@
 
     {{-- Result --}}
     @if ($result)
-        <div class="rounded-xl border border-forest-600 bg-success-bg p-5 sm:p-6" aria-live="polite" role="status">
+        <div class="rounded-xl border border-forest-600/25 bg-success-bg p-5 sm:p-6" aria-live="polite" role="status">
             <div class="flex items-start gap-3">
                 <svg viewBox="0 0 24 24" class="mt-0.5 size-5 shrink-0 text-forest-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                     <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10Z"/><path d="m9 12 2 2 4-4"/>

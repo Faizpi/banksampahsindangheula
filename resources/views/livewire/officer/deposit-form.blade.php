@@ -44,7 +44,7 @@
             </x-slot:actions>
         </x-ui.success-state>
     @elseif (session('success'))
-        <div role="status" class="flex items-center gap-3 rounded-xl border border-forest-600 bg-success-bg px-4 py-3.5 text-body text-deep-green">
+        <div role="status" class="flex items-center gap-3 rounded-xl border border-forest-600/25 bg-success-bg px-4 py-3.5 text-body text-deep-green">
             <svg viewBox="0 0 24 24" class="size-5 shrink-0 text-forest-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 6.477 10 12 10Z"/><path d="m9 12 2 2 4-4"/>
             </svg>
