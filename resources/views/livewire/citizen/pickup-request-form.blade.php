@@ -125,7 +125,7 @@
                                 :options="$types->pluck('name', 'id')->all()" :error="$errors->first('items.'.$index.'.waste_type_id')" />
                             <x-ui.input wire:model="items.{{ $index }}.estimated_weight_kg" label="Total berat (kg)" name="items.{{ $index }}.estimated_weight_kg" inputmode="decimal"
                                 :error="$errors->first('items.'.$index.'.estimated_weight_kg')" />
-                            <x-ui.input wire:model="items.{{ $index }}.estimated_quantity" label="Jumlah wadah (opsional)" name="items.{{ $index }}.estimated_quantity" inputmode="numeric"
+                            <x-ui.input wire:model="items.{{ $index }}.estimated_quantity" label="Jumlah wadah" name="items.{{ $index }}.estimated_quantity" inputmode="numeric"
                                 :error="$errors->first('items.'.$index.'.estimated_quantity')" />
                             @if (count($items) > 1)
                                 <div class="md:pt-7">
