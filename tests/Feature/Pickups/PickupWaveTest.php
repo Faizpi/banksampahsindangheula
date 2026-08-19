@@ -8,11 +8,13 @@ use App\Domain\AuditReconciliation\Models\AuditLog;
 use App\Domain\CustomersRegions\Actions\ManageRegions;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Deposits\Models\Deposit;
+use App\Domain\Deposits\Services\DepositService;
 use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
 use App\Domain\Identity\Models\StaffServiceArea;
+use App\Domain\Identity\Queries\VisibleUsers;
 use App\Domain\Ledger\Models\IdempotencyKey;
 use App\Domain\Notifications\Events\NotificationRequested;
 use App\Domain\Pickups\Enums\PickupStatus;
@@ -482,6 +484,34 @@ final class PickupWaveTest extends TestCase
         self::assertSame(PickupStatus::Rejected, $rejected->status);
         self::assertNull($rejected->scheduled_date);
         self::assertDatabaseCount('deposits', 0);
+    }
+
+    public function test_assigned_pickup_completion_uses_pickup_scope_without_widening_direct_deposits(): void
+    {
+        [$customer, $area, $type, $condition] = $this->pricedContext();
+        $admin = User::factory()->create();
+        $staff = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($customer, ['pickup.request']);
+        $this->grant($admin, ['pickup.review', 'pickup.schedule', 'pickup.view', 'user.view.all']);
+        $this->grant($staff, ['pickup.view', 'pickup.execute', 'pickup.complete', 'deposit.create', 'deposit.update-draft', 'deposit.finalize']);
+        StaffProfile::query()->create(['user_id' => $staff->id, 'staff_number' => 'STF-PICKUP-SCOPE-'.$staff->id, 'service_area_id' => $area->id, 'active_from' => today(), 'active_to' => null]);
+        $this->capacity($area, 3, '50.000');
+        $service = app(PickupService::class);
+        $pickup = $service->submit($customer, $this->requestData($customer, $area), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('pickup-scope.jpg')], 'w5-pickup-scope-request-0001');
+        $pickup = $service->markPickedUp($staff, $service->begin($staff, $service->schedule($admin, $service->review($admin, $pickup, true), $staff)));
+
+        self::assertFalse(app(VisibleUsers::class)->canView($staff, $customer));
+        try {
+            app(DepositService::class)->createDraft($staff, $customer);
+            self::fail('Expected direct deposit customer scope denial.');
+        } catch (AuthorizationException) {
+            self::assertDatabaseCount('deposits', 0);
+        }
+
+        $completed = $service->complete($staff, $pickup, [['waste_type_id' => $type->id, 'condition_id' => $condition->id, 'weight_kg' => '1.000']], 'w5-pickup-scope-complete-0001', UploadedFile::fake()->image('pickup-scope-evidence.jpg'));
+
+        self::assertSame(PickupStatus::Completed, $completed->status);
+        self::assertSame(1, Deposit::query()->where('pickup_request_id', $completed->id)->count());
     }
 
     public function test_multi_area_staff_can_schedule_and_complete_only_in_an_active_assigned_area(): void

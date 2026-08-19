@@ -18,6 +18,7 @@ use App\Domain\MobileServices\Services\MobileDepositGuard;
 use App\Domain\Notifications\Data\NotificationPayload;
 use App\Domain\Notifications\Events\NotificationRequested;
 use App\Domain\Notifications\Support\NotificationDedupeKey;
+use App\Domain\Pickups\Models\PickupRequest;
 use App\Domain\Platform\Actions\StorePrivateMedia;
 use App\Domain\Platform\Models\Media;
 use App\Domain\Shared\Weight;
@@ -49,6 +50,29 @@ final readonly class DepositService
     {
         $this->authorize($actor, 'deposit.create');
         $this->assertCustomerScope($actor, $customer);
+
+        return $this->createDraftRecord($actor, $customer, $method, $location, $mobileService);
+    }
+
+    public function createPickupDraft(User $actor, PickupRequest $pickup): Deposit
+    {
+        $this->authorize($actor, 'deposit.create');
+        if ($pickup->assigned_staff_id !== $actor->id) {
+            throw new AuthorizationException('Penjemputan tidak ditugaskan kepada Anda.');
+        }
+
+        $area = $pickup->serviceArea()->first();
+        if ($area === null || ! $area->is_active) {
+            throw new AuthorizationException('Area pelayanan penjemputan tidak aktif.');
+        }
+
+        $customer = $pickup->customer()->firstOrFail();
+
+        return $this->createDraftRecord($actor, $customer, 'penjemputan', $pickup->address);
+    }
+
+    private function createDraftRecord(User $actor, User $customer, string $method, ?string $location, ?MobileService $mobileService = null): Deposit
+    {
         if ($customer->customerProfile === null || $customer->status->value !== 'aktif') {
             throw ValidationException::withMessages(['customer' => 'Nasabah harus aktif dan memiliki profil.']);
         }

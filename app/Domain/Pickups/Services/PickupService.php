@@ -376,8 +376,7 @@ final readonly class PickupService
                         'attachable_id' => $locked->id,
                     ])->save();
                 }
-                $customer = $locked->customer()->firstOrFail();
-                $deposit = $this->deposits->createDraft($actor, $customer, 'penjemputan', $locked->address);
+                $deposit = $this->deposits->createPickupDraft($actor, $locked);
                 $deposit->forceFill(['pickup_request_id' => $locked->id])->save();
                 $deposit = $this->deposits->finalize($actor, $deposit, 'pickup-'.$locked->id.'-'.$idempotencyKey, array_map(static fn (DepositItemInput $item): array => ['waste_type_id' => $item->wasteTypeId, 'condition_id' => $item->conditionId, 'weight_kg' => $item->weightKg], $normalized));
                 $oldStatus = $locked->status;
