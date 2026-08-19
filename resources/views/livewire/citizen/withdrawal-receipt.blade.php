@@ -28,6 +28,14 @@
     </x-ui.panel>
 
     @if ($withdrawal->proofMedia)
-        <a href="{{ route('withdrawal.proof', $withdrawal->proofMedia) }}" class="min-h-touch inline-flex items-center justify-center rounded-md border border-forest-600 px-5 text-label text-forest-700">Unduh bukti pembayaran</a>
+        <x-ui.panel title="Bukti pembayaran" description="Dokumen ini hanya tersedia melalui akses akun Anda.">
+            @if (str_starts_with($withdrawal->proofMedia->mime_type, 'image/'))
+                <a href="{{ route('withdrawal.proof', $withdrawal->proofMedia) }}" class="block overflow-hidden rounded-lg border border-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-forest-600">
+                    <img src="{{ route('withdrawal.proof', $withdrawal->proofMedia) }}" alt="Bukti pembayaran pencairan {{ $withdrawal->request_number }}" class="max-h-96 w-full object-contain" />
+                </a>
+            @endif
+
+            <a href="{{ route('withdrawal.proof', $withdrawal->proofMedia) }}" class="mt-4 min-h-touch inline-flex items-center justify-center rounded-md border border-forest-600 px-5 text-label text-forest-700">Unduh bukti pembayaran</a>
+        </x-ui.panel>
     @endif
 </section>

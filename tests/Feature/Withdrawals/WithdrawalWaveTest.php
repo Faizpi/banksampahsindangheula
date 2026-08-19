@@ -499,14 +499,47 @@ final class WithdrawalWaveTest extends TestCase
         $this->actingAs($other)->get(route('citizen.withdrawal.show', $paid))->assertNotFound();
         $this->actingAs($other)->get(route('withdrawal.proof', $paid->proofMedia))->assertNotFound();
         $this->actingAs($customer)->get(route('citizen.withdrawal.show', $paid))->assertOk()->assertSee($paid->request_number);
+        $proofUrl = route('withdrawal.proof', $paid->proofMedia);
         $this->actingAs($customer)->get(route('citizen.withdrawal.receipt', $paid))
             ->assertOk()
             ->assertSee('Pencairan berhasil')
             ->assertSee($paid->request_number)
             ->assertSee('Rp25.000')
             ->assertSee('Berhasil')
+            ->assertSeeHtml('<img src="'.$proofUrl.'" alt="Bukti pembayaran pencairan '.$paid->request_number.'" class="max-h-96 w-full object-contain" />')
+            ->assertSeeHtml('href="'.$proofUrl.'"')
+            ->assertDontSee('storage/')
             ->assertDontSee('Nomor bukti');
         $this->actingAs($customer)->get(route('withdrawal.proof', $paid->proofMedia))->assertOk();
+    }
+
+    public function test_withdrawal_proof_images_render_inline_while_pdfs_are_downloads(): void
+    {
+        Storage::fake('media_private');
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 70_000);
+        $approver = User::factory()->create();
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $payer = $this->payerFor($area);
+        $service = app(WithdrawalService::class);
+        $customerNumber = (string) $customer->customerProfile?->customer_number;
+        $paid = $service->pay($payer, $service->assignPayer($approver, $service->approve($approver, $service->request($customer, $this->requestPayload($area) + ['amount' => 25_000], 'w6-proof-disposition-request-0001'), true), $payer), 'nomor_nasabah', $customerNumber, UploadedFile::fake()->image('proof.png'), 'w6-proof-disposition-payment-0001');
+
+        $imageResponse = $this->actingAs($customer)->get(route('withdrawal.proof', $paid->proofMedia));
+        $imageResponse->assertOk();
+        self::assertStringStartsWith('inline;', (string) $imageResponse->headers->get('Content-Disposition'));
+
+        $paid->proofMedia->update(['mime_type' => 'application/pdf', 'original_name' => 'proof.pdf']);
+        $proofMedia = $paid->proofMedia->fresh();
+        $pdfResponse = $this->actingAs($customer)->get(route('withdrawal.proof', $proofMedia));
+        $pdfResponse->assertOk();
+        self::assertStringStartsWith('attachment;', (string) $pdfResponse->headers->get('Content-Disposition'));
+
+        $this->actingAs($customer)->get(route('citizen.withdrawal.receipt', $paid))
+            ->assertOk()
+            ->assertDontSee('<img', false)
+            ->assertSeeHtml('href="'.route('withdrawal.proof', $proofMedia).'"');
     }
 
     public function test_paid_withdrawal_detail_exposes_the_receipt_action(): void
