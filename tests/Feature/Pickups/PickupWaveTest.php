@@ -12,6 +12,7 @@ use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
+use App\Domain\Identity\Models\StaffServiceArea;
 use App\Domain\Ledger\Models\IdempotencyKey;
 use App\Domain\Notifications\Events\NotificationRequested;
 use App\Domain\Pickups\Enums\PickupStatus;
@@ -481,6 +482,27 @@ final class PickupWaveTest extends TestCase
         self::assertSame(PickupStatus::Rejected, $rejected->status);
         self::assertNull($rejected->scheduled_date);
         self::assertDatabaseCount('deposits', 0);
+    }
+
+    public function test_multi_area_staff_can_schedule_and_complete_only_in_an_active_assigned_area(): void
+    {
+        [$customer, $area, $type, $condition] = $this->pricedContext();
+        $secondArea = ServiceArea::query()->create(['name' => 'Area kedua '.$customer->id, 'is_active' => true]);
+        $admin = User::factory()->create();
+        $staff = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($customer, ['pickup.request']);
+        $this->grant($admin, ['pickup.review', 'pickup.schedule', 'pickup.view', 'user.view.all']);
+        $this->grant($staff, ['pickup.view', 'pickup.execute', 'pickup.complete', 'deposit.create', 'deposit.update-draft', 'deposit.finalize', 'user.view', 'user.view.all']);
+        $profile = StaffProfile::query()->create(['user_id' => $staff->id, 'staff_number' => 'STF-MULTI-'.$staff->id, 'service_area_id' => $area->id, 'active_from' => today(), 'active_to' => null]);
+        StaffServiceArea::query()->create(['staff_profile_user_id' => $profile->user_id, 'service_area_id' => $secondArea->id, 'active_from' => today(), 'active_to' => null]);
+        $this->capacity($area, 3, '50.000');
+        $pickup = app(PickupService::class)->submit($customer, $this->requestData($customer, $area), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('multi-area.jpg')], 'w5-multi-area-0001');
+        $service = app(PickupService::class);
+        $pickup = $service->markPickedUp($staff, $service->begin($staff, $service->schedule($admin, $service->review($admin, $pickup, true), $staff)));
+        $completed = $service->complete($staff, $pickup, [['waste_type_id' => $type->id, 'condition_id' => $condition->id, 'weight_kg' => '1.000']], 'w5-multi-area-complete-0001', UploadedFile::fake()->image('multi-area-evidence.jpg'));
+
+        self::assertSame(PickupStatus::Completed, $completed->status);
+        self::assertTrue($service->canView($staff, $completed));
     }
 
     public function test_lane_d_assigned_staff_transitions_to_actual_weighted_deposit_and_completion_is_idempotent(): void

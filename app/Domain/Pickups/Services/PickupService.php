@@ -691,11 +691,11 @@ final readonly class PickupService
         $today = today()->toDateString();
 
         return StaffServiceArea::query()
-            ->where('staff_profile_user_id', $actor->id)
-            ->where('service_area_id', $pickup->service_area_id)
-            ->where(static fn (Builder $dates): Builder => $dates->whereNull('active_from')->orWhereDate('active_from', '<=', $today))
-            ->where(static fn (Builder $dates): Builder => $dates->whereNull('active_to')->orWhereDate('active_to', '>=', $today))
-            ->whereHas('serviceArea', static fn (Builder $area): Builder => $area->where('is_active', true))
+            ->where('staff_service_areas.staff_profile_user_id', $actor->id)
+            ->where('staff_service_areas.service_area_id', $pickup->service_area_id)
+            ->where(static fn (Builder $dates): Builder => $dates->whereNull('staff_service_areas.active_from')->orWhereDate('staff_service_areas.active_from', '<=', $today))
+            ->where(static fn (Builder $dates): Builder => $dates->whereNull('staff_service_areas.active_to')->orWhereDate('staff_service_areas.active_to', '>=', $today))
+            ->whereHas('serviceArea', static fn (Builder $area): Builder => $area->where('service_areas.is_active', true))
             ->exists();
     }
 
