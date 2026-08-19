@@ -17,7 +17,7 @@
         $total = $paginator->total();
         $previousUrl = $paginator->previousPageUrl();
         $nextUrl = $paginator->nextPageUrl();
-        $pages = collect($paginator->linkCollection()->items())->map(static fn (array $page): array => [
+        $pages = $paginator->linkCollection()->map(static fn (array $page): array => [
             'label' => $page['label'],
             'url' => $page['url'],
         ])->all();
