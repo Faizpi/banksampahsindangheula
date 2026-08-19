@@ -165,7 +165,7 @@
                                 $depositLabel = $mobileServiceId === null ? 'Mulai Setoran Langsung' : 'Mulai Setoran Keliling';
                             @endphp
                             <div class="rounded-xl border border-border bg-warm-canvas p-4">
-                                <x-ui.select name="mobileServiceId" label="Metode setoran" wire:model="mobileServiceId">
+                                <x-ui.select name="mobileServiceId" label="Metode setoran" wire:model.live="mobileServiceId">
                                     <option value="">Setoran langsung</option>
                                     @foreach ($mobileServices as $mobileService)
                                         <option value="{{ $mobileService->id }}">Keliling · {{ $mobileService->point }} · {{ $mobileService->starts_at->format('d M H:i') }}</option>
