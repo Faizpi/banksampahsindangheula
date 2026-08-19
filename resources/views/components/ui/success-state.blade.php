@@ -10,10 +10,11 @@
             @if ($description)
                 <p class="mt-3 text-body text-text-secondary">{{ $description }}</p>
             @endif
-            @if ($viewHref || $printHref)
+            @if ($viewHref || $printHref || isset($actions))
                 <div class="mt-4 flex flex-wrap gap-2">
                     @if ($viewHref)<a href="{{ $viewHref }}" class="inline-flex min-h-touch items-center justify-center rounded-md bg-forest-600 px-5 text-label text-white transition duration-180 ease-standard hover:bg-forest-700 active:translate-y-px">Lihat bukti</a>@endif
                     @if ($printHref)<a href="{{ $printHref }}" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-5 text-label text-deep-green transition duration-180 ease-standard hover:border-forest-600 hover:bg-success-bg active:translate-y-px">Cetak bukti</a>@endif
+                    {{ $actions ?? '' }}
                 </div>
             @endif
         </div>
