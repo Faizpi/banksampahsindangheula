@@ -71,7 +71,7 @@
                     @elseif ($redemption->status->value === 'siap_diambil' && $canHandover)
                         <button type="button" wire:click="select({{ $redemption->id }})"
                             class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-harvest-gold px-5 text-label font-bold text-deep-green transition hover:opacity-90">
-                            <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7-7"/></svg>
+                            <x-public.icon name="arrow-right" size="size-4" />
                             Proses serah-terima
                         </button>
                     @elseif ($redemption->status->value === 'siap_diambil')
