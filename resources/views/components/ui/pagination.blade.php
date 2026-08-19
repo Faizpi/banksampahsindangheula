@@ -8,6 +8,8 @@
     $previousUrl = null;
     $nextUrl = null;
     $pages = [];
+    $isLivewirePagination = false;
+    $pageName = 'page';
 
     if ($paginator instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
         $currentPage = $paginator->currentPage();
@@ -21,6 +23,8 @@
             'label' => $page['label'],
             'url' => $page['url'],
         ])->all();
+        $isLivewirePagination = class_exists(\Livewire\Livewire::class);
+        $pageName = $paginator->getPageName();
     }
 
     $safeUrl = static function (mixed $url): ?string {
@@ -62,7 +66,7 @@
     </div>
     <div class="flex items-center gap-2">
         @if ($previous)
-            <a href="{{ $previous }}" rel="prev" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-4 text-label text-deep-green hover:border-forest-600 hover:bg-success-bg">Sebelumnya</a>
+            <button type="button" wire:click="previousPage('{{ $pageName }}')" rel="prev" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-4 text-label text-deep-green hover:border-forest-600 hover:bg-success-bg">Sebelumnya</button>
         @else
             <span data-pagination-disabled aria-disabled="true" class="inline-flex min-h-touch cursor-not-allowed items-center justify-center rounded-md border border-border bg-disabled-bg px-4 text-label text-text-secondary">Sebelumnya</span>
         @endif
@@ -79,7 +83,7 @@
                         @if ($current)
                             <span aria-current="page" class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-md bg-forest-600 px-3 text-label text-white">{{ $pageLabel }}</span>
                         @elseif ($pageUrl)
-                            <a href="{{ $pageUrl }}" aria-label="Halaman {{ $pageLabel }}" class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-md border border-border bg-surface px-3 text-label text-deep-green hover:bg-success-bg">{{ $pageLabel }}</a>
+                            <button type="button" wire:click="gotoPage({{ $pageNumber }}, '{{ $pageName }}')" aria-label="Halaman {{ $pageLabel }}" class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-md border border-border bg-surface px-3 text-label text-deep-green hover:bg-success-bg">{{ $pageLabel }}</button>
                         @endif
                     </li>
                 @endforeach
@@ -87,7 +91,7 @@
         @endif
 
         @if ($next)
-            <a href="{{ $next }}" rel="next" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-4 text-label text-deep-green hover:border-forest-600 hover:bg-success-bg">Berikutnya</a>
+            <button type="button" wire:click="nextPage('{{ $pageName }}')" rel="next" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-4 text-label text-deep-green hover:border-forest-600 hover:bg-success-bg">Berikutnya</button>
         @else
             <span data-pagination-disabled aria-disabled="true" class="inline-flex min-h-touch cursor-not-allowed items-center justify-center rounded-md border border-border bg-disabled-bg px-4 text-label text-text-secondary">Berikutnya</span>
         @endif
