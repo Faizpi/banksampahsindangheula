@@ -15,7 +15,22 @@
         <x-ui.mascot variant="11" bubble="Timbang dengan akurat!" bubblePosition="top" class="h-28 w-auto shrink-0" />
     </div>
 
-    @if ($draft?->isFinal() || $draft?->isPendingReview())
+    @php
+        $depositComplete = $draft?->isFinal() || $draft?->isPendingReview();
+        $depositSteps = [
+            ['key' => 'input', 'title' => 'Isi item setoran', 'description' => 'Tambahkan jenis sampah, kondisi, dan berat aktual.', 'icon' => 'clipboard-check'],
+            ['key' => 'evidence', 'title' => 'Unggah bukti transaksi', 'description' => 'Bukti privat diperlukan sebelum finalisasi.', 'icon' => 'file-check'],
+            ['key' => 'review', 'title' => 'Tinjau finalisasi', 'description' => 'Periksa kembali nilai sebelum transaksi dicatat.', 'icon' => 'eye'],
+            ['key' => 'final', 'title' => 'Setoran selesai', 'description' => 'Setoran tercatat dan saldo diproses sesuai statusnya.', 'icon' => 'circle-check'],
+        ];
+        $depositCurrentStatus = $depositComplete ? 'final' : ($finalizationReviewOpen ? 'review' : ($evidence ? 'evidence' : 'input'));
+    @endphp
+
+    <x-ui.panel title="Tahapan setoran" description="Ikuti setiap tahap agar pencatatan setoran tetap jelas.">
+        <x-ui.status-stepper :steps="$depositSteps" :current-status="$depositCurrentStatus" :completed-statuses="['final']" label="Tahapan setoran" />
+    </x-ui.panel>
+
+    @if ($depositComplete)
         <x-ui.success-state
             :title="$draft->isPendingReview() ? 'Setoran menunggu persetujuan' : 'Setoran berhasil difinalisasi'"
             :reference="(string) $draft->deposit_number"
@@ -23,7 +38,11 @@
             :time="$draft->occurred_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i')"
             :status="(string) $draft->status"
             :description="session('success')"
-        />
+        >
+            <x-slot:actions>
+                <button type="button" wire:click="startNewDeposit" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-5 text-label text-deep-green transition hover:border-forest-600 hover:bg-success-bg active:translate-y-px">Buat setoran baru</button>
+            </x-slot:actions>
+        </x-ui.success-state>
     @elseif (session('success'))
         <div role="status" class="flex items-center gap-3 rounded-xl border border-forest-600 bg-success-bg px-4 py-3.5 text-body text-deep-green">
             <svg viewBox="0 0 24 24" class="size-5 shrink-0 text-forest-600" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -43,6 +62,7 @@
         </div>
     @endif
 
+    @unless ($depositComplete)
     <x-ui.panel title="Item setoran" description="Berat dalam kilogram dengan maksimal tiga angka desimal.">
         <div class="space-y-3">
             @forelse ($items as $index => $item)
@@ -143,5 +163,6 @@
          @error('evidence')
              <p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
          @enderror
-     </x-ui.panel>
-</section>
+      </x-ui.panel>
+    @endunless
+ </section>
