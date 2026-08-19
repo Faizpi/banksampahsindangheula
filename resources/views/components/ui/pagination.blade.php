@@ -1,5 +1,6 @@
 @props([
     'label' => 'Navigasi halaman',
+    'paginator' => null,
     'currentPage' => 1,
     'lastPage' => 1,
     'from' => 0,
@@ -11,6 +12,20 @@
 ])
 
 @php
+    if ($paginator instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
+        $currentPage = $paginator->currentPage();
+        $lastPage = $paginator->lastPage();
+        $from = $paginator->firstItem() ?? 0;
+        $to = $paginator->lastItem() ?? 0;
+        $total = $paginator->total();
+        $previousUrl = $paginator->previousPageUrl();
+        $nextUrl = $paginator->nextPageUrl();
+        $pages = collect($paginator->linkCollection()->items())->map(static fn (array $page): array => [
+            'label' => $page['label'],
+            'url' => $page['url'],
+        ])->all();
+    }
+
     $safeUrl = static function (mixed $url): ?string {
         if (!is_string($url) || $url === '' || preg_match('/[\x00-\x20\x7F]/', $url) === 1 || preg_match('/%(?![0-9A-Fa-f]{2})/', $url) === 1 || str_contains($url, '\\')) return null;
         $decoded = rawurldecode($url);
