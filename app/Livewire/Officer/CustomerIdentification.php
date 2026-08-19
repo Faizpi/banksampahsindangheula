@@ -134,6 +134,7 @@ final class CustomerIdentification extends Component
         }
 
         $this->confirmed = true;
+        $this->selectedService = 'deposit';
     }
 
     public function chooseService(string $service): void

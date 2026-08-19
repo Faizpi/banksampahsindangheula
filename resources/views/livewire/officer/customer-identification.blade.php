@@ -154,27 +154,6 @@
                     <p class="text-body-sm text-text-secondary">Nomor referensi: {{ $candidate->maskedNumber() }}</p>
 
 
-                    @if ($selectedService === '')
-                        <div class="mt-5">
-                            <h3 class="text-title font-bold text-deep-green">Pilih layanan warga</h3>
-                            <p class="mt-1 text-body-sm text-text-secondary">Pisahkan jalur agar tindakan yang dipilih tetap jelas dan tidak tercampur.</p>
-                            <div class="mt-4 max-w-xl">
-                                <button type="button" wire:click="chooseService('deposit')" class="group flex min-h-32 w-full items-start justify-between gap-4 rounded-xl border-2 border-forest-600 bg-success-bg p-5 text-left transition hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2">
-                                    <span>
-                                        <span class="block text-title font-bold text-deep-green">Setoran</span>
-                                        <span class="mt-1 block max-w-md text-body-sm text-text-secondary">Catat setoran langsung atau pilih jadwal layanan keliling.</span>
-                                    </span>
-                                    <svg viewBox="0 0 24 24" class="mt-1 size-5 shrink-0 text-forest-700 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                                </button>
-                                <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId, 'assistedServiceId' => $assistedServiceId]) }}" class="mt-3 inline-flex min-h-touch items-center justify-center gap-2 rounded-xl border-2 border-forest-600 px-5 text-label font-bold text-forest-700 transition hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2">
-                                    Mulai Setoran
-                                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                                </a>
-                            </div>
-
-                        </div>
-                    @endif
-
                     @if ($selectedService === 'deposit')
                         <div class="mt-5 border-t border-border pt-4">
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
