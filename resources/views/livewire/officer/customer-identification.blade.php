@@ -15,6 +15,27 @@
         <x-ui.mascot variant="6" bubble="Cari warga dengan mudah!" bubblePosition="top" class="h-28 w-auto shrink-0" />
     </div>
 
+    @php
+        $identificationSteps = [
+            ['key' => 'identify', 'title' => 'Identifikasi', 'description' => 'Pindai QR atau cari nomor warga.', 'icon' => 'eye'],
+            ['key' => 'confirm', 'title' => 'Konfirmasi', 'description' => 'Pastikan nama warga sesuai.', 'icon' => 'circle-check'],
+            ['key' => 'service', 'title' => 'Pilih layanan', 'description' => 'Tentukan proses yang akan dijalankan.', 'icon' => 'clipboard-check'],
+            ['key' => 'complete', 'title' => 'Selesaikan', 'description' => 'Jalankan layanan yang dipilih.', 'icon' => 'flag'],
+            ['key' => 'summary', 'title' => 'Ringkasan', 'description' => 'Periksa hasil layanan warga.', 'icon' => 'file-check'],
+        ];
+        $identificationCurrentStep = $candidate === null
+            ? 'identify'
+            : (! $confirmed ? 'confirm' : ($selectedService === '' ? 'service' : 'complete'));
+    @endphp
+
+    <x-ui.panel title="Tahapan layanan warga" description="Ikuti alur ini agar identifikasi dan layanan warga tetap jelas.">
+        <x-ui.status-stepper
+            :steps="$identificationSteps"
+            :current-status="$identificationCurrentStep"
+            label="Tahapan layanan warga"
+        />
+    </x-ui.panel>
+
     @if ($scannerOpen)
         <x-ui.panel title="Pindai QR nasabah" description="Arahkan kamera ke QR kartu nasabah. QR hanya berisi token acak; nama tetap harus dikonfirmasi." state="success">
             <div
@@ -120,7 +141,7 @@
 
     {{-- Candidate Result --}}
     @if ($candidate)
-        <x-ui.panel title="Kandidat identitas" state="{{ $confirmed ? 'success' : 'default' }}">
+        <x-ui.panel title="Kandidat identitas">
             @if ($confirmed)
                 <div role="status" class="space-y-1">
                     <div class="flex items-center gap-2">
@@ -132,13 +153,6 @@
                     <p class="text-h2 font-bold text-deep-green">{{ $candidate->name }}</p>
                     <p class="text-body-sm text-text-secondary">Nomor referensi: {{ $candidate->maskedNumber() }}</p>
 
-                    <ol class="mt-5 grid gap-2 border-t border-border pt-4 text-body-sm sm:grid-cols-5">
-                        <li class="font-semibold text-forest-700">1. Identifikasi</li>
-                        <li class="font-semibold text-forest-700">2. Konfirmasi</li>
-                        <li class="font-semibold {{ $selectedService === '' ? 'text-deep-green' : 'text-forest-700' }}">3. Pilih layanan</li>
-                        <li class="text-text-secondary">4. Selesaikan</li>
-                        <li class="text-text-secondary">5. Ringkasan</li>
-                    </ol>
 
                     @if ($selectedService === '')
                         <div class="mt-5">
