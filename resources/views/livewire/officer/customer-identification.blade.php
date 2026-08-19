@@ -156,23 +156,26 @@
 
                     @if ($selectedService === 'deposit')
                         <div class="mt-5 border-t border-border pt-4">
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId, 'assistedServiceId' => $assistedServiceId]) }}" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2">
-                                    Mulai Setoran
+                            @php
+                                $depositQuery = http_build_query(array_filter([
+                                    'mobileServiceId' => $mobileServiceId,
+                                    'assistedServiceId' => $assistedServiceId,
+                                ]));
+                                $depositUrl = route('officer.deposit-form', ['customerId' => $candidate->userId]).($depositQuery !== '' ? '?'.$depositQuery : '');
+                                $depositLabel = $mobileServiceId === null ? 'Mulai Setoran Langsung' : 'Mulai Setoran Keliling';
+                            @endphp
+                            <div class="rounded-xl border border-border bg-warm-canvas p-4">
+                                <x-ui.select name="mobileServiceId" label="Metode setoran" wire:model="mobileServiceId">
+                                    <option value="">Setoran langsung</option>
+                                    @foreach ($mobileServices as $mobileService)
+                                        <option value="{{ $mobileService->id }}">Keliling · {{ $mobileService->point }} · {{ $mobileService->starts_at->format('d M H:i') }}</option>
+                                    @endforeach
+                                </x-ui.select>
+                                <a href="{{ $depositUrl }}" class="mt-3 inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2">
+                                    {{ $depositLabel }}
                                     <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                                 </a>
                             </div>
-                            @if ($mobileServices->isNotEmpty())
-                                <div class="mt-4 rounded-xl border border-border bg-warm-canvas p-4">
-                                    <x-ui.select name="mobileServiceId" label="Jadwal keliling (opsional)" wire:model="mobileServiceId">
-                                        <option value="">Setoran langsung</option>
-                                        @foreach ($mobileServices as $mobileService)
-                                            <option value="{{ $mobileService->id }}">{{ $mobileService->point }} · {{ $mobileService->starts_at->format('d M H:i') }}</option>
-                                        @endforeach
-                                    </x-ui.select>
-                                    <a href="{{ route('officer.deposit-form', ['customerId' => $candidate->userId]) }}?{{ http_build_query(array_filter(['mobileServiceId' => $mobileServiceId, 'assistedServiceId' => $assistedServiceId])) }}" class="mt-3 inline-flex min-h-touch items-center justify-center rounded-xl border-2 border-forest-600 px-5 text-label font-bold text-forest-700 transition hover:bg-success-bg">Mulai Setoran Keliling</a>
-                                </div>
-                            @endif
                         </div>
                     @endif
 
