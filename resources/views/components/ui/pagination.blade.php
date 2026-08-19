@@ -64,7 +64,7 @@
         <p class="text-body-sm text-text-primary">Menampilkan {{ $normalizedFrom }}–{{ $normalizedTo }} dari {{ $normalizedTotal }} hasil</p>
         <p class="text-caption text-text-secondary">Halaman {{ $normalizedCurrentPage }} dari {{ $normalizedLastPage }}</p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="flex items-center justify-end gap-2 self-end sm:self-auto">
         @if ($previous)
             <button type="button" wire:click="previousPage('{{ $pageName }}')" rel="prev" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-4 text-label text-deep-green hover:border-forest-600 hover:bg-success-bg">Sebelumnya</button>
         @else
