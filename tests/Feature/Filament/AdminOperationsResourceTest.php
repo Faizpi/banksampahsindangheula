@@ -125,6 +125,45 @@ final class AdminOperationsResourceTest extends TestCase
         self::assertFalse($viewer->fresh()->can('view', $otherRegion));
     }
 
+    public function test_announcement_edit_action_preloads_persisted_rt_targets(): void
+    {
+        $admin = $this->userWith('backoffice.access', 'announcement.view', 'announcement.manage');
+        $firstRt = $this->createRt('ANNOUNCEMENT-FIRST');
+        $secondRt = $this->createRt('ANNOUNCEMENT-SECOND');
+        $announcement = Announcement::factory()->create([
+            'audience' => AnnouncementAudience::Region,
+            'status' => AnnouncementStatus::Draft,
+            'created_by' => $admin->id,
+        ]);
+        $announcement->rts()->attach([$firstRt->id, $secondRt->id]);
+        $this->actingAs($admin);
+
+        Livewire::test(ManageAnnouncements::class)
+            ->mountTableAction('edit', $announcement->fresh())
+            ->assertTableActionDataSet([
+                'rt_ids' => [$firstRt->id, $secondRt->id],
+            ]);
+    }
+
+    public function test_mobile_service_edit_action_preloads_persisted_staff_and_waste_types(): void
+    {
+        [$admin, $firstStaff, $rt, $firstType] = $this->mobileContext();
+        $secondStaff = $this->userWith('mobile-service.operate');
+        $secondStaff->staffProfile()->create(['staff_number' => 'RESOURCE-STF-'.uniqid(), 'service_area_id' => null, 'active_from' => today(), 'active_to' => null]);
+        $category = WasteCategory::factory()->create();
+        $unit = WasteUnit::factory()->weight('1.000000')->create();
+        $secondType = WasteType::factory()->create(['waste_category_id' => $category->id, 'waste_unit_id' => $unit->id, 'is_active' => true]);
+        $service = app(MobileServiceService::class)->create($admin, null, $rt->id, 'Titik edit terhidrasi', '2026-08-11 09:00:00', '2026-08-11 11:00:00', 20, '', [$firstStaff->id, $secondStaff->id], [$firstType->id, $secondType->id]);
+        $this->actingAs($admin);
+
+        Livewire::test(ManageMobileServices::class)
+            ->mountTableAction('edit', $service->fresh())
+            ->assertTableActionDataSet([
+                'staff_ids' => [$firstStaff->id, $secondStaff->id],
+                'waste_type_ids' => [$firstType->id, $secondType->id],
+            ]);
+    }
+
     public function test_target_progress_batch_preserves_formula_and_avoids_row_aggregation_queries(): void
     {
         $admin = $this->userWith('target.view', 'target.manage', 'target.publish', 'waste.manage');

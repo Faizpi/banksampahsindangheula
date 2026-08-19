@@ -22,6 +22,7 @@ use App\Domain\Identity\Support\SystemRoles;
 use App\Domain\Pickups\Enums\PickupStatus;
 use App\Filament\Resources\Identity\Models\Customers\CustomerResource;
 use App\Filament\Resources\Identity\Models\Customers\Pages\ManageCustomers;
+use App\Filament\Resources\Identity\Models\Roles\Pages\ManageRoles as ManageRolesPage;
 use App\Filament\Resources\Identity\Models\Users\Pages\ManageUsers as ManageUsersPage;
 use App\Filament\Resources\Identity\Models\Users\UserResource;
 use App\Models\User;
@@ -235,6 +236,23 @@ final class IdentityManagementResourceTest extends TestCase
                 'customer_number' => 'NSB-00000001',
                 'staff_number' => 'STF-00000001',
                 'service_area_names' => 'Area VIEW-STAFF',
+            ]);
+    }
+
+    public function test_role_edit_action_preloads_persisted_permissions(): void
+    {
+        $actor = User::factory()->create();
+        $role = Role::factory()->create(['name' => 'editable-role']);
+        $firstPermission = Permission::query()->firstOrCreate(['name' => 'role.permission.first'], ['description' => 'First persisted role permission']);
+        $secondPermission = Permission::query()->firstOrCreate(['name' => 'role.permission.second'], ['description' => 'Second persisted role permission']);
+        $role->permissions()->attach([$firstPermission->id, $secondPermission->id], ['granted_by' => $actor->id, 'reason' => 'Persisted role permissions for edit hydration.']);
+        $this->grant($actor, 'role-editor', 'role.manage');
+        $this->actingAs($actor->fresh());
+
+        Livewire::test(ManageRolesPage::class)
+            ->mountTableAction('edit', $role->fresh())
+            ->assertTableActionDataSet([
+                'permissions' => [$firstPermission->id, $secondPermission->id],
             ]);
     }
 

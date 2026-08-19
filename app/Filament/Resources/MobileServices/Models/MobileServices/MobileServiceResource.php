@@ -79,7 +79,10 @@ final class MobileServiceResource extends Resource
             TextColumn::make('served_count')->label('Terlayani'),
             TextColumn::make('status')->label('Status')->badge(),
         ])->recordActions([
-            EditAction::make()->visible(fn (MobileService $record): bool => $record->status === MobileServiceStatus::Draft)->using(fn (MobileService $record, array $data): MobileService => self::service()->update(self::actor(), $record, isset($data['rw_id']) ? (int) $data['rw_id'] : null, isset($data['rt_id']) ? (int) $data['rt_id'] : null, (string) $data['point'], (string) $data['starts_at'], (string) $data['ends_at'], (int) $data['capacity'], (string) ($data['notes'] ?? ''), array_map('intval', $data['staff_ids'] ?? []), array_map('intval', $data['waste_type_ids'] ?? []))),
+            EditAction::make()->visible(fn (MobileService $record): bool => $record->status === MobileServiceStatus::Draft)->fillForm(fn (MobileService $record): array => [
+                'staff_ids' => $record->staff()->pluck('users.id')->all(),
+                'waste_type_ids' => $record->wasteTypes()->pluck('waste_types.id')->all(),
+            ])->using(fn (MobileService $record, array $data): MobileService => self::service()->update(self::actor(), $record, isset($data['rw_id']) ? (int) $data['rw_id'] : null, isset($data['rt_id']) ? (int) $data['rt_id'] : null, (string) $data['point'], (string) $data['starts_at'], (string) $data['ends_at'], (int) $data['capacity'], (string) ($data['notes'] ?? ''), array_map('intval', $data['staff_ids'] ?? []), array_map('intval', $data['waste_type_ids'] ?? []))),
             Action::make('publish')->label('Publikasikan')->icon(Heroicon::OutlinedMegaphone)->color('success')->visible(fn (MobileService $record): bool => $record->status === MobileServiceStatus::Draft)->authorize('publish')->requiresConfirmation()->modalHeading(fn (MobileService $record): string => "Publikasikan layanan {$record->service_number}?")->modalDescription('Jadwal dan titik layanan akan terlihat oleh warga sesuai cakupan yang dipilih.')->modalSubmitActionLabel('Publikasikan layanan')->action(function (MobileService $record): void {
                 try {
                     self::service()->transition(self::actor(), $record, MobileServiceStatus::Published);
