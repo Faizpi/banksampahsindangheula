@@ -23,7 +23,7 @@
                     @if ($metric['format'] === 'currency')
                         Rp {{ number_format((int) $metrics[$metric['key']], 0, ',', '.') }}
                     @elseif ($metric['format'] === 'weight')
-                        {{ \App\Support\WeightFormatter::format($metrics[$metric['key']]) }} <span class="text-label font-semibold text-text-secondary">kg</span>
+                        {{ \App\Support\WeightFormatter::format($metrics[$metric['key']], fixedTwoDecimals: true) }} <span class="text-label font-semibold text-text-secondary">kg</span>
                     @else
                         {{ $metrics[$metric['key']] }}
                     @endif
@@ -96,7 +96,7 @@
                                 @if ($row['value'] === '' || $row['value'] === null)
                                     —
                                 @elseif ($isWeight)
-                                    {{ \App\Support\WeightFormatter::format($row['value']) }} kg
+                                    {{ \App\Support\WeightFormatter::format($row['value'], fixedTwoDecimals: true) }} kg
                                 @else
                                     Rp {{ number_format((int) $row['value'], 0, ',', '.') }}
                                 @endif
@@ -133,7 +133,7 @@
                                 @if ($row['value'] === '' || $row['value'] === null)
                                     —
                                 @elseif ($isWeight)
-                                    {{ \App\Support\WeightFormatter::format($row['value']) }} kg
+                                    {{ \App\Support\WeightFormatter::format($row['value'], fixedTwoDecimals: true) }} kg
                                 @else
                                     Rp {{ number_format((int) $row['value'], 0, ',', '.') }}
                                 @endif

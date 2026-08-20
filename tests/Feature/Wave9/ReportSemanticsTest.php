@@ -188,6 +188,14 @@ final class ReportSemanticsTest extends TestCase
         self::assertSame('Area Semantics · Alamat Semantics', $reports->displayRows($actor, 'pickups', $period)[0]['detail']);
         self::assertSame('2.500', $reports->displayRows($actor, 'pickups', $period)[0]['value']);
         self::assertSame('weight', $reports->displayRows($actor, 'pickups', $period)[0]['value_format']);
+        Livewire::actingAs($actor);
+        Livewire::test(TreasurerReports::class, ['surface' => 'backoffice'])
+            ->set('reportType', 'pickups')
+            ->set('period', 'custom')
+            ->set('start', $period['start'])
+            ->set('end', $period['end'])
+            ->call('refreshReport')
+            ->assertSee('2,50 kg');
         self::assertSame(12_500, $reports->displayRows($actor, 'participation', $period)[0]['value']);
         self::assertSame('currency', $reports->displayRows($actor, 'participation', $period)[0]['value_format']);
     }

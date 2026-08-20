@@ -81,7 +81,11 @@ final class ReportDetailedDepositExportTest extends TestCase
         self::assertStringContainsString('<autoFilter ref="A1:Q3"/>', $sheet);
         self::assertStringContainsString('<tableParts count="1">', $sheet);
         self::assertStringContainsString('<c r="K2" s="4"><v>4.000</v></c>', $sheet);
+        self::assertStringContainsString('<c r="O2" s="4"><v>1.250</v></c>', $sheet);
+        self::assertStringContainsString('<numFmt numFmtId="165" formatCode="0.00&quot; kg&quot;"/>', $parts['xl/styles.xml']);
         self::assertStringContainsString('<c r="L2" s="5"><v>42000</v></c>', $sheet);
+        self::assertStringContainsString('formatCode="0.00&quot; kg&quot;"', $parts['xl/styles.xml']);
+        self::assertStringNotContainsString('formatCode="0.000&quot; kg&quot;"', $parts['xl/styles.xml']);
         self::assertStringContainsString('<c r="B2" s="3"><v>', $sheet);
         self::assertStringNotContainsString('<mergeCells', $sheet);
         self::assertStringContainsString('<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" name="LaporanTable" displayName="LaporanTable" ref="A1:Q3"', $parts['xl/tables/table1.xml']);
