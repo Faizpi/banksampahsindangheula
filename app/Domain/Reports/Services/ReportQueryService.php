@@ -13,6 +13,7 @@ use App\Domain\Pickups\Models\PickupRequest;
 use App\Domain\Reports\Enums\ReportType;
 use App\Domain\Withdrawals\Models\WithdrawalRequest;
 use App\Models\User;
+use App\Support\WeightFormatter;
 use BackedEnum;
 use Carbon\CarbonImmutable;
 use DateTimeImmutable;
@@ -475,7 +476,7 @@ final readonly class ReportQueryService
 
         return match ($type) {
             ReportType::Deposits, ReportType::Participation => $this->joinDisplayValues([
-                $this->displayValue($record->getAttribute('total_weight_kg')).' kg',
+                WeightFormatter::format($record->getAttribute('total_weight_kg'), fixedTwoDecimals: true).' kg',
                 $this->displayValue($record->getAttribute('method')),
             ], ' · ', 'Setoran sampah'),
             ReportType::Withdrawals => $this->joinDisplayValues([

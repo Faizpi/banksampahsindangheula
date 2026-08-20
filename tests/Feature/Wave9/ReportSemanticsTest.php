@@ -200,6 +200,21 @@ final class ReportSemanticsTest extends TestCase
         self::assertSame('currency', $reports->displayRows($actor, 'participation', $period)[0]['value_format']);
     }
 
+    public function test_deposit_and_participation_detail_weights_always_use_two_indonesian_decimals(): void
+    {
+        $actor = $this->userWith('report.view', 'user.view.all');
+        $condition = WasteCondition::factory()->create();
+        $wasteType = WasteType::factory()->create();
+        $this->seedDeposit($actor, $actor, 20_000, 'DEP-DETAIL-WEIGHT', '20.000', $wasteType, $condition, 'penjemputan');
+
+        $reports = app(ReportQueryService::class);
+        $period = ['start' => '2026-08-01', 'end' => '2026-08-02'];
+
+        foreach (['deposits', 'participation'] as $reportType) {
+            self::assertSame('20,00 kg · penjemputan', $reports->displayRows($actor, $reportType, $period)[0]['detail']);
+        }
+    }
+
     public function test_treasurer_report_uses_the_summary_contract_labels_for_each_type(): void
     {
         $actor = $this->userWith('report.view');
@@ -338,13 +353,13 @@ final class ReportSemanticsTest extends TestCase
         ];
     }
 
-    private function seedDeposit(User $customer, User $staff, int $value, string $number, string $weight, WasteType $wasteType, WasteCondition $condition): Deposit
+    private function seedDeposit(User $customer, User $staff, int $value, string $number, string $weight, WasteType $wasteType, WasteCondition $condition, string $method = 'loket'): Deposit
     {
         $deposit = Deposit::query()->create([
             'deposit_number' => $number,
             'customer_id' => $customer->id,
             'staff_id' => $staff->id,
-            'method' => 'loket',
+            'method' => $method,
             'occurred_at' => '2026-08-01 10:00:00',
             'status' => Deposit::STATUS_FINAL,
             'total_weight_kg' => $weight,

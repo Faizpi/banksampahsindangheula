@@ -187,7 +187,7 @@ final class Wave9ContractsTest extends TestCase
                 'reference' => 'DEP-W9-ROWS-'.$actor->id,
                 'date' => '2026-08-01 10:00:00',
                 'subject' => $actor->name,
-                'detail' => '1.000 kg · loket',
+                'detail' => '1,00 kg · loket',
                 'status' => 'final',
                 'value' => 20_000,
                 'value_format' => 'currency',
