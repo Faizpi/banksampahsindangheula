@@ -10,11 +10,11 @@ use UnitEnum;
 
 final class TechnicalHealthPage extends OperationsDashboard
 {
+    protected static bool $isDiscovered = true;
+
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedChartBar;
 
     protected static string|UnitEnum|null $navigationGroup = 'Administrasi sistem';
-
-    protected static ?string $navigationParentItem = 'Kontrol teknis';
 
     protected static ?int $navigationSort = 10;
 

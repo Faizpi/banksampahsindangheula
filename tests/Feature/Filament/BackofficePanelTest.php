@@ -88,12 +88,8 @@ final class BackofficePanelTest extends TestCase
         );
 
         $this->actingAs($superadmin->fresh())->get('/backoffice/login')->assertRedirect('/backoffice');
-        self::assertContains(
-            'Kontrol teknis',
-            $this->navigationLabelsForGroup($panel, 'Administrasi sistem'),
-        );
         self::assertSame(
-            ['Kontrol teknis', 'Health', 'Pengaturan', 'Pemeliharaan', 'Cadangan', 'Retensi audit', 'Retensi foto'],
+            ['Health'],
             $this->navigationLabelsForGroup($panel, 'Administrasi sistem', includeChildren: true),
         );
         self::assertContains(
@@ -120,15 +116,17 @@ final class BackofficePanelTest extends TestCase
         );
     }
 
-    public function test_technical_dashboard_is_discovered_and_permission_gated(): void
+    public function test_only_technical_health_is_discovered_and_permission_gated(): void
     {
-        self::assertContains(OperationsDashboard::class, array_values(Filament::getPanel('backoffice')->getPages()));
-        self::assertContains(TechnicalHealthPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
-        self::assertContains(TechnicalSettingsPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
-        self::assertContains(TechnicalMaintenancePage::class, array_values(Filament::getPanel('backoffice')->getPages()));
-        self::assertContains(TechnicalBackupsPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
-        self::assertContains(TechnicalAuditRetentionPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
-        self::assertContains(TechnicalMediaRetentionPage::class, array_values(Filament::getPanel('backoffice')->getPages()));
+        $pages = array_values(Filament::getPanel('backoffice')->getPages());
+
+        self::assertContains(TechnicalHealthPage::class, $pages);
+        self::assertNotContains(OperationsDashboard::class, $pages);
+        self::assertNotContains(TechnicalSettingsPage::class, $pages);
+        self::assertNotContains(TechnicalMaintenancePage::class, $pages);
+        self::assertNotContains(TechnicalBackupsPage::class, $pages);
+        self::assertNotContains(TechnicalAuditRetentionPage::class, $pages);
+        self::assertNotContains(TechnicalMediaRetentionPage::class, $pages);
 
         $technical = User::factory()->create();
         $viewer = User::factory()->create();
@@ -211,11 +209,17 @@ final class BackofficePanelTest extends TestCase
         $this->actingAs($superadmin->fresh());
         $this->get('/backoffice/reconciliation')->assertOk()->assertSee('Rekonsiliasi saldo harian');
         $this->get('/backoffice/technical-health-page')->assertOk()->assertSee('Health sistem');
-        $this->get('/backoffice/technical-settings-page')->assertOk()->assertSee('Pengaturan teknis');
-        $this->get('/backoffice/technical-maintenance-page')->assertOk()->assertSee('Pemeliharaan aplikasi');
-        $this->get('/backoffice/technical-backups-page')->assertOk()->assertSee('Cadangan dan pemulihan');
-        $this->get('/backoffice/technical-audit-retention-page')->assertOk()->assertSee('Retensi audit');
-        $this->get('/backoffice/technical-media-retention-page')->assertOk()->assertSee('Pembersihan foto penjemputan');
+
+        foreach ([
+            '/backoffice/operations-dashboard',
+            '/backoffice/technical-settings-page',
+            '/backoffice/technical-maintenance-page',
+            '/backoffice/technical-backups-page',
+            '/backoffice/technical-audit-retention-page',
+            '/backoffice/technical-media-retention-page',
+        ] as $uri) {
+            $this->get($uri)->assertNotFound();
+        }
     }
 
     public function test_backoffice_hubs_use_the_shared_light_intro_surface(): void
@@ -232,7 +236,6 @@ final class BackofficePanelTest extends TestCase
             '/backoffice/waste-catalog',
             '/backoffice/reports',
             '/backoffice/work-queue-dashboard',
-            '/backoffice/operations-dashboard',
             '/backoffice/technical-health-page',
         ] as $uri) {
             $this->get($uri)
