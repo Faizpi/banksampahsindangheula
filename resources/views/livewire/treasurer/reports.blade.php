@@ -67,14 +67,14 @@
     {{-- Export --}}
     <x-ui.panel title="Ekspor Excel" description="Unduh data sesuai filter aktif untuk disimpan atau dibagikan secara internal.">
         <div class="flex justify-end">
-            <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled" class="px-4">
-                <span wire:loading.remove wire:target="export" class="inline-flex items-center gap-2">
+            <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled" class="min-w-[10.5rem] whitespace-nowrap px-5">
+                <span wire:loading.remove wire:target="export" class="inline-flex w-full flex-nowrap items-center justify-center gap-2 whitespace-nowrap">
                     <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 19h14a2 2 0 0 0 2-2v-2M5 19a2 2 0 0 1-2-2v-2" />
                     </svg>
-                    <span>Unduh Excel</span>
+                    <span class="whitespace-nowrap">Unduh Excel</span>
                 </span>
-                <span wire:loading wire:target="export">Menyiapkan...</span>
+                <span wire:loading wire:target="export" class="inline-flex w-full flex-nowrap items-center justify-center whitespace-nowrap">Menyiapkan...</span>
             </x-ui.button>
         </div>
     </x-ui.panel>
@@ -82,9 +82,27 @@
     <x-ui.panel title="Hasil laporan" description="Data hanya dapat dilihat dan mengikuti cakupan akses serta filter yang dipilih.">
         <div class="grid gap-3 md:hidden">
             @forelse ($rows as $row)
+                @php($isWeight = $row['value_format'] === 'weight')
                 <article class="rounded-md border border-border bg-warm-canvas p-4">
-                    <div class="flex items-start justify-between gap-3"><h3 class="text-label font-bold text-deep-green">{{ $row['reference'] }}</h3><span class="text-caption font-semibold text-text-secondary">{{ \App\Support\StatusLabel::for($row['status']) }}</span></div>
-                    <dl class="mt-3 grid gap-2 text-body-sm"><div><dt class="text-text-secondary">Waktu</dt><dd class="font-semibold text-deep-green">{{ $row['date'] }}</dd></div><div><dt class="text-text-secondary">Subjek</dt><dd class="font-semibold text-deep-green">{{ $row['subject_id'] }}</dd></div><div><dt class="text-text-secondary">Nilai</dt><dd class="amount-tabular font-semibold text-deep-green">{{ $row['amount'] === '' ? '—' : 'Rp '.number_format((int) $row['amount'], 0, ',', '.') }}</dd></div></dl>
+                    <h3 class="text-label font-bold text-deep-green">{{ $row['reference'] }}</h3>
+                    <dl class="mt-3 grid gap-2 text-body-sm">
+                        <div><dt class="text-text-secondary">Waktu</dt><dd class="font-semibold text-deep-green">{{ $row['date'] }}</dd></div>
+                        <div><dt class="text-text-secondary">Nasabah</dt><dd class="font-semibold text-deep-green">{{ $row['subject'] }}</dd></div>
+                        <div><dt class="text-text-secondary">Detail</dt><dd class="text-deep-green">{{ $row['detail'] }}</dd></div>
+                        <div><dt class="text-text-secondary">Status</dt><dd class="font-semibold text-deep-green">{{ \App\Support\StatusLabel::for($row['status']) }}</dd></div>
+                        <div>
+                            <dt class="text-text-secondary">{{ $isWeight ? 'Estimasi berat' : 'Nilai' }}</dt>
+                            <dd class="amount-tabular font-semibold text-deep-green">
+                                @if ($row['value'] === '' || $row['value'] === null)
+                                    —
+                                @elseif ($isWeight)
+                                    {{ \App\Support\WeightFormatter::format($row['value']) }} kg
+                                @else
+                                    Rp {{ number_format((int) $row['value'], 0, ',', '.') }}
+                                @endif
+                            </dd>
+                        </div>
+                    </dl>
                 </article>
             @empty
                 <x-ui.empty-state kind="no-results" title="Tidak ada hasil" description="Ubah periode atau hapus filter untuk melihat data lain." />
@@ -96,22 +114,33 @@
                     <tr>
                         <th class="px-3 py-2 font-semibold">Referensi</th>
                         <th class="px-3 py-2 font-semibold">Waktu</th>
-                        <th class="px-3 py-2 font-semibold">Subjek</th>
+                        <th class="px-3 py-2 font-semibold">Nasabah</th>
+                        <th class="px-3 py-2 font-semibold">Detail</th>
                         <th class="px-3 py-2 font-semibold">Status</th>
                         <th class="px-3 py-2 text-right font-semibold">Nilai</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-border">
                     @forelse ($rows as $row)
+                        @php($isWeight = $row['value_format'] === 'weight')
                         <tr>
                             <td class="whitespace-nowrap px-3 py-2 font-medium text-deep-green">{{ $row['reference'] }}</td>
                             <td class="whitespace-nowrap px-3 py-2 text-text-secondary">{{ $row['date'] }}</td>
-                            <td class="px-3 py-2 text-text-secondary">{{ $row['subject_id'] }}</td>
+                            <td class="px-3 py-2 text-deep-green">{{ $row['subject'] }}</td>
+                            <td class="px-3 py-2 text-text-secondary">{{ $row['detail'] }}</td>
                             <td class="px-3 py-2 text-text-secondary">{{ \App\Support\StatusLabel::for($row['status']) }}</td>
-                            <td class="px-3 py-2 text-right amount-tabular">{{ $row['amount'] === '' ? '—' : 'Rp '.number_format((int) $row['amount'], 0, ',', '.') }}</td>
+                            <td class="px-3 py-2 text-right amount-tabular">
+                                @if ($row['value'] === '' || $row['value'] === null)
+                                    —
+                                @elseif ($isWeight)
+                                    {{ \App\Support\WeightFormatter::format($row['value']) }} kg
+                                @else
+                                    Rp {{ number_format((int) $row['value'], 0, ',', '.') }}
+                                @endif
+                            </td>
                         </tr>
                     @empty
-                        <tr><td colspan="5" class="px-3 py-6 text-center text-text-secondary">Tidak ada hasil. Ubah periode atau hapus filter.</td></tr>
+                        <tr><td colspan="6" class="px-3 py-6 text-center text-text-secondary">Tidak ada hasil. Ubah periode atau hapus filter.</td></tr>
                     @endforelse
                 </tbody>
             </table>
