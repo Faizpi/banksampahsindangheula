@@ -69,7 +69,7 @@
             </span>
         </div>
 
-        <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+        <div class="mt-4 flex flex-col items-end gap-3 sm:flex-row sm:justify-end">
             @if ($pickup->status->value === 'dijadwalkan')
                 <button type="button" wire:click="begin" wire:loading.attr="disabled"
                     class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-sky-blue px-5 text-label font-bold text-white transition hover:opacity-90 disabled:cursor-wait disabled:opacity-60">
@@ -119,10 +119,12 @@
                     </div>
                 @endforeach
 
-                <button type="button" wire:click="addActualItem" class="inline-flex min-h-touch items-center gap-2 justify-self-start rounded-xl border-2 border-forest-600 px-4 text-label font-bold text-forest-700 transition hover:bg-success-bg">
-                    <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
-                    Tambah Detail Timbang
-                </button>
+                <div class="flex flex-col items-end">
+                    <button type="button" wire:click="addActualItem" class="inline-flex min-h-touch items-center gap-2 rounded-xl border-2 border-forest-600 px-4 text-label font-bold text-forest-700 transition hover:bg-success-bg">
+                        <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+                        Tambah Detail Timbang
+                    </button>
+                </div>
 
                 <x-ui.media-picker
                     id="pickup-evidence"
@@ -159,7 +161,7 @@
                     @endif
                 </div>
 
-                <div class="flex flex-col gap-3 sm:flex-row">
+                <div class="flex flex-col items-end gap-3 sm:flex-row sm:justify-end">
                     <x-ui.button type="button" wire:click="reviewCompletion" wire:loading.attr="disabled" data-photo-picker-action>
                         <span wire:loading.remove>Review Finalisasi</span>
                         <span wire:loading>Memeriksa...</span>
