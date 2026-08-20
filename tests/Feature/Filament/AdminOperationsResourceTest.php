@@ -256,37 +256,43 @@ final class AdminOperationsResourceTest extends TestCase
 
     public function test_mobile_service_resource_creates_publishes_opens_and_closes_a_schedule(): void
     {
-        [$admin, $staff, $rt, $type] = $this->mobileContext();
-        $this->actingAs($admin);
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-08-10 10:00:00', 'Asia/Jakarta'));
 
-        Livewire::test(ManageMobileServices::class)
-            ->callAction('create', data: [
-                'rw_id' => null,
-                'rt_id' => $rt->id,
-                'point' => 'Balai RT 01',
-                'starts_at' => '2026-08-10 09:00:00',
-                'ends_at' => '2026-08-10 11:00:00',
-                'capacity' => 20,
-                'notes' => 'Bawa timbangan.',
-                'staff_ids' => [$staff->id],
-                'waste_type_ids' => [$type->id],
-            ]);
+        try {
+            [$admin, $staff, $rt, $type] = $this->mobileContext();
+            $this->actingAs($admin);
 
-        $service = MobileService::query()->latest('id')->firstOrFail();
-        self::assertSame(MobileServiceStatus::Draft, $service->status);
+            Livewire::test(ManageMobileServices::class)
+                ->callAction('create', data: [
+                    'rw_id' => null,
+                    'rt_id' => $rt->id,
+                    'point' => 'Balai RT 01',
+                    'starts_at' => '2026-08-10 09:00:00',
+                    'ends_at' => '2026-08-10 11:00:00',
+                    'capacity' => 20,
+                    'notes' => 'Bawa timbangan.',
+                    'staff_ids' => [$staff->id],
+                    'waste_type_ids' => [$type->id],
+                ]);
 
-        Livewire::test(ManageMobileServices::class)
-            ->assertTableActionVisible('publish', $service)
-            ->callTableAction('publish', $service);
-        Livewire::test(ManageMobileServices::class)
-            ->assertTableActionVisible('open', $service->fresh())
-            ->callTableAction('open', $service->fresh());
-        Livewire::test(ManageMobileServices::class)
-            ->assertTableActionVisible('close', $service->fresh())
-            ->callTableAction('close', $service->fresh());
+            $service = MobileService::query()->latest('id')->firstOrFail();
+            self::assertSame(MobileServiceStatus::Draft, $service->status);
 
-        self::assertDatabaseHas('mobile_services', ['id' => $service->id, 'status' => MobileServiceStatus::Closed->value]);
-        self::assertDatabaseHas('audit_logs', ['action' => 'mobile-service.status.changed', 'auditable_id' => $service->id, 'actor_id' => $admin->id]);
+            Livewire::test(ManageMobileServices::class)
+                ->assertTableActionVisible('publish', $service)
+                ->callTableAction('publish', $service);
+            Livewire::test(ManageMobileServices::class)
+                ->assertTableActionVisible('open', $service->fresh())
+                ->callTableAction('open', $service->fresh());
+            Livewire::test(ManageMobileServices::class)
+                ->assertTableActionVisible('close', $service->fresh())
+                ->callTableAction('close', $service->fresh());
+
+            self::assertDatabaseHas('mobile_services', ['id' => $service->id, 'status' => MobileServiceStatus::Closed->value]);
+            self::assertDatabaseHas('audit_logs', ['action' => 'mobile-service.status.changed', 'auditable_id' => $service->id, 'actor_id' => $admin->id]);
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
     }
 
     public function test_capacity_key_change_deactivates_the_old_record_without_direct_deletion(): void
