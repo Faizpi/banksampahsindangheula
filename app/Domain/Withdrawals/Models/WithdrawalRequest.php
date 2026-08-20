@@ -31,6 +31,7 @@ use LogicException;
  * @property int|null $approver_id
  * @property int|null $payer_id
  * @property CarbonImmutable|null $expires_at
+ * @property CarbonImmutable|null $paid_at
  */
 final class WithdrawalRequest extends Model
 {

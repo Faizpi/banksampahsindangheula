@@ -31,6 +31,7 @@ use LogicException;
  * @property int|null $prepared_by_id
  * @property int|null $handover_actor_id
  * @property CarbonImmutable|null $expires_at
+ * @property CarbonImmutable|null $handed_over_at
  */
 final class GroceryRedemption extends Model
 {

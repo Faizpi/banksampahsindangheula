@@ -231,7 +231,7 @@ final class PickupTask extends Component
         if ($deposit instanceof Deposit) {
             $this->pickup->setRelation('deposit', $deposit);
         }
-        $this->receipt = $deposit instanceof Deposit && $deposit->occurred_at !== null
+        $this->receipt = $deposit instanceof Deposit
             ? ['number' => (string) $deposit->deposit_number, 'value' => (int) $deposit->total_value, 'occurredAt' => $deposit->occurred_at->setTimezone('Asia/Jakarta')->translatedFormat('d F Y, H:i'), 'status' => (string) $deposit->status]
             : null;
         $this->evidence = null;
