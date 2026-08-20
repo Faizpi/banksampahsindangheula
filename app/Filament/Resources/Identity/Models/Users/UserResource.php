@@ -113,7 +113,7 @@ final class UserResource extends Resource
                         'customer_number' => $record->customerProfile?->customer_number,
                         'staff_number' => $record->staffProfile?->staff_number,
                         'service_area_names' => $record->staffProfile?->serviceAreas
-                            ->map(fn ($assignment): string => $assignment->serviceArea?->name ?? '')
+                            ->map(fn ($assignment): string => $assignment->serviceArea->name)
                             ->filter()
                             ->implode(', ') ?: null,
                     ];

@@ -123,7 +123,7 @@ final class LedgerEntryResource extends Resource
                     ->fillForm(fn (LedgerEntry $record): array => [
                         'source' => sprintf(
                             'Jenis sumber: %s\nID sumber: %s\nReferensi transaksi: %s',
-                            $record->source_type === null ? 'Tidak tersedia' : class_basename($record->source_type),
+                            class_basename($record->source_type),
                             $record->source_id ?? 'Tidak tersedia',
                             $record->source_key,
                         ),
