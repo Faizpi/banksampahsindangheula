@@ -59,7 +59,7 @@ final class MobileServiceResource extends Resource
                 TextInput::make('point')->label('Titik layanan')->required()->minLength(3)->maxLength(255),
                 DateTimePicker::make('starts_at')->label('Mulai')->seconds(false)->native(false)->required(),
                 DateTimePicker::make('ends_at')->label('Selesai')->seconds(false)->native(false)->after('starts_at')->required(),
-                TextInput::make('capacity')->label('Kapasitas warga')->numeric()->integer()->minValue(0)->maxValue(1000000)->required(),
+                TextInput::make('capacity')->label('Kapasitas warga')->numeric()->integer()->minValue(1)->maxValue(1000000)->required(),
                 Select::make('staff_ids')->label('Petugas layanan')->helperText('Pilih petugas aktif yang dapat mengoperasikan layanan keliling.')->multiple()->required()->minItems(1)->searchable()->preload()->options(fn (): array => User::query()->where('status', UserStatus::Active)->whereHas('staffProfile', fn (Builder $query): Builder => $query)->whereHas('roles.permissions', fn (Builder $query): Builder => $query->where('permissions.name', 'mobile-service.operate'))->orderBy('name')->pluck('name', 'id')->all()),
                 Select::make('waste_type_ids')->label('Jenis sampah yang diterima')->helperText('Pilih jenis sampah aktif yang dapat disetor pada layanan ini.')->multiple()->required()->minItems(1)->searchable()->preload()->options(fn (): array => WasteType::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all()),
                 Textarea::make('notes')->label('Catatan')->maxLength(2000)->rows(4)->columnSpanFull(),
