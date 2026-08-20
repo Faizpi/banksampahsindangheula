@@ -5,5 +5,5 @@
         <p class="mt-2 max-w-3xl text-sm text-text-secondary">Filter data, tinjau ringkasan, atau ekspor ke Excel.</p>
     </section>
 
-    <livewire:treasurer.reports />
+    <livewire:treasurer.reports surface="backoffice" />
 </x-filament-panels::page>
