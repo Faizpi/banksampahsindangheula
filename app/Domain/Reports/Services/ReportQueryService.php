@@ -309,10 +309,10 @@ final readonly class ReportQueryService
     private function scopedQuery(User $actor, ReportType $type, array $filters): Builder
     {
         $query = match ($type) {
-            ReportType::Deposits, ReportType::Participation => Deposit::query()->with('correction')->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED]),
-            ReportType::Withdrawals => WithdrawalRequest::query()->whereNotNull('paid_at'),
-            ReportType::Groceries => GroceryRedemption::query()->whereNotNull('handed_over_at'),
-            ReportType::Pickups => PickupRequest::query()->whereNotNull('completed_at'),
+            ReportType::Deposits, ReportType::Participation => Deposit::query()->with(['correction', 'customer', 'items.wasteType', 'items.condition'])->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED]),
+            ReportType::Withdrawals => WithdrawalRequest::query()->with('customer')->whereNotNull('paid_at'),
+            ReportType::Groceries => GroceryRedemption::query()->with('customer')->whereNotNull('handed_over_at'),
+            ReportType::Pickups => PickupRequest::query()->with('customer')->whereNotNull('completed_at'),
         };
         $this->applyRecordScope($actor, $type, $query);
         $this->applyFilters($query, $type, $filters);
