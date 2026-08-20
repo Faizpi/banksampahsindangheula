@@ -40,7 +40,9 @@
             :description="session('success')"
         >
             <x-slot:actions>
-                <button type="button" wire:click="startNewDeposit" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-5 text-label text-deep-green transition hover:border-forest-600 hover:bg-success-bg active:translate-y-px">Buat setoran baru</button>
+                <div class="flex flex-col items-end">
+                    <button type="button" wire:click="startNewDeposit" class="inline-flex min-h-touch items-center justify-center rounded-md border border-border bg-surface px-5 text-label text-deep-green transition hover:border-forest-600 hover:bg-success-bg active:translate-y-px">Buat setoran baru</button>
+                </div>
             </x-slot:actions>
         </x-ui.success-state>
     @elseif (session('success'))
@@ -127,7 +129,7 @@
                 @endif
             </div>
 
-            <div class="flex flex-col gap-3 pt-2 sm:flex-row">
+            <div class="flex flex-col items-end gap-3 pt-2 sm:flex-row sm:justify-end">
                 <x-ui.button type="button" wire:click="addItem" variant="secondary">
                     <svg viewBox="0 0 24 24" class="mr-2 size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
                     Tambah Item
