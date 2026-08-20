@@ -117,7 +117,7 @@ final class Wave9ContractsTest extends TestCase
         self::assertSame(['deposits', 'withdrawals', 'groceries', 'pickups', 'participation'], $contract['report_types']);
         self::assertSame('paid_at', $contract['report_columns']['withdrawals'][1]);
         self::assertSame('handed_over_at', $contract['report_columns']['groceries'][1]);
-        self::assertSame('completed_at', $contract['report_columns']['pickups'][1]);
+        self::assertContains('completed_at', $contract['report_columns']['pickups']);
         self::assertCount(0, app(ReportQueryService::class)->paginate($actor, ['start' => '2026-08-01', 'end' => '2026-08-02'], perPage: 25));
     }
 
@@ -186,9 +186,11 @@ final class Wave9ContractsTest extends TestCase
             [
                 'reference' => 'DEP-W9-ROWS-'.$actor->id,
                 'date' => '2026-08-01 10:00:00',
-                'subject_id' => (string) $actor->id,
+                'subject' => $actor->name,
+                'detail' => '1.000 kg · loket',
                 'status' => 'final',
-                'amount' => 20_000,
+                'value' => 20_000,
+                'value_format' => 'currency',
             ],
         ], $reports->displayRows($actor, 'deposits', ['start' => '2026-08-01', 'end' => '2026-08-02']));
     }

@@ -144,7 +144,52 @@ final class ReportSemanticsTest extends TestCase
         $reports = app(ReportQueryService::class);
         $period = ['start' => '2026-08-01', 'end' => '2026-08-02'];
         self::assertSame(7_000, $reports->aggregate($actor, $period, 'deposits')['total_value']);
-        self::assertSame(7_000, $reports->displayRows($actor, 'deposits', $period)[0]['amount']);
+        self::assertSame(7_000, $reports->displayRows($actor, 'deposits', $period)[0]['value']);
+    }
+
+    public function test_display_rows_expose_readable_shared_preview_fields_for_every_report_type(): void
+    {
+        $actor = $this->userWith('report.view', 'user.view.all');
+        $customer = User::factory()->create(['name' => 'Nasabah Preview']);
+        $period = ['start' => '2026-08-01', 'end' => '2026-08-02'];
+        $condition = WasteCondition::factory()->create();
+        $wasteType = WasteType::factory()->create();
+        $this->seedDeposit($customer, $actor, 12_500, 'DEP-PREVIEW', '1.250', $wasteType, $condition);
+        $this->seedWithdrawal($customer, $actor, 15_000, 'WDR-PREVIEW');
+        $package = GroceryPackage::query()->create([
+            'code' => 'PKG-PREVIEW',
+            'name' => 'Paket Preview',
+            'contents' => 'Beras dan minyak',
+            'value' => 20_000,
+            'status' => 'aktif',
+        ]);
+        $this->seedGrocery($customer, $actor, $package, 20_000, 'GRC-PREVIEW');
+        [$rt, $area] = $this->pickupRegion();
+        $this->seedPickup($customer, $rt, $area, 'PUP-PREVIEW', '2.500');
+
+        $reports = app(ReportQueryService::class);
+        foreach (['deposits', 'withdrawals', 'groceries', 'pickups', 'participation'] as $reportType) {
+            $row = $reports->displayRows($actor, $reportType, $period)[0];
+
+            self::assertSame(['reference', 'date', 'subject', 'detail', 'status', 'value', 'value_format'], array_keys($row));
+            self::assertSame('Nasabah Preview', $row['subject']);
+            self::assertNotSame((string) $customer->id, $row['subject']);
+            self::assertNotSame('', $row['detail']);
+        }
+
+        self::assertSame('DEP-PREVIEW', $reports->displayRows($actor, 'deposits', $period)[0]['reference']);
+        self::assertSame(12_500, $reports->displayRows($actor, 'deposits', $period)[0]['value']);
+        self::assertSame('currency', $reports->displayRows($actor, 'deposits', $period)[0]['value_format']);
+        self::assertSame(15_000, $reports->displayRows($actor, 'withdrawals', $period)[0]['value']);
+        self::assertSame('currency', $reports->displayRows($actor, 'withdrawals', $period)[0]['value_format']);
+        self::assertSame(20_000, $reports->displayRows($actor, 'groceries', $period)[0]['value']);
+        self::assertSame('currency', $reports->displayRows($actor, 'groceries', $period)[0]['value_format']);
+        self::assertSame('PUP-PREVIEW', $reports->displayRows($actor, 'pickups', $period)[0]['reference']);
+        self::assertSame('Area Semantics · Alamat Semantics', $reports->displayRows($actor, 'pickups', $period)[0]['detail']);
+        self::assertSame('2.500', $reports->displayRows($actor, 'pickups', $period)[0]['value']);
+        self::assertSame('weight', $reports->displayRows($actor, 'pickups', $period)[0]['value_format']);
+        self::assertSame(12_500, $reports->displayRows($actor, 'participation', $period)[0]['value']);
+        self::assertSame('currency', $reports->displayRows($actor, 'participation', $period)[0]['value_format']);
     }
 
     public function test_treasurer_report_uses_the_summary_contract_labels_for_each_type(): void
