@@ -228,14 +228,18 @@ final readonly class ReportExportService
         return [
             'Nomor Setoran' => $deposit->deposit_number,
             'Tanggal Setoran' => $this->dateValue($deposit->occurred_at),
-            'ID Nasabah' => $deposit->customer_id,
-            'Nama Nasabah' => $deposit->customer->name,
-            'Status Setoran' => $this->label($deposit->status),
+            'Nomor Nasabah' => (string) data_get($deposit, 'customer.customerProfile.customer_number', ''),
+            'Nama Nasabah' => (string) data_get($deposit, 'customer.name', ''),
+            'RT' => (string) data_get($deposit, 'customer.customerProfile.rt.name', ''),
+            'Area Layanan' => $this->serviceAreas(data_get($deposit, 'customer.customerProfile.rt.serviceAreas')),
+            'Petugas Setoran' => (string) data_get($deposit, 'staff.name', ''),
             'Metode Setoran' => $this->label($deposit->method),
+            'Lokasi Setoran' => $deposit->location ?? '',
+            'Status Setoran' => $this->label($deposit->status),
             'Total Berat (kg)' => $deposit->total_weight_kg,
             'Total Nilai (Rp)' => $deposit->effectiveTotalValue(),
-            'Jenis Sampah' => $item->wasteType->name,
-            'Kondisi Sampah' => $item->condition->name,
+            'Jenis Sampah' => $item->wasteType->name ?? '',
+            'Kondisi Sampah' => $item->condition->name ?? '',
             'Berat Item (kg)' => $item->weight_kg,
             'Harga per Satuan (Rp)' => $item->price_per_unit,
             'Nilai Item (Rp)' => $item->subtotal,
@@ -249,30 +253,69 @@ final readonly class ReportExportService
             ReportType::Withdrawals => $record instanceof WithdrawalRequest ? [
                 'Nomor Pencairan' => $record->request_number,
                 'Tanggal Dibayar' => $this->dateValue($record->paid_at),
-                'ID Nasabah' => $record->customer_id,
-                'Nama Nasabah' => $record->customer->name,
+                'Nomor Nasabah' => (string) data_get($record, 'customer.customerProfile.customer_number', ''),
+                'Nama Nasabah' => (string) data_get($record, 'customer.name', ''),
+                'RT' => (string) data_get($record, 'customer.customerProfile.rt.name', ''),
+                'Area Layanan' => $this->serviceAreas(data_get($record, 'customer.customerProfile.rt.serviceAreas')),
+                'Petugas Pembayar' => (string) data_get($record, 'payer.name', ''),
+                'Lokasi Pengambilan' => $record->pickup_location ?? '',
+                'Tanggal Pengambilan' => $record->pickup_date ?? '',
+                'Verifikasi Penerima' => $record->recipient_verification ?? '',
+                'Referensi Penerima' => $record->recipient_reference ?? '',
                 'Status Pencairan' => $this->label($record->status),
                 'Jumlah Pencairan (Rp)' => $record->amount,
             ] : [],
             ReportType::Groceries => $record instanceof GroceryRedemption ? [
                 'Nomor Penukaran' => $record->request_number,
                 'Tanggal Diserahkan' => $this->dateValue($record->handed_over_at),
-                'ID Nasabah' => $record->customer_id,
-                'Nama Nasabah' => $record->customer->name,
+                'Nomor Nasabah' => (string) data_get($record, 'customer.customerProfile.customer_number', ''),
+                'Nama Nasabah' => (string) data_get($record, 'customer.name', ''),
+                'RT' => (string) data_get($record, 'customer.customerProfile.rt.name', ''),
+                'Area Layanan' => $this->serviceAreas(data_get($record, 'customer.customerProfile.rt.serviceAreas')),
+                'Nama Paket' => (string) (($record->package_snapshot ?? [])['name'] ?? ''),
+                'Isi Paket' => (string) (($record->package_snapshot ?? [])['contents'] ?? ''),
+                'Petugas Persiapan' => (string) data_get($record, 'preparedBy.name', ''),
+                'Petugas Penyerahan' => (string) data_get($record, 'handoverActor.name', ''),
+                'Catatan Ketersediaan' => $record->availability_note ?? '',
+                'Verifikasi Penerima' => $record->recipient_verification ?? '',
+                'Referensi Penerima' => $record->recipient_reference ?? '',
                 'Status Penukaran' => $this->label($record->status),
                 'Nilai Sembako (Rp)' => $record->value_snapshot,
             ] : [],
             ReportType::Pickups => $record instanceof PickupRequest ? [
                 'Nomor Penjemputan' => $record->request_number,
-                'Tanggal Selesai' => $this->dateValue($record->completed_at),
-                'ID Nasabah' => $record->customer_id,
-                'Nama Nasabah' => $record->customer->name,
-                'ID Area Layanan' => $record->service_area_id,
-                'Status Penjemputan' => $this->label($record->status),
+                'Nama Nasabah' => (string) data_get($record, 'customer.name', ''),
+                'RT' => (string) data_get($record, 'rt.name', ''),
+                'Area Layanan' => (string) data_get($record, 'serviceArea.name', ''),
+                'Alamat Penjemputan' => $record->address ?? '',
+                'Tanggal Pilihan' => $this->dateValue($record->selected_date),
+                'Tanggal Terjadwal' => $this->dateValue($record->scheduled_date),
+                'Petugas Penjemputan' => $record->assignedStaff->name ?? '',
                 'Estimasi Berat (kg)' => $record->estimated_weight_kg,
+                'Catatan' => $record->notes ?? '',
+                'Tanggal Selesai' => $this->dateValue($record->completed_at),
+                'Status Penjemputan' => $this->label($record->status),
             ] : [],
             default => [],
         };
+    }
+
+    /** @param iterable<int, object>|null $serviceAreas */
+    private function serviceAreas(?iterable $serviceAreas): string
+    {
+        if ($serviceAreas === null) {
+            return '';
+        }
+
+        $names = [];
+        foreach ($serviceAreas as $serviceArea) {
+            $name = $serviceArea->name ?? '';
+            if (is_string($name) && $name !== '') {
+                $names[] = $name;
+            }
+        }
+
+        return implode(', ', $names);
     }
 
     /** @param array<string, mixed> $filters */
@@ -411,11 +454,21 @@ final readonly class ReportExportService
     private function headerForColumn(ReportType $type, string $column): string
     {
         return match ($type->value.':'.$column) {
-            'deposits:deposit_number' => 'Nomor Setoran', 'deposits:occurred_at' => 'Tanggal Setoran', 'deposits:customer_id' => 'ID Nasabah', 'deposits:status' => 'Status Setoran', 'deposits:total_weight_kg' => 'Total Berat (kg)', 'deposits:total_value' => 'Total Nilai (Rp)',
-            'participation:occurred_at' => 'Tanggal Setoran', 'participation:customer_id' => 'ID Nasabah', 'participation:status' => 'Status Setoran', 'participation:total_weight_kg' => 'Total Berat (kg)', 'participation:total_value' => 'Total Nilai (Rp)',
-            'withdrawals:request_number' => 'Nomor Pencairan', 'withdrawals:paid_at' => 'Tanggal Dibayar', 'withdrawals:customer_id' => 'ID Nasabah', 'withdrawals:status' => 'Status Pencairan', 'withdrawals:amount' => 'Jumlah Pencairan (Rp)',
-            'groceries:request_number' => 'Nomor Penukaran', 'groceries:handed_over_at' => 'Tanggal Diserahkan', 'groceries:customer_id' => 'ID Nasabah', 'groceries:status' => 'Status Penukaran', 'groceries:value_snapshot' => 'Nilai Sembako (Rp)',
-            'pickups:request_number' => 'Nomor Penjemputan', 'pickups:completed_at' => 'Tanggal Selesai', 'pickups:customer_id' => 'ID Nasabah', 'pickups:status' => 'Status Penjemputan', 'pickups:service_area_id' => 'ID Area Layanan',
+            'deposits:deposit_number', 'participation:deposit_number' => 'Nomor Setoran',
+            'deposits:occurred_at', 'participation:occurred_at' => 'Tanggal Setoran',
+            'deposits:customer_number', 'participation:customer_number', 'withdrawals:customer_number', 'groceries:customer_number' => 'Nomor Nasabah',
+            'deposits:customer_name', 'participation:customer_name', 'withdrawals:customer_name', 'groceries:customer_name', 'pickups:customer_name' => 'Nama Nasabah',
+            'deposits:rt', 'participation:rt', 'withdrawals:rt', 'groceries:rt', 'pickups:rt' => 'RT',
+            'deposits:service_area', 'participation:service_area', 'withdrawals:service_area', 'groceries:service_area', 'pickups:service_area' => 'Area Layanan',
+            'deposits:staff_name', 'participation:staff_name' => 'Petugas Setoran',
+            'deposits:method', 'participation:method' => 'Metode Setoran',
+            'deposits:location', 'participation:location' => 'Lokasi Setoran',
+            'deposits:status', 'participation:status' => 'Status Setoran',
+            'deposits:total_weight_kg', 'participation:total_weight_kg' => 'Total Berat (kg)',
+            'deposits:total_value', 'participation:total_value' => 'Total Nilai (Rp)',
+            'withdrawals:request_number' => 'Nomor Pencairan', 'withdrawals:paid_at' => 'Tanggal Dibayar', 'withdrawals:payer_name' => 'Petugas Pembayar', 'withdrawals:pickup_location' => 'Lokasi Pengambilan', 'withdrawals:pickup_date' => 'Tanggal Pengambilan', 'withdrawals:recipient_verification' => 'Verifikasi Penerima', 'withdrawals:recipient_reference' => 'Referensi Penerima', 'withdrawals:status' => 'Status Pencairan', 'withdrawals:amount' => 'Jumlah Pencairan (Rp)',
+            'groceries:request_number' => 'Nomor Penukaran', 'groceries:handed_over_at' => 'Tanggal Diserahkan', 'groceries:package_name' => 'Nama Paket', 'groceries:package_contents' => 'Isi Paket', 'groceries:prepared_by_name' => 'Petugas Persiapan', 'groceries:handover_staff_name' => 'Petugas Penyerahan', 'groceries:availability_note' => 'Catatan Ketersediaan', 'groceries:recipient_verification' => 'Verifikasi Penerima', 'groceries:recipient_reference' => 'Referensi Penerima', 'groceries:status' => 'Status Penukaran', 'groceries:value_snapshot' => 'Nilai Sembako (Rp)',
+            'pickups:request_number' => 'Nomor Penjemputan', 'pickups:address' => 'Alamat Penjemputan', 'pickups:selected_date' => 'Tanggal Pilihan', 'pickups:scheduled_date' => 'Tanggal Terjadwal', 'pickups:assigned_staff_name' => 'Petugas Penjemputan', 'pickups:estimated_weight_kg' => 'Estimasi Berat (kg)', 'pickups:notes' => 'Catatan', 'pickups:completed_at' => 'Tanggal Selesai', 'pickups:status' => 'Status Penjemputan',
             default => throw ValidationException::withMessages(['export' => 'Kolom ekspor tidak didukung oleh skema bisnis.']),
         };
     }
