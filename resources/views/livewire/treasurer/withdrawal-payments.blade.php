@@ -31,7 +31,7 @@
     {{-- Withdrawal List --}}
     @forelse ($withdrawals as $withdrawal)
         <x-ui.panel :title="$withdrawal->request_number" :description="$withdrawal->customer?->name ?? 'Nasabah'">
-            <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex flex-col items-end gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div class="space-y-1">
                     <p class="amount-tabular text-h2 font-extrabold text-deep-green">
                         Rp{{ number_format($withdrawal->amount, 0, ',', '.') }}
@@ -83,7 +83,9 @@
                     hint="{{ $verificationHint }}"
                     :options="['kartu_nasabah' => 'Pindai kartu nasabah', 'nomor_nasabah' => 'Masukkan nomor nasabah']" />
                 @if ($recipientVerification === 'kartu_nasabah')
-                    <x-ui.button type="button" variant="secondary" wire:click="openScanner">Pindai QR kartu nasabah</x-ui.button>
+                    <div class="flex justify-end">
+                        <x-ui.button type="button" variant="secondary" wire:click="openScanner">Pindai QR kartu nasabah</x-ui.button>
+                    </div>
                     @if ($scannerOpen)
                         <div
                             x-data="{
@@ -148,7 +150,7 @@
                             </div>
                             <p x-show="error" x-text="error" role="alert" class="text-body-sm font-semibold text-terracotta"></p>
                             <x-ui.input wire:model="scanToken" label="Token QR kartu" name="scanToken" placeholder="Masukkan token QR bila pemindai tidak tersedia" :error="$errors->first('recipientReference')" />
-                            <div class="flex flex-col gap-3 sm:flex-row">
+                            <div class="flex flex-col items-end gap-3 sm:flex-row sm:justify-end">
                                 <x-ui.button type="button" wire:click="scanCustomerCard(scanToken)">Resolusi kartu</x-ui.button>
                                 <x-ui.button type="button" variant="quiet" x-on:click="stop(); $wire.closeScanner()">Tutup</x-ui.button>
                                 <x-ui.button type="button" variant="quiet" x-on:click="stop(); start()">Coba Lagi</x-ui.button>
@@ -176,16 +178,18 @@
                 @error('proof')
                     <p class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
                 @enderror
-                <x-ui.button type="button" wire:click="reviewPayment" wire:loading.attr="disabled" wire:target="reviewPayment" data-photo-picker-action>
-                    <span wire:loading.remove wire:target="reviewPayment">Tinjau sebelum bayar</span>
-                    <span wire:loading wire:target="reviewPayment">Memeriksa...</span>
-                </x-ui.button>
+                <div class="flex justify-end">
+                    <x-ui.button type="button" wire:click="reviewPayment" wire:loading.attr="disabled" wire:target="reviewPayment" data-photo-picker-action>
+                        <span wire:loading.remove wire:target="reviewPayment">Tinjau sebelum bayar</span>
+                        <span wire:loading wire:target="reviewPayment">Memeriksa...</span>
+                    </x-ui.button>
+                </div>
 
                 @if ($showPaymentReview)
                     <div class="rounded-md border-2 border-harvest-gold bg-warning-bg p-4" role="alert">
                         <h3 class="text-title font-bold text-deep-green">Konfirmasi pembayaran final</h3>
                         <p class="mt-1 text-body-sm text-text-primary">Pembayaran akan mengubah dana ditahan menjadi saldo keluar dan tidak dapat diulang. Pastikan penerima, nominal, dan bukti sudah benar.</p>
-                        <div class="mt-4 flex flex-col gap-3 sm:flex-row">
+                        <div class="mt-4 flex flex-col items-end gap-3 sm:flex-row sm:justify-end">
                             <x-ui.button type="button" variant="secondary" wire:click="cancelPaymentReview">Ubah data</x-ui.button>
                             <x-ui.button type="button" wire:click="pay" wire:loading.attr="disabled" wire:target="pay">
                                 <span wire:loading.remove wire:target="pay">Bayar dan catat bukti</span>

@@ -34,7 +34,7 @@
 
     {{-- Filter Form --}}
     <x-ui.panel title="Filter laporan" description="Gunakan pilihan cepat atau tentukan tanggal sendiri.">
-        <div class="mb-4 flex flex-wrap gap-2" aria-label="Preset periode">
+        <div class="mb-4 flex flex-wrap justify-end gap-2" aria-label="Preset periode">
             <button type="button" wire:click="setPeriod('today')" class="min-h-touch rounded-md border px-4 text-body-sm font-semibold {{ $period === 'today' ? 'border-forest-600 bg-success-bg text-forest-700' : 'border-border bg-surface text-deep-green hover:border-forest-600 hover:bg-success-bg' }}">Hari ini</button>
             <button type="button" wire:click="setPeriod('week')" class="min-h-touch rounded-md border px-4 text-body-sm font-semibold {{ $period === 'week' ? 'border-forest-600 bg-success-bg text-forest-700' : 'border-border bg-surface text-deep-green hover:border-forest-600 hover:bg-success-bg' }}">Minggu ini</button>
             <button type="button" wire:click="setPeriod('month')" class="min-h-touch rounded-md border px-4 text-body-sm font-semibold {{ $period === 'month' ? 'border-forest-600 bg-success-bg text-forest-700' : 'border-border bg-surface text-deep-green hover:border-forest-600 hover:bg-success-bg' }}">Per bulan</button>
@@ -57,7 +57,7 @@
             <x-ui.select wire:model="serviceAreaId" name="serviceAreaId" label="Area pelayanan (opsional)" :options="$serviceAreas->all()"><option value="">Semua area</option></x-ui.select>
             <x-ui.select wire:model="status" name="status" label="Status (opsional)" :options="$statusOptions"><option value="">Semua status</option></x-ui.select>
             <x-ui.input wire:model="search" name="search" label="Nomor transaksi" placeholder="Contoh: STR-2026-001" />
-            <x-ui.button type="submit" wire:loading.attr="disabled" class="lg:self-end">
+            <x-ui.button type="submit" wire:loading.attr="disabled" class="justify-self-end lg:self-end">
                 <span wire:loading.remove>Terapkan</span>
                 <span wire:loading>Memuat...</span>
             </x-ui.button>
@@ -66,13 +66,15 @@
 
     {{-- Export --}}
     <x-ui.panel title="Ekspor Excel" description="Unduh data sesuai filter aktif untuk disimpan atau dibagikan secara internal.">
-        <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled">
-            <span wire:loading.remove wire:target="export">
-                <svg viewBox="0 0 24 24" class="mr-2 inline size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                Unduh Excel
-            </span>
-            <span wire:loading wire:target="export">Menyiapkan...</span>
-        </x-ui.button>
+        <div class="flex justify-end">
+            <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled">
+                <span wire:loading.remove wire:target="export">
+                    <svg viewBox="0 0 24 24" class="mr-2 inline size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    Unduh Excel
+                </span>
+                <span wire:loading wire:target="export">Menyiapkan...</span>
+            </x-ui.button>
+        </div>
     </x-ui.panel>
 
     <x-ui.panel title="Hasil laporan" description="Data hanya dapat dilihat dan mengikuti cakupan akses serta filter yang dipilih.">
