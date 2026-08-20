@@ -1,4 +1,4 @@
-<x-slot:title>Laporan {{ $reportTypes[$reportType] }}</x-slot:title>
+<x-slot:title>Laporan {{ $reportTypes[$reportType] ?? 'Tidak diizinkan' }}</x-slot:title>
 <x-slot:date>{{ now()->translatedFormat('d F Y') }}</x-slot:date>
 <x-slot:connectivity><x-ui.connectivity-status /></x-slot:connectivity>
 
@@ -7,7 +7,7 @@
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
             <p class="text-label font-semibold text-forest-600">Laporan transaksi</p>
-            <h1 id="reports-title" class="mt-1 text-h1 font-bold text-deep-green">Laporan {{ $reportTypes[$reportType] }}</h1>
+            <h1 id="reports-title" class="mt-1 text-h1 font-bold text-deep-green">Laporan {{ $reportTypes[$reportType] ?? 'Tidak diizinkan' }}</h1>
             <p class="mt-2 text-body text-text-secondary">Pilih periode, lihat ringkasan, lalu unduh Excel.</p>
         </div>
         <x-ui.mascot variant="5" class="hidden h-20 w-auto sm:block" />
@@ -67,10 +67,12 @@
     {{-- Export --}}
     <x-ui.panel title="Ekspor Excel" description="Unduh data sesuai filter aktif untuk disimpan atau dibagikan secara internal.">
         <div class="flex justify-end">
-            <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled">
-                <span wire:loading.remove wire:target="export">
-                    <svg viewBox="0 0 24 24" class="mr-2 inline size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
-                    Unduh Excel
+            <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled" class="px-4">
+                <span wire:loading.remove wire:target="export" class="inline-flex items-center gap-2">
+                    <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 19h14a2 2 0 0 0 2-2v-2M5 19a2 2 0 0 1-2-2v-2" />
+                    </svg>
+                    <span>Unduh Excel</span>
                 </span>
                 <span wire:loading wire:target="export">Menyiapkan...</span>
             </x-ui.button>
