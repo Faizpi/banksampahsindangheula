@@ -51,7 +51,7 @@ final class CitizenShellTest extends TestCase
     {
         $html = Blade::render('<x-layouts.citizen title="Beranda">Isi</x-layouts.citizen>');
 
-        self::assertMatchesRegularExpression('/<form id="citizen-logout-form" method="POST" action="[^"]*\/logout">.*?<button type="button"(?=[^>]*aria-label="Keluar dari akun")(?=[^>]*x-on:click\.prevent="\$dispatch\(\'open-dialog\', \{ id: \'citizen-logout-confirmation\', invoker: \$el \}\)")[^>]*>/s', $html);
+        self::assertMatchesRegularExpression('/<form (?=[^>]*id="citizen-logout-form")(?=[^>]*method="POST")(?=[^>]*action="[^"]*\/logout")(?=[^>]*x-data(?:="\{\}")?)[^>]*>.*?<button type="button"(?=[^>]*aria-label="Keluar dari akun")(?=[^>]*x-on:click\.prevent="\$dispatch\(\'open-dialog\', \{ id: \'citizen-logout-confirmation\', invoker: \$el \}\)")[^>]*>/s', $html);
         self::assertMatchesRegularExpression('/<button type="submit" form="citizen-logout-form"[^>]*>Keluar<\/button>/', $html);
     }
 

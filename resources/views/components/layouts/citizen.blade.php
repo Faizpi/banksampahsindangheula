@@ -51,7 +51,7 @@
             <div class="flex min-h-touch shrink-0 items-center gap-1">
                 @isset($headerActions){{ $headerActions }}@endisset
                 {{-- Logout confirmation --}}
-                <form id="citizen-logout-form" method="POST" action="{{ route('logout') }}">
+                <form id="citizen-logout-form" method="POST" action="{{ route('logout') }}" x-data>
                     @csrf
                     <button type="button"
                         aria-label="Keluar dari akun"
