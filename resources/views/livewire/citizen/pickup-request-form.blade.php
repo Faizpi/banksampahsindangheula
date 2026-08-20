@@ -186,11 +186,9 @@
             </x-ui.panel>
         @endif
 
-        <div class="flex flex-col gap-3 sm:flex-row sm:justify-between">
+        <div class="flex flex-col items-end gap-3 sm:flex-row sm:justify-end">
             @if ($step > 1)
                 <x-ui.button type="button" variant="secondary" wire:click="previousStep">Kembali</x-ui.button>
-            @else
-                <span></span>
             @endif
 
             @if ($step < 3)
