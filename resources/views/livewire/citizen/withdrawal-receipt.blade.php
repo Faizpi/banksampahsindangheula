@@ -35,7 +35,9 @@
                 </a>
             @endif
 
-            <a href="{{ route('withdrawal.proof', $withdrawal->proofMedia) }}" class="mt-4 min-h-touch inline-flex items-center justify-center rounded-md border border-forest-600 px-5 text-label text-forest-700">Unduh bukti pembayaran</a>
+            <div class="mt-4 flex justify-end">
+                <a href="{{ route('withdrawal.proof', $withdrawal->proofMedia) }}" class="min-h-touch inline-flex items-center justify-center rounded-md border border-forest-600 px-5 text-label text-forest-700">Unduh bukti pembayaran</a>
+            </div>
         </x-ui.panel>
     @endif
 </section>

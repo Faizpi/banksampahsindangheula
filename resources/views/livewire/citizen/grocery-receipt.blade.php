@@ -28,6 +28,8 @@
     </x-ui.panel>
 
     @if ($redemption->proofMedia)
-        <a href="{{ route('grocery.proof', $redemption->proofMedia) }}" class="inline-flex min-h-touch items-center justify-center rounded-md border border-forest-600 px-5 text-label text-forest-700">Unduh bukti penyerahan</a>
+        <div class="flex justify-end">
+            <a href="{{ route('grocery.proof', $redemption->proofMedia) }}" class="inline-flex min-h-touch items-center justify-center rounded-md border border-forest-600 px-5 text-label text-forest-700">Unduh bukti penyerahan</a>
+        </div>
     @endif
 </section>
