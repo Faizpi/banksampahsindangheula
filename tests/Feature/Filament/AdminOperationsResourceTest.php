@@ -194,6 +194,27 @@ final class AdminOperationsResourceTest extends TestCase
         self::assertLessThanOrEqual(8, $queries);
     }
 
+    public function test_target_progress_scoped_to_waste_type_counts_only_matching_items_in_mixed_deposit(): void
+    {
+        $admin = $this->userWith('target.view', 'target.manage', 'target.publish', 'waste.manage');
+        $category = WasteCategory::factory()->create();
+        $unit = WasteUnit::factory()->weight('1.000000')->create();
+        $condition = WasteCondition::factory()->create();
+        $matchingType = WasteType::factory()->create(['waste_category_id' => $category->id, 'waste_unit_id' => $unit->id, 'is_plastic' => true]);
+        $nonMatchingType = WasteType::factory()->create(['waste_category_id' => $category->id, 'waste_unit_id' => $unit->id, 'is_plastic' => false]);
+        $target = CollectionTarget::query()->create(['target_number' => 'TGT-SCOPED-'.uniqid(), 'name' => 'Target plastik terpilih', 'purpose' => 'Uji lingkup jenis sampah', 'period_start' => today()->subDay(), 'period_end' => today()->addDay(), 'target_weight_kg' => '10.000', 'status' => TargetStatus::Active, 'is_public' => false, 'created_by' => $admin->id]);
+        $target->scopes()->create(['waste_type_id' => $matchingType->id]);
+        $customer = User::factory()->create();
+        $deposit = Deposit::query()->create(['deposit_number' => 'DEP-SCOPED-'.uniqid(), 'customer_id' => $customer->id, 'staff_id' => $admin->id, 'method' => 'loket', 'occurred_at' => now(), 'status' => Deposit::STATUS_FINAL]);
+        $deposit->items()->create(['waste_type_id' => $matchingType->id, 'waste_condition_id' => $condition->id, 'weight_kg' => '1.250']);
+        $deposit->items()->create(['waste_type_id' => $nonMatchingType->id, 'waste_condition_id' => $condition->id, 'weight_kg' => '3.750']);
+
+        $aggregate = app(TargetProgressService::class)->aggregate($target->load('scopes'));
+
+        self::assertSame('1.250', $aggregate['weight_kg']);
+        self::assertSame(1, $aggregate['deposit_count']);
+    }
+
     public function test_target_resource_activates_and_closes_with_progress_snapshot(): void
     {
         $admin = $this->userWith('backoffice.access', 'target.view', 'target.manage', 'target.publish');
