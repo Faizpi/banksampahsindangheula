@@ -27,6 +27,7 @@ use App\Livewire\Treasurer\Reports as TreasurerReports;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -153,7 +154,7 @@ final class ReportSemanticsTest extends TestCase
 
         foreach ($contracts as $reportType => $contract) {
             Livewire::actingAs($actor);
-            $component = Livewire::test(TreasurerReports::class)
+            $component = Livewire::test(TreasurerReports::class, ['surface' => 'backoffice'])
                 ->set('reportType', $reportType)
                 ->set('start', '2026-08-01')
                 ->set('end', '2026-08-02')
@@ -193,6 +194,60 @@ final class ReportSemanticsTest extends TestCase
         $component->assertSee('Unduh Excel')
             ->assertDontSee('CSV')
             ->assertDontSee('PDF');
+    }
+
+    public function test_report_type_choices_are_limited_by_officer_role_without_an_all_transactions_choice(): void
+    {
+        $treasurer = $this->userWith('report.view');
+        $backoffice = $this->userWith('report.view');
+
+        Livewire::actingAs($treasurer);
+        Livewire::test(TreasurerReports::class)
+            ->assertSet('reportType', 'withdrawals')
+            ->assertSet('reportTypes', [
+                'withdrawals' => 'Pencairan',
+                'groceries' => 'Sembako',
+            ]);
+
+        Livewire::actingAs($backoffice);
+        Livewire::test(TreasurerReports::class, ['surface' => 'backoffice'])
+            ->assertSet('reportType', 'deposits')
+            ->assertSet('reportTypes', [
+                'deposits' => 'Setoran',
+                'withdrawals' => 'Pencairan',
+                'groceries' => 'Sembako',
+                'pickups' => 'Penjemputan',
+                'participation' => 'Partisipasi',
+            ]);
+    }
+
+    public function test_treasurer_rejects_forged_disallowed_report_types_for_refresh_and_export(): void
+    {
+        $actor = $this->userWith('report.view', 'report.export');
+        Livewire::actingAs($actor);
+
+        Livewire::test(TreasurerReports::class)
+            ->set('reportType', 'deposits')
+            ->call('refreshReport')
+            ->assertHasErrors(['reportType']);
+
+        Livewire::test(TreasurerReports::class)
+            ->set('reportType', 'pickups')
+            ->call('export')
+            ->assertHasErrors(['reportType']);
+    }
+
+    public function test_treasurer_cannot_forge_the_backoffice_surface_to_access_restricted_report_types(): void
+    {
+        $actor = $this->userWith('report.view', 'report.export');
+        Livewire::actingAs($actor);
+
+        $this->expectException(CannotUpdateLockedPropertyException::class);
+
+        Livewire::test(TreasurerReports::class)
+            ->set('surface', 'backoffice')
+            ->set('reportType', 'deposits')
+            ->call('refreshReport');
     }
 
     /** @return array<string, list<array{key: string, label: string, format: string}>> */
