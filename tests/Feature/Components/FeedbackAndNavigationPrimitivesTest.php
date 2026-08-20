@@ -135,6 +135,7 @@ final class FeedbackAndNavigationPrimitivesTest extends TestCase
             </x-ui.dialog>
         BLADE);
 
+        self::assertMatchesRegularExpression('/<div\s+x-data=.*?\s+x-show="open"\s+x-cloak\s+x-on:open-dialog\.window=/s', $html);
         self::assertStringContainsString('x-trap.inert.noscroll="open"', $html);
         self::assertStringContainsString('role="dialog"', $html);
         self::assertStringContainsString('aria-modal="true"', $html);
