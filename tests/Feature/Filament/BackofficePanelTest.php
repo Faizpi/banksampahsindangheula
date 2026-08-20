@@ -383,7 +383,7 @@ final class BackofficePanelTest extends TestCase
             $this->navigationLabelsForGroup($panel, 'Keamanan & Akses'),
         );
         self::assertSame(
-            ['Direktori', 'Verifikasi Warga', 'Wilayah', 'Dusun', 'RW', 'RT', 'Katalog Sampah', 'Jenis Sampah', 'Kondisi Sampah', 'Harga Sampah', 'Satuan Sampah', 'Paket Sembako'],
+            ['Direktori', 'Nasabah', 'Pengguna', 'Verifikasi Warga', 'Wilayah', 'Area Pelayanan', 'Dusun', 'RW', 'RT', 'Katalog Sampah', 'Jenis Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Harga Sampah', 'Satuan Sampah', 'Paket Sembako'],
             $this->navigationLabelsForGroup($panel, 'Data Master', includeChildren: true),
         );
         self::assertSame([], $this->navigationLabelsForGroup($panel, 'Administrasi sistem'));
@@ -439,10 +439,31 @@ final class BackofficePanelTest extends TestCase
 
         self::assertTrue($regionalManager->fresh()->canAccessPanel($panel));
         $this->actingAs($regionalManager->fresh());
-        self::assertSame(['Dusun', 'RT', 'RW', 'Wilayah'], $this->dataMasterNavigationLabels($panel));
+        self::assertSame(['Area Pelayanan', 'Dusun', 'RT', 'RW', 'Wilayah'], $this->dataMasterNavigationLabels($panel));
 
         self::assertTrue($panelUserWithoutRegionalPermission->fresh()->canAccessPanel($panel));
         $this->actingAs($panelUserWithoutRegionalPermission->fresh());
+        self::assertSame([], $this->dataMasterNavigationLabels($panel));
+    }
+
+    public function test_identity_resources_remain_visible_only_to_users_with_existing_permissions(): void
+    {
+        $customerManager = User::factory()->create();
+        $userViewer = User::factory()->create();
+        $panelUserWithoutIdentityPermission = User::factory()->create();
+        $this->grant($customerManager, 'customer-manager', 'backoffice.access', 'customer.view', 'customer.update');
+        $this->grant($userViewer, 'user-viewer', 'backoffice.access', 'user.view');
+        $this->grant($panelUserWithoutIdentityPermission, 'identity-unprivileged', 'backoffice.access');
+
+        $panel = Filament::getPanel('backoffice');
+
+        $this->actingAs($customerManager->fresh());
+        self::assertSame(['Direktori', 'Nasabah'], $this->dataMasterNavigationLabels($panel));
+
+        $this->actingAs($userViewer->fresh());
+        self::assertSame(['Direktori', 'Pengguna', 'Verifikasi Warga'], $this->dataMasterNavigationLabels($panel));
+
+        $this->actingAs($panelUserWithoutIdentityPermission->fresh());
         self::assertSame([], $this->dataMasterNavigationLabels($panel));
     }
 
@@ -456,11 +477,11 @@ final class BackofficePanelTest extends TestCase
         $panel = Filament::getPanel('backoffice');
 
         $this->actingAs($viewer->fresh());
-        self::assertSame(['Jenis Sampah', 'Katalog Sampah', 'Kondisi Sampah', 'Satuan Sampah'], $this->dataMasterNavigationLabels($panel));
+        self::assertSame(['Jenis Sampah', 'Katalog Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Satuan Sampah'], $this->dataMasterNavigationLabels($panel));
         self::assertFalse($viewer->fresh()->can('create', WasteCategory::class));
 
         $this->actingAs($manager->fresh());
-        self::assertSame(['Jenis Sampah', 'Katalog Sampah', 'Kondisi Sampah', 'Satuan Sampah'], $this->dataMasterNavigationLabels($panel));
+        self::assertSame(['Jenis Sampah', 'Katalog Sampah', 'Kategori Sampah', 'Kondisi Sampah', 'Satuan Sampah'], $this->dataMasterNavigationLabels($panel));
         self::assertTrue($manager->fresh()->can('create', WasteCategory::class));
     }
 

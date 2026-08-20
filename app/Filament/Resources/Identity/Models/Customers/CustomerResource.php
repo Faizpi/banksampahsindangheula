@@ -37,6 +37,8 @@ final class CustomerResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?string $navigationParentItem = 'Direktori';
+
     protected static ?int $navigationSort = 10;
 
     protected static ?string $navigationLabel = 'Nasabah';
@@ -46,11 +48,6 @@ final class CustomerResource extends Resource
     protected static ?string $pluralModelLabel = 'nasabah';
 
     protected static ?string $recordTitleAttribute = 'name';
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
-    }
 
     public static function canViewAny(): bool
     {

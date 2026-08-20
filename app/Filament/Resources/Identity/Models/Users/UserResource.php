@@ -41,6 +41,8 @@ final class UserResource extends Resource
 
     protected static string|UnitEnum|null $navigationGroup = 'Data Master';
 
+    protected static ?string $navigationParentItem = 'Direktori';
+
     protected static ?int $navigationSort = 20;
 
     protected static ?string $navigationLabel = 'Pengguna';
@@ -50,11 +52,6 @@ final class UserResource extends Resource
     protected static ?string $pluralModelLabel = 'pengguna';
 
     protected static ?string $recordTitleAttribute = 'name';
-
-    public static function shouldRegisterNavigation(): bool
-    {
-        return false;
-    }
 
     public static function canViewAny(): bool
     {
