@@ -154,6 +154,64 @@ final class PickupWaveTest extends TestCase
             ->assertSeeHtml('href="'.route('pickup.media', $pickup->media()->sole()).'"');
     }
 
+    public function test_direct_pickup_booking_rejects_same_day(): void
+    {
+        [$customer, $area, $type] = $this->context();
+        $this->grant($customer, ['pickup.request']);
+        $today = today('Asia/Jakarta')->toDateString();
+        $this->capacity($area, 3, '10.000', $today);
+
+        $this->expectException(ValidationException::class);
+
+        app(PickupService::class)->submit($customer, $this->requestData($customer, $area, $today), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('same-day.jpg')], 'w5-same-day-policy-0001');
+    }
+
+    public function test_direct_pickup_booking_accepts_tomorrow(): void
+    {
+        [$customer, $area, $type] = $this->context();
+        $this->grant($customer, ['pickup.request']);
+        $tomorrow = today('Asia/Jakarta')->addDay()->toDateString();
+        $this->capacity($area, 3, '10.000', $tomorrow);
+
+        $pickup = app(PickupService::class)->submit($customer, $this->requestData($customer, $area, $tomorrow), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('tomorrow.jpg')], 'w5-tomorrow-policy-0001');
+
+        self::assertSame($tomorrow, $pickup->selected_date->toDateString());
+    }
+
+    public function test_direct_pickup_booking_rejects_dates_beyond_the_configured_horizon(): void
+    {
+        [$customer, $area, $type] = $this->context();
+        $this->grant($customer, ['pickup.request']);
+        $horizon = 2;
+        config()->set('app.pickup_booking_horizon_days', $horizon);
+        $beyondHorizon = today('Asia/Jakarta')->addDays($horizon + 1)->toDateString();
+        $this->capacity($area, 3, '10.000', $beyondHorizon);
+
+        $this->expectException(ValidationException::class);
+
+        app(PickupService::class)->submit($customer, $this->requestData($customer, $area, $beyondHorizon), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('beyond-horizon.jpg')], 'w5-beyond-horizon-policy-0001');
+    }
+
+    public function test_citizen_pickup_availability_does_not_expose_dates_beyond_the_configured_horizon(): void
+    {
+        [$customer, $area] = $this->context();
+        $horizon = 2;
+        config()->set('app.pickup_booking_horizon_days', $horizon);
+        $tomorrow = today('Asia/Jakarta')->addDay()->toDateString();
+        $horizonDate = today('Asia/Jakarta')->addDays($horizon)->toDateString();
+        $beyondHorizon = today('Asia/Jakarta')->addDays($horizon + 1)->toDateString();
+        $this->capacity($area, 3, '10.000', $tomorrow);
+        $this->capacity($area, 3, '10.000', $horizonDate);
+        $this->capacity($area, 3, '10.000', $beyondHorizon);
+
+        $this->actingAs($customer);
+
+        Livewire::test(PickupRequestForm::class)
+            ->set('serviceAreaId', (string) $area->id)
+            ->assertSet('availableDates', [$tomorrow, $horizonDate])
+            ->assertSet('selectedDate', $tomorrow);
+    }
+
     public function test_pickup_form_only_exposes_areas_attached_to_the_customers_active_rt_hierarchy(): void
     {
         [$customer, $area] = $this->context();

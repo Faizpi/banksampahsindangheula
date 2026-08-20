@@ -223,14 +223,15 @@ final readonly class PickupService
     /** @return list<string> */
     public function alternatives(ServiceArea $area, string $date, int $limit = 3, ?string $estimatedWeight = null): array
     {
-        return $this->findAlternatives($area, $this->businessDate($date), $limit, $estimatedWeight);
+        return $this->findAlternatives($area, CarbonImmutable::createFromFormat('!Y-m-d', $date, 'Asia/Jakarta'), $limit, $estimatedWeight);
     }
 
     /** @return list<string> */
     private function findAlternatives(ServiceArea $area, CarbonImmutable $start, int $limit = 3, ?string $estimatedWeight = null): array
     {
         $alternatives = [];
-        for ($offset = 1; $offset <= 14 && count($alternatives) < $limit; $offset++) {
+        $horizonDays = (int) config('app.pickup_booking_horizon_days', 30);
+        for ($offset = 1; $offset <= $horizonDays && count($alternatives) < $limit; $offset++) {
             $candidate = $start->addDays($offset);
             $capacity = PickupCapacity::query()->where('service_area_id', $area->id)->whereDate('service_date', $candidate->toDateString())->where('is_active', true)->first();
             if ($capacity === null) {
@@ -743,8 +744,9 @@ final readonly class PickupService
         } catch (Throwable) {
             $date = false;
         }
-        if (! $date instanceof CarbonImmutable || $date->format('Y-m-d') !== $value || $date->isBefore(today('Asia/Jakarta')) || $date->diffInDays(today('Asia/Jakarta')) > (int) config('app.pickup_booking_horizon_days', 30)) {
-            throw ValidationException::withMessages([$field => 'Tanggal layanan tidak tersedia: pilih hari ini hingga batas horizon pemesanan.']);
+        $today = CarbonImmutable::today('Asia/Jakarta');
+        if (! $date instanceof CarbonImmutable || $date->format('Y-m-d') !== $value || $date->isBefore($today->addDay()) || $date->isAfter($today->addDays((int) config('app.pickup_booking_horizon_days', 30)))) {
+            throw ValidationException::withMessages([$field => 'Tanggal layanan tidak tersedia: pilih besok hingga batas horizon pemesanan.']);
         }
 
         return $date;
