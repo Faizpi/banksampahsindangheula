@@ -9,8 +9,8 @@ use App\Filament\Resources\Identity\Models\Users\UserResource;
 use App\Models\User;
 use Filament\Actions\CreateAction;
 use Filament\Notifications\Notification;
-use Illuminate\Validation\ValidationException;
 use Filament\Resources\Pages\ManageRecords;
+use Illuminate\Validation\ValidationException;
 
 final class ManageUsers extends ManageRecords
 {

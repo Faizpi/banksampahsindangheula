@@ -6,6 +6,7 @@ namespace App\Domain\Identity\Actions;
 
 use App\Domain\AuditReconciliation\Services\AuditLogger;
 use App\Domain\CustomersRegions\Models\ServiceArea;
+use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
 use App\Domain\Identity\Queries\VisibleUsers;
@@ -31,7 +32,7 @@ final readonly class ManageStaffProfile
         $assignments = $this->assignmentAttributes($data);
 
         return DB::transaction(function () use ($actor, $subject, $assignments): User {
-            $locked = $this->visibleUsers->queryFor($actor, ...\App\Domain\Identity\Enums\UserStatus::cases())
+            $locked = $this->visibleUsers->queryFor($actor, ...UserStatus::cases())
                 ->whereKey($subject->getKey())
                 ->with('roles')
                 ->lockForUpdate()

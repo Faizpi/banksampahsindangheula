@@ -44,7 +44,7 @@ final readonly class ManageUsers
         Gate::forUser($actor)->authorize('create', User::class);
         $attributes = $this->userAttributes($data);
         $password = $this->createPassword($data);
-        $roleId = (int) ($data['role_id'] ?? 0);
+        $roleId = (int) $data['role_id'];
         $role = Role::query()->whereKey($roleId)->first();
         if (! $role instanceof Role) {
             throw ValidationException::withMessages(['role_id' => 'Peran yang dipilih tidak valid.']);
