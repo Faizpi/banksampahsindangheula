@@ -106,10 +106,10 @@ final class DeveloperCredentialsTest extends TestCase
         $this->actingAs($bendahara)
             ->get(route('treasurer.reports'))
             ->assertOk()
-            ->assertSee('Laporan Setoran')
+            ->assertSee('Laporan Pencairan')
             ->assertSee('Filter laporan')
             ->assertSee('Tidak ada hasil')
-            ->assertSee('0.000');
+            ->assertSee('Rp 0');
     }
 
     public function test_admin_logs_in_through_the_filament_backoffice_form(): void
