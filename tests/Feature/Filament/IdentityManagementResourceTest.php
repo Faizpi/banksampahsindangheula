@@ -86,7 +86,7 @@ final class IdentityManagementResourceTest extends TestCase
 
         self::assertSame(
             [$areaCustomer->id, $staff->id],
-            UserResource::getEloquentQuery()->orderBy('id')->pluck('id')->all(),
+            UserResource::getEloquentQuery()->pluck('id')->sort()->values()->all(),
         );
         self::assertTrue(CustomerResource::getEloquentQuery()->whereKey($areaCustomer)->exists());
         self::assertFalse(CustomerResource::getEloquentQuery()->whereKey($outsideCustomer)->exists());
