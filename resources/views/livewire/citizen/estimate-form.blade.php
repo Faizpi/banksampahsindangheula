@@ -29,10 +29,12 @@
                 inputmode="decimal" placeholder="Contoh: 1.250"
                 :error="$errors->first('weightKg')" />
 
-            <x-ui.button type="submit" wire:loading.attr="disabled">
-                <span wire:loading.remove>Hitung Estimasi</span>
-                <span wire:loading>Menghitung...</span>
-            </x-ui.button>
+            <div class="flex justify-end">
+                <x-ui.button type="submit" wire:loading.attr="disabled">
+                    <span wire:loading.remove>Hitung Estimasi</span>
+                    <span wire:loading>Menghitung...</span>
+                </x-ui.button>
+            </div>
         </form>
     </x-ui.panel>
 

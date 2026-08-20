@@ -59,8 +59,10 @@
         <p role="alert" class="text-body-sm font-semibold text-terracotta">{{ $message }}</p>
     @enderror
 
-    <x-ui.button type="button" wire:click="submit" wire:loading.attr="disabled" wire:target="submit" :disabled="$isAmountOverBalance">
-        <span wire:loading.remove wire:target="submit">Ajukan Pencairan</span>
-        <span wire:loading wire:target="submit">Memproses...</span>
-    </x-ui.button>
+    <div class="flex justify-end">
+        <x-ui.button type="button" wire:click="submit" wire:loading.attr="disabled" wire:target="submit" :disabled="$isAmountOverBalance">
+            <span wire:loading.remove wire:target="submit">Ajukan Pencairan</span>
+            <span wire:loading wire:target="submit">Memproses...</span>
+        </x-ui.button>
+    </div>
 </section>

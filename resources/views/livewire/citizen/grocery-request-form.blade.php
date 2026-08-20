@@ -118,8 +118,10 @@
         @endif
     </x-ui.panel>
 
-    <x-ui.button type="button" wire:click="submit" wire:loading.attr="disabled" wire:target="submit" :disabled="$selectedPackage === null || ! $selectedPackageIsAffordable">
-        <span wire:loading.remove wire:target="submit">Ajukan Paket</span>
-        <span wire:loading wire:target="submit">Memproses...</span>
-    </x-ui.button>
+    <div class="flex justify-end">
+        <x-ui.button type="button" wire:click="submit" wire:loading.attr="disabled" wire:target="submit" :disabled="$selectedPackage === null || ! $selectedPackageIsAffordable">
+            <span wire:loading.remove wire:target="submit">Ajukan Paket</span>
+            <span wire:loading wire:target="submit">Memproses...</span>
+        </x-ui.button>
+    </div>
 </section>
