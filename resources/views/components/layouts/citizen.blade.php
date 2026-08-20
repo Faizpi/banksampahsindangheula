@@ -53,7 +53,7 @@
                 {{-- Logout confirmation --}}
                 <form id="citizen-logout-form" method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit"
+                    <button type="button"
                         aria-label="Keluar dari akun"
                         x-on:click.prevent="$dispatch('open-dialog', { id: 'citizen-logout-confirmation', invoker: $el })"
                         class="inline-flex min-h-touch min-w-touch items-center justify-center rounded-xl text-text-secondary transition hover:bg-danger-bg hover:text-terracotta">
