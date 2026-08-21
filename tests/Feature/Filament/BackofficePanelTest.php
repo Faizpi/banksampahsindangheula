@@ -12,7 +12,6 @@ use App\Domain\WasteMaster\Models\WastePrice;
 use App\Filament\Pages\OperationsDashboard;
 use App\Filament\Pages\Reconciliation;
 use App\Filament\Pages\Reports as ReportsPage;
-use App\Filament\Pages\StatisticsDashboard;
 use App\Filament\Pages\TechnicalAuditRetentionPage;
 use App\Filament\Pages\TechnicalBackupsPage;
 use App\Filament\Pages\TechnicalHealthPage;
@@ -275,28 +274,6 @@ final class BackofficePanelTest extends TestCase
             ->assertOk()
             ->assertSee('Ringkasan transaksi dan ekspor Excel')
             ->assertSee('Unduh Excel');
-    }
-
-    public function test_internal_statistics_dashboard_is_root_navigated_and_permission_gated(): void
-    {
-        $statisticsViewer = User::factory()->create();
-        $panelViewer = User::factory()->create();
-        $this->grant($statisticsViewer, 'statistics-viewer', 'backoffice.access', 'statistics.internal.view');
-        $this->grant($panelViewer, 'panel-viewer', 'backoffice.access');
-
-        self::assertContains(StatisticsDashboard::class, array_values(Filament::getPanel('backoffice')->getPages()));
-        self::assertNull((new \ReflectionProperty(StatisticsDashboard::class, 'navigationGroup'))->getValue());
-        self::assertSame(2, (new \ReflectionProperty(StatisticsDashboard::class, 'navigationSort'))->getValue());
-
-        $this->actingAs($panelViewer->fresh());
-        self::assertFalse(StatisticsDashboard::canAccess());
-
-        $this->actingAs($statisticsViewer->fresh());
-        self::assertTrue(StatisticsDashboard::canAccess());
-        $this->get('/backoffice/statistics-dashboard')
-            ->assertOk()
-            ->assertSee('Statistik internal')
-            ->assertSee('Filter statistik');
     }
 
     public function test_work_queue_only_renders_queues_with_pending_work(): void

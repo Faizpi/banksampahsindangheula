@@ -56,12 +56,7 @@ final readonly class StatisticsService
             $aggregate['active_customers'] = null;
             $aggregate['target_progress_kg'] = null;
             $aggregate['mobile_service_count'] = null;
-            $aggregate['charts'] = [];
-
-            return $aggregate;
         }
-
-        $aggregate['charts'] = $this->charts($start, $end, $rtId);
 
         return $aggregate;
     }
@@ -72,34 +67,24 @@ final readonly class StatisticsService
         $period = ['start' => $start, 'end' => $end];
         $publication = StatisticPublication::query()->where('publication_key', 'public-dashboard')->where('is_active', true)->first();
         if ($publication === null) {
-            return ['suppressed' => true, 'metrics' => [], 'charts' => [], 'period' => $period, 'rt_id' => null];
+            return ['suppressed' => true, 'metrics' => [], 'period' => $period, 'rt_id' => null];
         }
         $rawDimensions = $publication->getAttribute('dimensions');
         $configuredDimensions = is_array($rawDimensions) ? array_values(array_filter($rawDimensions, static fn (mixed $dimension): bool => is_string($dimension))) : [];
         $aggregateRtId = in_array('rt_id', $configuredDimensions, true) ? $rtId : null;
         $aggregate = $this->aggregate($start, $end, $aggregateRtId, true);
         if ($aggregate['subject_count'] < $publication->privacy_threshold) {
-            return ['suppressed' => true, 'metrics' => [], 'charts' => [], 'period' => $period, 'rt_id' => $aggregateRtId];
+            return ['suppressed' => true, 'metrics' => [], 'period' => $period, 'rt_id' => $aggregateRtId];
         }
         $rawMetrics = $publication->getAttribute('metrics');
         $configuredMetrics = is_array($rawMetrics) ? array_values(array_filter($rawMetrics, static fn (mixed $metric): bool => is_string($metric))) : [];
         $allowedMetrics = array_values(array_intersect($configuredMetrics, self::METRICS));
-        $charts = $this->charts($start, $end, $aggregateRtId, $publication->privacy_threshold, true);
         $result = [];
         foreach ($allowedMetrics as $metric) {
-            $result[$metric] = $metric === 'target_progress_kg'
-                ? number_format((float) collect($charts['target_progress_kg'])->sum('progress_kg'), 3, '.', '')
-                : $aggregate[$metric] ?? null;
+            $result[$metric] = $aggregate[$metric] ?? null;
         }
-        $charts = array_intersect_key($charts, array_flip(array_intersect($allowedMetrics, ['total_weight_kg', 'dominant_waste_type', 'target_progress_kg'])));
 
-        return [
-            'suppressed' => false,
-            'metrics' => $result,
-            'charts' => $charts,
-            'period' => $period,
-            'rt_id' => $aggregateRtId,
-        ];
+        return ['suppressed' => false, 'metrics' => $result, 'period' => $period, 'rt_id' => $aggregateRtId];
     }
 
     /**
@@ -179,92 +164,6 @@ final readonly class StatisticsService
             'target_progress_kg' => number_format($targetProgress, 3, '.', ''),
             'mobile_service_count' => $mobileServiceCount,
         ];
-    }
-
-    /**
-     * @return array{total_weight_kg: list<array{month: string, total_weight_kg: string}>, dominant_waste_type: list<array{waste_type: string, weight_kg: string}>, target_progress_kg: list<array{target_number: string, name: string, target_weight_kg: string, progress_kg: string}>}
-     */
-    private function charts(string $start, string $end, ?int $rtId, ?int $threshold = null, bool $publicOnly = false): array
-    {
-        $deposits = Deposit::query()
-            ->with('items.wasteType')
-            ->whereIn('status', [Deposit::STATUS_FINAL, Deposit::STATUS_CORRECTED])
-            ->whereDate('occurred_at', '>=', $start)
-            ->whereDate('occurred_at', '<', $end)
-            ->when($rtId !== null, static fn (Builder $query): Builder => $query->whereHas('customer.customerProfile', static fn (Builder $profile): Builder => $profile->where('rt_id', $rtId)))
-            ->get();
-        $monthly = [];
-        $composition = [];
-        foreach ($deposits as $deposit) {
-            $month = $deposit->occurred_at->format('Y-m');
-            $monthly[$month]['subjects'][$deposit->customer_id] = true;
-            $monthly[$month]['weight'] = ($monthly[$month]['weight'] ?? 0.0) + (float) $deposit->items->sum('weight_kg');
-            foreach ($deposit->items as $item) {
-                $name = (string) ($item->wasteType->name ?? $item->waste_type_name ?? '');
-                if ($name === '') {
-                    continue;
-                }
-                $composition[$name]['subjects'][$deposit->customer_id] = true;
-                $composition[$name]['weight'] = ($composition[$name]['weight'] ?? 0.0) + (float) $item->weight_kg;
-            }
-        }
-
-        $months = [];
-        $cursor = new \DateTimeImmutable($start);
-        $endDate = new \DateTimeImmutable($end);
-        while ($cursor < $endDate) {
-            $month = $cursor->format('Y-m');
-            $bucket = $monthly[$month] ?? ['subjects' => [], 'weight' => 0.0];
-            if ($threshold === null || count($bucket['subjects']) >= $threshold) {
-                $months[] = ['month' => $month, 'total_weight_kg' => number_format($bucket['weight'], 3, '.', '')];
-            }
-            $cursor = $cursor->modify('first day of next month');
-        }
-
-        $segments = collect($composition)
-            ->filter(static fn (array $segment): bool => $threshold === null || count($segment['subjects']) >= $threshold)
-            ->sortByDesc('weight')
-            ->map(static fn (array $segment, string $name): array => ['waste_type' => $name, 'weight_kg' => number_format($segment['weight'], 3, '.', '')])
-            ->values()
-            ->all();
-
-        $targets = $this->chartTargets($start, $end, $rtId, $publicOnly, $threshold);
-
-        return [
-            'total_weight_kg' => $months,
-            'dominant_waste_type' => $segments,
-            'target_progress_kg' => $targets,
-        ];
-    }
-
-    /** @return list<array{target_number: string, name: string, target_weight_kg: string, progress_kg: string}> */
-    private function chartTargets(string $start, string $end, ?int $rtId, bool $publicOnly, ?int $threshold): array
-    {
-        $targets = CollectionTarget::query()
-            ->with('scopes')
-            ->whereIn('status', [TargetStatus::Active, TargetStatus::Closed])
-            ->whereDate('period_start', '<', $end)
-            ->whereDate('period_end', '>=', $start)
-            ->when($publicOnly, static fn (Builder $query): Builder => $query->where('is_public', true))
-            ->get();
-        $progress = $this->targetProgress->aggregateMany($targets, $rtId === null ? null : [$rtId]);
-
-        return $targets->filter(function (CollectionTarget $target) use ($progress, $publicOnly, $threshold): bool {
-            $subjects = $progress[$target->getKey()]['subject_count'] ?? 0;
-
-            return ! $publicOnly || $subjects >= max($threshold ?? 0, $target->public_min_subjects);
-        })->map(function (CollectionTarget $target) use ($progress): array {
-            $progressKg = $target->status === TargetStatus::Closed
-                ? $this->targetProgress->progress($target)
-                : $progress[$target->getKey()]['weight_kg'] ?? '0.000';
-
-            return [
-                'target_number' => $target->target_number,
-                'name' => $target->name,
-                'target_weight_kg' => number_format((float) $target->target_weight_kg, 3, '.', ''),
-                'progress_kg' => $progressKg,
-            ];
-        })->values()->all();
     }
 
     private function targetProgress(string $start, string $end, ?int $rtId, bool $publicOnly): float
