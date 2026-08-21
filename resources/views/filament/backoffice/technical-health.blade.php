@@ -2,7 +2,7 @@
     <section class="backoffice-page-intro" aria-labelledby="technical-health-title">
         <p class="text-sm font-semibold text-forest-700">Kontrol teknis</p>
         <h2 id="technical-health-title" class="mt-1 text-2xl font-bold text-deep-green">Health sistem</h2>
-        <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">Ringkasan kondisi aplikasi tanpa menampilkan path, payload, checksum, atau rahasia.</p>
+        <p class="mt-2 max-w-2xl text-sm leading-6 text-text-secondary">Kondisi aplikasi ditampilkan tanpa path, payload, checksum, atau rahasia.</p>
     </section>
 
     @if ($health === [])

@@ -314,7 +314,6 @@ final class BackofficePanelTest extends TestCase
             ->assertOk()
             ->assertSee('Verifikasi warga')
             ->assertSee('data-disclosure-chevron')
-            ->assertSee('Panduan pemeriksaan yang aman')
             ->assertDontSee('Pickup hari ini')
             ->assertDontSee('Pencairan menunggu keputusan')
             ->assertDontSee('Setoran perlu ditinjau');

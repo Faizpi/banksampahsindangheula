@@ -2,7 +2,7 @@
     <section class="backoffice-page-intro" aria-labelledby="reconciliation-title">
         <p class="text-sm font-semibold text-forest-700">Pengawasan keuangan</p>
         <h2 id="reconciliation-title" class="mt-1 text-2xl font-bold text-deep-green">Rekonsiliasi saldo harian</h2>
-        <p class="mt-3 max-w-3xl text-base leading-7 text-text-secondary">Bandingkan catatan transaksi sistem dengan saldo tersedia dan kas pencairan fisik sebelum penutupan hari kerja.</p>
+        <p class="mt-3 max-w-3xl text-base leading-7 text-text-secondary">Bandingkan transaksi, saldo tersedia, dan kas pencairan sebelum penutupan hari kerja.</p>
     </section>
 
     @if (session('reconciliation-success'))

@@ -9,7 +9,7 @@
                     Sampah tercatat. <span class="text-forest-600">Nilai terjaga.</span> Desa bergerak bersama.
                 </h1>
                 <p class="mt-5 max-w-xl text-body leading-relaxed text-text-secondary">
-                    Layanan bank sampah Desa Sindangheula yang membuat setoran, saldo rupiah, penjemputan, dan perkembangan program desa lebih transparan &amp; mudah dipahami.
+                    Layanan bank sampah Desa Sindangheula untuk setoran, saldo rupiah, penjemputan, dan program desa yang transparan.
                 </p>
 
                 <div class="mt-8 flex flex-col gap-3.5 sm:flex-row sm:flex-wrap sm:items-center">
@@ -72,7 +72,7 @@
                     id="services-title"
                     eyebrow="Layanan Transparan Warga"
                     title="Satu catatan untuk setiap langkah."
-                    description="Warga dapat menyetor langsung, mengajukan penjemputan, memeriksa saldo, dan mengikuti program desa dari satu layanan yang tertib."
+                    description="Setoran, penjemputan, saldo, dan program desa tercatat dalam satu layanan."
                     class="lg:sticky lg:top-28 lg:self-start"
                 />
 
@@ -83,7 +83,7 @@
                         </div>
                         <div>
                             <h3 class="text-title font-bold text-deep-green transition-colors group-hover:text-forest-600">Setoran yang Dapat Ditelusuri</h3>
-                            <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Berat, harga saat transaksi, nilai, petugas, dan bukti tersimpan dalam satu riwayat terpercaya.</p>
+                            <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Berat, harga saat transaksi, nilai, petugas, dan bukti tersimpan dalam riwayat.</p>
                         </div>
                         <span class="inline-flex self-start justify-center rounded-full border border-border bg-success-bg px-3 py-1 text-xs font-bold text-forest-600 sm:self-center">Multi-jenis</span>
                     </article>
@@ -94,7 +94,7 @@
                         </div>
                         <div>
                             <h3 class="text-title font-bold text-deep-green transition-colors group-hover:text-forest-600">Penjemputan yang Terjadwal</h3>
-                            <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Ajukan dengan foto, pilih tanggal tersedia, lalu nilai akhir mengikuti penimbangan aktual petugas.</p>
+                            <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Ajukan dengan foto dan pilih tanggal tersedia. Nilai akhir mengikuti penimbangan aktual petugas.</p>
                         </div>
                         <span class="inline-flex self-start justify-center rounded-full border border-info-bg bg-info-bg px-3 py-1 text-xs font-bold text-sky-blue sm:self-center">Sesuai Kapasitas</span>
                     </article>
@@ -105,7 +105,7 @@
                         </div>
                         <div>
                             <h3 class="text-title font-bold text-deep-green transition-colors group-hover:text-forest-600">Saldo Rupiah yang Jelas</h3>
-                            <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Saldo tersedia, tertahan, masuk, keluar, dan koreksi dapat diperiksa tanpa kebingungan poin.</p>
+                            <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Saldo tersedia, tertahan, masuk, keluar, dan koreksi dapat diperiksa.</p>
                         </div>
                         <span class="inline-flex self-start justify-center rounded-full border border-border bg-warm-canvas px-3 py-1 text-xs font-bold text-deep-green sm:self-center">Mutasi tercatat</span>
                     </article>
@@ -121,7 +121,7 @@
                 id="how-it-works-title"
                 eyebrow="Alur Sederhana"
                 title="Dari sampah terpilah menjadi saldo yang terbaca."
-                description="Setiap tahap punya catatan yang jelas agar warga tahu apa yang terjadi sebelum saldo bertambah."
+                    description="Setiap tahap tercatat sebelum saldo bertambah."
             />
 
             <ol class="mt-12 grid gap-6 md:grid-cols-3">
@@ -131,7 +131,7 @@
                         <x-ui.mascot variant="3" bubble="Pilah sampahmu!" class="h-28 w-auto" />
                     </div>
                     <h3 class="mt-4 text-h3 font-bold text-deep-green">Bawa atau Ajukan</h3>
-                    <p class="mt-2.5 text-body-sm leading-relaxed text-text-secondary">Datang ke titik layanan, layanan keliling, atau ajukan penjemputan dari rumah sesuai kapasitas.</p>
+                    <p class="mt-2.5 text-body-sm leading-relaxed text-text-secondary">Datang ke titik layanan atau ajukan penjemputan dari rumah sesuai kapasitas.</p>
                 </li>
 
                 <li class="relative flex flex-col items-center rounded-2xl border border-border bg-warm-canvas p-6 text-center shadow-xs sm:p-8">
@@ -140,7 +140,7 @@
                         <x-ui.mascot variant="7" bubble="Timbang akurat!" class="h-28 w-auto" />
                     </div>
                     <h3 class="mt-4 text-h3 font-bold text-deep-green">Timbang &amp; Konfirmasi</h3>
-                    <p class="mt-2.5 text-body-sm leading-relaxed text-text-secondary">Petugas mencatat berat aktual per jenis dan sistem mengambil harga pasar yang berlaku.</p>
+                    <p class="mt-2.5 text-body-sm leading-relaxed text-text-secondary">Petugas mencatat berat aktual per jenis dengan harga pasar yang berlaku.</p>
                 </li>
 
                 <li class="relative flex flex-col items-center rounded-2xl border border-border bg-warm-canvas p-6 text-center shadow-xs sm:p-8">
@@ -149,7 +149,7 @@
                         <x-ui.mascot variant="12" bubble="Saldo bertambah!" class="h-28 w-auto" />
                     </div>
                     <h3 class="mt-4 text-h3 font-bold text-deep-green">Saldo &amp; Bukti Digital</h3>
-                    <p class="mt-2.5 text-body-sm leading-relaxed text-text-secondary">Setelah transaksi sah, saldo bertambah dan bukti dapat diverifikasi kapan saja melalui QR.</p>
+                    <p class="mt-2.5 text-body-sm leading-relaxed text-text-secondary">Setelah transaksi sah, saldo bertambah dan bukti dapat diverifikasi melalui QR.</p>
                 </li>
             </ol>
         </div>
@@ -162,23 +162,23 @@
                 id="mascot-stories-title"
                 eyebrow="Warga dan Lingkungan"
                 title="Kebiasaan kecil, dampak yang terlihat."
-                description="Bank Sampah Sindangheula mendampingi warga di setiap langkah: memilih, memahami, dan mengelola sampah secara bertanggung jawab."
+                    description="Bank Sampah Sindangheula mendampingi warga dalam mengelola sampah secara bertanggung jawab."
             />
             <div class="mt-12 grid gap-6 md:grid-cols-3">
                 <article class="flex flex-col items-center rounded-2xl border border-border bg-surface p-6 text-center shadow-xs">
                     <x-ui.mascot variant="9" class="h-36 w-auto" />
                     <h3 class="mt-4 text-title font-bold text-deep-green">Pilih Langkah yang Tepat</h3>
-                    <p class="mt-2 text-body-sm leading-relaxed text-text-secondary">Mulai dari setoran langsung ke lokasi bank sampah atau ajukan penjemputan sesuai kebutuhan rumah tangga.</p>
+                    <p class="mt-2 text-body-sm leading-relaxed text-text-secondary">Setor langsung ke lokasi bank sampah atau ajukan penjemputan sesuai kebutuhan.</p>
                 </article>
                 <article class="flex flex-col items-center rounded-2xl border border-border bg-surface p-6 text-center shadow-xs">
                     <x-ui.mascot variant="10" class="h-36 w-auto" />
                     <h3 class="mt-4 text-title font-bold text-deep-green">Pahami Sebelum Bertindak</h3>
-                    <p class="mt-2 text-body-sm leading-relaxed text-text-secondary">Katalog harga terbaru, jadwal operasional, dan riwayat setoran transparan untuk kenyamanan Anda.</p>
+                    <p class="mt-2 text-body-sm leading-relaxed text-text-secondary">Katalog harga terbaru, jadwal operasional, dan riwayat setoran tersedia.</p>
                 </article>
                 <article class="flex flex-col items-center rounded-2xl border border-border bg-surface p-6 text-center shadow-xs">
                     <x-ui.mascot variant="11" class="h-36 w-auto" />
                     <h3 class="mt-4 text-title font-bold text-deep-green">Material Punya Tujuan</h3>
-                    <p class="mt-2 text-body-sm leading-relaxed text-text-secondary">Sampah terpilah tidak berhenti di rumah; setiap jenis material daur ulang diproses secara bertanggung jawab.</p>
+                    <p class="mt-2 text-body-sm leading-relaxed text-text-secondary">Setiap jenis material daur ulang diproses secara bertanggung jawab.</p>
                 </article>
             </div>
         </div>
@@ -190,7 +190,7 @@
             <div class="max-w-2xl">
                 <span class="inline-flex rounded-full border border-forest-600 bg-success-bg px-3.5 py-1 text-xs font-semibold text-forest-700">Bergabung Sekarang</span>
                 <h2 id="account-cta-title" class="mt-3 text-h2 font-extrabold text-deep-green lg:text-h1">Sudah menjadi warga atau petugas?</h2>
-                <p class="mt-3 text-body leading-relaxed text-text-secondary">Masuk untuk melihat saldo, riwayat transaksi, pengajuan penjemputan, dan fitur lengkap Bank Sampah.</p>
+                <p class="mt-3 text-body leading-relaxed text-text-secondary">Masuk untuk melihat saldo, riwayat transaksi, dan pengajuan penjemputan.</p>
             </div>
             <div class="flex flex-col gap-6 sm:flex-row sm:items-center">
                 <x-ui.mascot variant="13" bubble="Siap bantu kamu!" bubblePosition="top" class="h-36 w-auto" />

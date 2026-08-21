@@ -9,7 +9,7 @@
             <p class="text-label font-semibold text-forest-600">Petugas</p>
             <h1 id="grocery-tasks-title" class="mt-2 text-h1 font-bold text-deep-green">Tugas sembako</h1>
             <p class="mt-3 text-body text-text-secondary">
-                Ikuti urutan persiapan. Serah-terima hanya tersedia bagi petugas dengan izin penyerahan dan memerlukan verifikasi penerima serta bukti privat.
+                Verifikasi penerima dan unggah bukti privat sebelum menyerahkan paket.
             </p>
         </div>
         <x-ui.mascot variant="4" bubble="Siapkan paket sembako!" bubblePosition="top" class="h-28 w-auto shrink-0" />
@@ -163,7 +163,7 @@
                             <p x-show="error" x-text="error" role="alert" class="text-body-sm font-semibold text-terracotta"></p>
                             <x-ui.input wire:model="scanToken" label="Token QR kartu" name="scanToken" placeholder="Masukkan token QR bila pemindai tidak tersedia" :error="$errors->first('recipientReference')" />
                             <div class="flex flex-col items-end gap-3 sm:flex-row sm:justify-end">
-                                <x-ui.button type="button" wire:click="scanCustomerCard(scanToken)">Resolusi kartu</x-ui.button>
+                                <x-ui.button type="button" wire:click="scanCustomerCard(scanToken)">Cocokkan kartu</x-ui.button>
                                 <x-ui.button type="button" variant="quiet" x-on:click="stop(); $wire.closeScanner()">Tutup</x-ui.button>
                                 <x-ui.button type="button" variant="quiet" x-on:click="stop(); start()">Coba Lagi</x-ui.button>
                             </div>
@@ -178,7 +178,7 @@
                     id="grocery-proof"
                     property="proof"
                     label="Bukti serah-terima"
-                    hint="Foto JPEG, PNG, atau WebP dikompres menjadi JPEG maksimal 1 MB. PDF diterima maksimal 5 MB."
+                    hint="Foto JPEG, PNG, atau WebP maksimal 1 MB. PDF maksimal 5 MB."
                     :allow-pdf="true"
                     remove-method="clearProof"
                     confirm-method="confirmProofUpload"

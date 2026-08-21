@@ -31,7 +31,7 @@
             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h2 id="technical-media-preview-title" class="text-lg font-semibold text-gray-950">Kandidat batch berikutnya</h2>
-                    <p class="mt-1 text-sm leading-6 text-gray-600">Total seluruh kandidat: {{ number_format($mediaRetentionCandidateCount, 0, ',', '.') }} foto ({{ $mediaRetentionCandidateSize }}). Batch ini memuat {{ count($mediaRetentionCandidates) }} foto.</p>
+                    <p class="mt-1 text-sm leading-6 text-gray-600">{{ number_format($mediaRetentionCandidateCount, 0, ',', '.') }} foto memenuhi batas retensi ({{ $mediaRetentionCandidateSize }}). Eksekusi ini memuat {{ count($mediaRetentionCandidates) }} foto.</p>
                 </div>
                 @if ($mediaRetentionMissingFiles > 0)
                     <span class="inline-flex w-fit rounded-full bg-warning-100 px-3 py-1 text-xs font-semibold text-warning-800">{{ $mediaRetentionMissingFiles }} file sudah tidak ada</span>

@@ -180,7 +180,6 @@ final class InternalStatisticsTest extends TestCase
             ->assertSee('RT Satu')
             ->assertSee('RT Dua')
             ->set('rtId', (string) $firstRt->id)
-            ->assertSee('Menampilkan agregat untuk RT terpilih.')
             ->assertSee('2 kg')
             ->set('rtId', (string) $secondRt->id)
             ->assertSee('4 kg');
