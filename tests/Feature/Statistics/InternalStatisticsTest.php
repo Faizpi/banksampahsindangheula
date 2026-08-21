@@ -23,6 +23,7 @@ use App\Domain\WasteMaster\Models\WasteCondition;
 use App\Domain\WasteMaster\Models\WasteType;
 use App\Domain\WasteMaster\Models\WasteUnit;
 use App\Livewire\PublicSite\PublicPrograms;
+use App\Livewire\Statistics\InternalDashboard;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
@@ -99,12 +100,89 @@ final class InternalStatisticsTest extends TestCase
         self::assertSame('Plastik', $internal['dominant_waste_type']);
         self::assertSame('2.500', $internal['target_progress_kg']);
         self::assertSame(1, $internal['mobile_service_count']);
+        self::assertSame([
+            'total_weight_kg' => [['month' => '2026-08', 'total_weight_kg' => '2.500']],
+            'dominant_waste_type' => [['waste_type' => 'Plastik', 'weight_kg' => '2.500']],
+            'target_progress_kg' => [[
+                'target_number' => 'TGT-STATS-001',
+                'name' => 'Target statistik',
+                'target_weight_kg' => '10.000',
+                'progress_kg' => '2.500',
+            ]],
+        ], $internal['charts']);
 
-        $statistics->configurePublic($actor, ['active_customers', 'target_progress_kg', 'mobile_service_count'], ['period'], 2, true);
+        $statistics->configurePublic($actor, ['active_customers', 'total_weight_kg', 'dominant_waste_type', 'target_progress_kg', 'mobile_service_count'], ['period'], 2, true);
         $public = $statistics->public('2026-08-01', '2026-08-02');
 
         self::assertFalse($public['suppressed']);
-        self::assertSame(['active_customers' => 2, 'target_progress_kg' => '2.500', 'mobile_service_count' => 1], $public['metrics']);
+        self::assertSame(['active_customers' => 2, 'total_weight_kg' => '2.500', 'dominant_waste_type' => 'Plastik', 'target_progress_kg' => '2.500', 'mobile_service_count' => 1], $public['metrics']);
+        self::assertSame([
+            'total_weight_kg' => [['month' => '2026-08', 'total_weight_kg' => '2.500']],
+            'dominant_waste_type' => [['waste_type' => 'Plastik', 'weight_kg' => '2.500']],
+            'target_progress_kg' => [[
+                'target_number' => 'TGT-STATS-001',
+                'name' => 'Target statistik',
+                'target_weight_kg' => '10.000',
+                'progress_kg' => '2.500',
+            ]],
+        ], $public['charts']);
+    }
+
+    public function test_public_charts_independently_suppress_under_threshold_buckets_segments_and_targets(): void
+    {
+        config(['app.statistics_privacy_threshold' => 2]);
+        $actor = $this->userWith('statistics.internal.view', 'statistics.public.manage', 'user.view.all', 'waste.manage');
+        [$plastic, $condition] = $this->wasteType($actor);
+        $paper = app(ManageWasteMaster::class)->createType($actor, $plastic->category, $plastic->unit, 'STATS-PAPER-'.$actor->id, 'Kertas', null, 0, false, true, [$condition->id]);
+        $dusun = Dusun::query()->create(['code' => 'CHART-DS-1', 'name' => 'Dusun Grafik', 'is_active' => true]);
+        $rw = Rw::query()->create(['dusun_id' => $dusun->id, 'code' => 'CHART-RW-1', 'name' => 'RW Grafik', 'is_active' => true]);
+        $rt = Rt::query()->create(['rw_id' => $rw->id, 'code' => 'CHART-RT-1', 'name' => 'RT Grafik', 'is_active' => true]);
+
+        foreach ([['2026-08-01 10:00:00', $plastic, 'DEP-CHART-1'], ['2026-08-02 10:00:00', $plastic, 'DEP-CHART-2'], ['2026-09-01 10:00:00', $paper, 'DEP-CHART-3']] as [$occurredAt, $type, $number]) {
+            $customer = User::factory()->create();
+            CustomerProfile::factory()->for($customer)->create(['rt_id' => $rt->id]);
+            $deposit = Deposit::query()->create(['deposit_number' => $number, 'customer_id' => $customer->id, 'staff_id' => $actor->id, 'method' => 'langsung', 'occurred_at' => $occurredAt, 'status' => Deposit::STATUS_FINAL, 'total_weight_kg' => '1.000', 'total_value' => 1_000, 'finalized_at' => $occurredAt]);
+            DepositItem::query()->create(['deposit_id' => $deposit->id, 'waste_type_id' => $type->id, 'waste_condition_id' => $condition->id, 'weight_kg' => '1.000']);
+        }
+
+        $eligibleTarget = CollectionTarget::query()->create(['target_number' => 'TGT-CHART-ELIGIBLE', 'name' => 'Target aman', 'purpose' => 'Uji target aman', 'period_start' => '2026-08-01', 'period_end' => '2026-09-30', 'target_weight_kg' => '10.000', 'status' => TargetStatus::Active, 'is_public' => true, 'public_min_subjects' => 2, 'created_by' => $actor->id]);
+        TargetScope::query()->create(['collection_target_id' => $eligibleTarget->id, 'rt_id' => $rt->id, 'waste_type_id' => $plastic->id]);
+        $privateTarget = CollectionTarget::query()->create(['target_number' => 'TGT-CHART-PRIVATE', 'name' => 'Target rahasia', 'purpose' => 'Uji target rahasia', 'period_start' => '2026-08-01', 'period_end' => '2026-09-30', 'target_weight_kg' => '10.000', 'status' => TargetStatus::Active, 'is_public' => true, 'public_min_subjects' => 3, 'created_by' => $actor->id]);
+        TargetScope::query()->create(['collection_target_id' => $privateTarget->id, 'rt_id' => $rt->id, 'waste_type_id' => $plastic->id]);
+
+        $statistics = app(StatisticsService::class);
+        $statistics->configurePublic($actor, ['total_weight_kg', 'dominant_waste_type', 'target_progress_kg'], ['period', 'rt_id'], 2, true);
+        $public = $statistics->public('2026-08-01', '2026-10-01', $rt->id);
+
+        self::assertFalse($public['suppressed']);
+        self::assertSame('2.000', $public['metrics']['target_progress_kg']);
+        self::assertSame([['month' => '2026-08', 'total_weight_kg' => '2.000']], $public['charts']['total_weight_kg']);
+        self::assertSame([['waste_type' => 'Plastik', 'weight_kg' => '2.000']], $public['charts']['dominant_waste_type']);
+        self::assertSame([['target_number' => 'TGT-CHART-ELIGIBLE', 'name' => 'Target aman', 'target_weight_kg' => '10.000', 'progress_kg' => '2.000']], $public['charts']['target_progress_kg']);
+        self::assertStringNotContainsString('TGT-CHART-PRIVATE', json_encode($public['charts'], JSON_THROW_ON_ERROR));
+    }
+
+    public function test_closed_target_chart_and_public_kpi_use_closed_progress_snapshot(): void
+    {
+        config(['app.statistics_privacy_threshold' => 2]);
+        $actor = $this->userWith('statistics.internal.view', 'statistics.public.manage', 'user.view.all', 'waste.manage');
+        [$type, $condition] = $this->wasteType($actor);
+        foreach (['DEP-CLOSED-CHART-1', 'DEP-CLOSED-CHART-2'] as $number) {
+            $customer = User::factory()->create();
+            CustomerProfile::factory()->for($customer)->create();
+            $deposit = Deposit::query()->create(['deposit_number' => $number, 'customer_id' => $customer->id, 'staff_id' => $actor->id, 'method' => 'langsung', 'occurred_at' => '2026-08-01 10:00:00', 'status' => Deposit::STATUS_FINAL, 'total_weight_kg' => '1.000', 'total_value' => 1_000, 'finalized_at' => '2026-08-01 10:00:00']);
+            DepositItem::query()->create(['deposit_id' => $deposit->id, 'waste_type_id' => $type->id, 'waste_condition_id' => $condition->id, 'weight_kg' => '1.000']);
+        }
+        CollectionTarget::query()->create(['target_number' => 'TGT-CLOSED-CHART', 'name' => 'Target ditutup', 'purpose' => 'Uji snapshot', 'period_start' => '2026-08-01', 'period_end' => '2026-08-31', 'target_weight_kg' => '10.000', 'status' => TargetStatus::Closed, 'is_public' => true, 'public_min_subjects' => 2, 'created_by' => $actor->id, 'closed_at' => '2026-08-31 12:00:00', 'closed_progress_kg' => '9.000']);
+
+        $statistics = app(StatisticsService::class);
+        $internal = $statistics->internal($actor, '2026-08-01', '2026-09-01');
+        self::assertSame('9.000', $internal['charts']['target_progress_kg'][0]['progress_kg']);
+
+        $statistics->configurePublic($actor, ['target_progress_kg'], ['period'], 2, true);
+        $public = $statistics->public('2026-08-01', '2026-09-01');
+        self::assertSame('9.000', $public['metrics']['target_progress_kg']);
+        self::assertSame('9.000', $public['charts']['target_progress_kg'][0]['progress_kg']);
     }
 
     public function test_public_statistics_uses_configured_rt_aggregation_and_includes_period_metadata(): void
@@ -156,6 +234,38 @@ final class InternalStatisticsTest extends TestCase
             ->assertDontSee('Total weight kg');
     }
 
+    public function test_public_programs_render_only_published_charts_and_explain_empty_chart_data(): void
+    {
+        $actor = $this->userWith('statistics.public.manage', 'waste.manage');
+        [$plastic, $condition] = $this->wasteType($actor);
+        $paper = app(ManageWasteMaster::class)->createType($actor, $plastic->category, $plastic->unit, 'PUBLIC-CHART-PAPER-'.$actor->id, 'Kertas', null, 0, false, true, [$condition->id]);
+
+        foreach ([[now()->subMonth(), $plastic, '1.500', 'PLASTIC-1'], [now()->subMonth(), $plastic, '1.500', 'PLASTIC-2'], [now(), $paper, '2.500', 'PAPER-1'], [now(), $paper, '2.500', 'PAPER-2']] as [$occurredAt, $type, $weight, $suffix]) {
+            $customer = User::factory()->create();
+            CustomerProfile::factory()->for($customer)->create();
+            $deposit = Deposit::query()->create(['deposit_number' => 'DEP-PUBLIC-CHART-'.$suffix, 'customer_id' => $customer->id, 'staff_id' => $actor->id, 'method' => 'langsung', 'occurred_at' => $occurredAt, 'status' => Deposit::STATUS_FINAL, 'total_weight_kg' => $weight, 'total_value' => 1_000, 'finalized_at' => $occurredAt]);
+            DepositItem::query()->create(['deposit_id' => $deposit->id, 'waste_type_id' => $type->id, 'waste_condition_id' => $condition->id, 'weight_kg' => $weight]);
+        }
+
+        CollectionTarget::query()->create(['target_number' => 'TGT-PUBLIC-CHART', 'name' => 'Target visual publik', 'purpose' => 'Uji visual statistik', 'period_start' => today()->subMonth(), 'period_end' => today()->addMonth(), 'target_weight_kg' => '10.000', 'status' => TargetStatus::Active, 'is_public' => true, 'public_min_subjects' => 2, 'created_by' => $actor->id]);
+        app(StatisticsService::class)->configurePublic($actor, ['total_weight_kg', 'dominant_waste_type', 'target_progress_kg'], ['period'], 2, true);
+
+        Livewire::test(PublicPrograms::class)
+            ->assertSee('Tren berat terkumpul')
+            ->assertSee('Komposisi sampah')
+            ->assertSee('Progres target publik')
+            ->assertSee('Kertas')
+            ->assertSee('Target visual publik')
+            ->assertSeeHtml('<progress')
+            ->assertSeeHtml('<svg');
+
+        app(StatisticsService::class)->configurePublic($actor, ['active_customers'], ['period'], 2, true);
+
+        Livewire::test(PublicPrograms::class)
+            ->assertSee('Belum ada data visual yang dapat dipublikasikan untuk periode ini.')
+            ->assertDontSee('Tren berat terkumpul');
+    }
+
     public function test_public_programs_applies_selected_rt_to_public_statistics_only_when_configured(): void
     {
         $actor = $this->userWith('statistics.public.manage', 'waste.manage');
@@ -190,6 +300,54 @@ final class InternalStatisticsTest extends TestCase
         Livewire::test(PublicPrograms::class)
             ->assertDontSee('Cakupan statistik')
             ->assertSee('6 kg');
+    }
+
+    public function test_internal_dashboard_renders_chart_payload_with_accessible_values_and_empty_states(): void
+    {
+        $actor = $this->userWith('statistics.internal.view', 'user.view.all');
+
+        Livewire::actingAs($actor)
+            ->test(InternalDashboard::class)
+            ->set('statistics', [
+                'suppressed' => false,
+                'active_customers' => 2,
+                'deposit_count' => 2,
+                'total_weight_kg' => '2.500',
+                'plastic_weight_kg' => '2.500',
+                'target_progress_kg' => '2.500',
+                'mobile_service_count' => 0,
+                'subject_count' => 2,
+                'dominant_waste_type' => 'Plastik',
+                'charts' => [
+                    'total_weight_kg' => [['month' => '2026-08', 'total_weight_kg' => '2.500']],
+                    'dominant_waste_type' => [
+                        ['waste_type' => 'Plastik', 'weight_kg' => '2.500'],
+                        ['waste_type' => 'Kertas', 'weight_kg' => '7.500'],
+                    ],
+                    'target_progress_kg' => [['target_number' => 'TGT-UI-001', 'name' => 'Target tampilan', 'target_weight_kg' => '10.000', 'progress_kg' => '2.500']],
+                ],
+            ])
+            ->assertSee('Tren berat setoran')
+            ->assertSee('2026-08')
+            ->assertSee('Komposisi jenis sampah')
+            ->assertSee('Plastik')
+            ->assertSee('Kertas')
+            ->assertSee('stroke-dasharray', false)
+            ->assertSee('text-sun-500', false)
+            ->assertSee('Progres per target')
+            ->assertSee('Target tampilan')
+            ->assertSee('TGT-UI-001')
+            ->assertSee('2,5 dari 10 kg (25,0%)');
+
+        Livewire::actingAs($actor)
+            ->test(InternalDashboard::class)
+            ->set('statistics', [
+                'suppressed' => false,
+                'charts' => [],
+            ])
+            ->assertSee('Belum ada data tren untuk filter ini.')
+            ->assertSee('Belum ada komposisi sampah untuk filter ini.')
+            ->assertSee('Belum ada target yang relevan untuk filter ini.');
     }
 
     public function test_internal_statistics_suppression_clears_new_metrics_too(): void
