@@ -12,6 +12,7 @@ use App\Domain\WasteMaster\Models\WastePrice;
 use App\Filament\Pages\OperationsDashboard;
 use App\Filament\Pages\Reconciliation;
 use App\Filament\Pages\Reports as ReportsPage;
+use App\Filament\Pages\StatisticsDashboard;
 use App\Filament\Pages\TechnicalAuditRetentionPage;
 use App\Filament\Pages\TechnicalBackupsPage;
 use App\Filament\Pages\TechnicalHealthPage;
@@ -96,6 +97,29 @@ final class BackofficePanelTest extends TestCase
             'Rekonsiliasi',
             $this->navigationLabelsForGroup($panel, 'Pengawasan'),
         );
+    }
+
+    public function test_statistics_dashboard_is_discovered_permission_gated_and_renders_for_authorized_users(): void
+    {
+        self::assertContains(StatisticsDashboard::class, array_values(Filament::getPanel('backoffice')->getPages()));
+
+        $viewer = User::factory()->create();
+        $statisticsViewer = User::factory()->create();
+        $this->grant($viewer, 'backoffice-viewer', 'backoffice.access');
+        $this->grant($statisticsViewer, 'statistics-viewer', 'backoffice.access', 'statistics.internal.view');
+
+        $this->actingAs($viewer->fresh());
+        self::assertFalse(StatisticsDashboard::canAccess());
+        $this->get('/backoffice/statistics-dashboard')->assertForbidden();
+
+        $this->actingAs($statisticsViewer->fresh());
+        self::assertTrue(StatisticsDashboard::canAccess());
+        $response = $this->get('/backoffice/statistics-dashboard');
+
+        $response
+            ->assertOk()
+            ->assertSee('Statistik internal');
+        self::assertSame(1, substr_count($response->getContent(), '<h1'));
     }
 
     public function test_work_queue_links_pending_withdrawals_to_the_existing_status_filter(): void
