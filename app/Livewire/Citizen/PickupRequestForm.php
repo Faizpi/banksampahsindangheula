@@ -211,7 +211,7 @@ final class PickupRequestForm extends Component
         $actor = auth()->user();
         $area = $service->activeAreaFor($actor, $this->serviceAreaId);
         $estimatedWeight = collect($this->items)->sum(static fn (array $item): float => (float) $item['estimated_weight_kg']);
-        $this->availableDates = $area === null ? [] : $service->alternatives($area, today()->toDateString(), 14, $estimatedWeight > 0 ? number_format($estimatedWeight, 3, '.', '') : null);
+        $this->availableDates = $area === null ? [] : $service->alternatives($area, today('Asia/Jakarta')->toDateString(), 14, $estimatedWeight > 0 ? number_format($estimatedWeight, 3, '.', '') : null);
 
         if ($this->serviceAreaId !== '' && $area === null) {
             $this->addError('serviceAreaId', 'Alamat berada di luar area pelayanan aktif.');

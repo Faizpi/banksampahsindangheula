@@ -231,7 +231,7 @@ final readonly class PickupService
     {
         $alternatives = [];
         $horizonDays = (int) config('app.pickup_booking_horizon_days', 30);
-        for ($offset = 1; $offset <= $horizonDays && count($alternatives) < $limit; $offset++) {
+        for ($offset = 0; $offset <= $horizonDays && count($alternatives) < $limit; $offset++) {
             $candidate = $start->addDays($offset);
             $capacity = PickupCapacity::query()->where('service_area_id', $area->id)->whereDate('service_date', $candidate->toDateString())->where('is_active', true)->first();
             if ($capacity === null) {
@@ -745,8 +745,8 @@ final readonly class PickupService
             $date = false;
         }
         $today = CarbonImmutable::today('Asia/Jakarta');
-        if (! $date instanceof CarbonImmutable || $date->format('Y-m-d') !== $value || $date->isBefore($today->addDay()) || $date->isAfter($today->addDays((int) config('app.pickup_booking_horizon_days', 30)))) {
-            throw ValidationException::withMessages([$field => 'Tanggal layanan tidak tersedia: pilih besok hingga batas horizon pemesanan.']);
+        if (! $date instanceof CarbonImmutable || $date->format('Y-m-d') !== $value || $date->isBefore($today) || $date->isAfter($today->addDays((int) config('app.pickup_booking_horizon_days', 30)))) {
+            throw ValidationException::withMessages([$field => 'Tanggal layanan tidak tersedia: pilih hari ini hingga batas horizon pemesanan.']);
         }
 
         return $date;

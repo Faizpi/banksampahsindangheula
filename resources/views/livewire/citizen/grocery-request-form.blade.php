@@ -35,6 +35,20 @@
 
     {{-- Package Selection --}}
     <x-ui.panel title="Paket aktif" description="Baca isi dan nilai penukaran setiap paket sebelum memilih. Ketersediaan fisik dikonfirmasi admin saat verifikasi.">
+        @if ($serviceAreas->count() > 1)
+            <label class="mb-5 block">
+                <span class="text-label font-semibold text-deep-green">Area layanan</span>
+                <select wire:model.live="serviceAreaId" class="mt-2 block w-full rounded-xl border-border bg-warm-canvas text-body text-deep-green">
+                    <option value="">Pilih area layanan</option>
+                    @foreach ($serviceAreas as $serviceArea)
+                        <option value="{{ $serviceArea->id }}">{{ $serviceArea->name }}</option>
+                    @endforeach
+                </select>
+                @error('serviceAreaId')
+                    <p role="alert" class="mt-2 text-body-sm text-terracotta">{{ $message }}</p>
+                @enderror
+            </label>
+        @endif
         <fieldset>
             <legend class="text-label font-semibold text-deep-green">Pilih paket sembako</legend>
             <div class="mt-3 grid gap-3 md:grid-cols-2">

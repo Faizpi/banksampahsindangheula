@@ -154,16 +154,53 @@ final class PickupWaveTest extends TestCase
             ->assertSeeHtml('href="'.route('pickup.media', $pickup->media()->sole()).'"');
     }
 
-    public function test_direct_pickup_booking_rejects_same_day(): void
+    public function test_direct_pickup_booking_accepts_same_day_when_active_capacity_has_space(): void
     {
         [$customer, $area, $type] = $this->context();
         $this->grant($customer, ['pickup.request']);
         $today = today('Asia/Jakarta')->toDateString();
         $this->capacity($area, 3, '10.000', $today);
 
+        $pickup = app(PickupService::class)->submit($customer, $this->requestData($customer, $area, $today), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('same-day.jpg')], 'w5-same-day-policy-0001');
+
+        self::assertSame($today, $pickup->selected_date->toDateString());
+    }
+
+    public function test_direct_pickup_booking_rejects_same_day_without_active_capacity_or_when_full(): void
+    {
+        [$customer, $area, $type] = $this->context();
+        $this->grant($customer, ['pickup.request']);
+        $today = today('Asia/Jakarta')->toDateString();
+        $service = app(PickupService::class);
+
+        try {
+            $service->submit($customer, $this->requestData($customer, $area, $today), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('no-capacity.jpg')], 'w5-same-day-no-capacity-0001');
+            self::fail('Expected unavailable same-day capacity.');
+        } catch (PickupCapacityUnavailable) {
+            self::assertDatabaseCount('pickup_requests', 0);
+        }
+
+        $this->capacity($area, 1, '10.000', $today);
+        PickupRequest::query()->create([
+            'request_number' => 'PUP-SAME-DAY-FULL-0001', 'customer_id' => $customer->id, 'rt_id' => $customer->customerProfile->rt_id,
+            'service_area_id' => $area->id, 'address' => 'Alamat kapasitas penuh', 'selected_date' => $today,
+            'estimated_weight_kg' => '1.000', 'status' => PickupStatus::PendingReview,
+        ]);
+
+        $this->expectException(PickupCapacityUnavailable::class);
+        $service->submit($customer, $this->requestData($customer, $area, $today), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('full-capacity.jpg')], 'w5-same-day-full-capacity-0001');
+    }
+
+    public function test_direct_pickup_booking_rejects_past_dates(): void
+    {
+        [$customer, $area, $type] = $this->context();
+        $this->grant($customer, ['pickup.request']);
+        $yesterday = today('Asia/Jakarta')->subDay()->toDateString();
+        $this->capacity($area, 3, '10.000', $yesterday);
+
         $this->expectException(ValidationException::class);
 
-        app(PickupService::class)->submit($customer, $this->requestData($customer, $area, $today), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('same-day.jpg')], 'w5-same-day-policy-0001');
+        app(PickupService::class)->submit($customer, $this->requestData($customer, $area, $yesterday), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('past-date.jpg')], 'w5-past-date-policy-0001');
     }
 
     public function test_direct_pickup_booking_accepts_tomorrow(): void
@@ -192,14 +229,16 @@ final class PickupWaveTest extends TestCase
         app(PickupService::class)->submit($customer, $this->requestData($customer, $area, $beyondHorizon), [['waste_type_id' => $type->id, 'estimated_weight_kg' => '1.000']], [UploadedFile::fake()->image('beyond-horizon.jpg')], 'w5-beyond-horizon-policy-0001');
     }
 
-    public function test_citizen_pickup_availability_does_not_expose_dates_beyond_the_configured_horizon(): void
+    public function test_citizen_pickup_availability_offers_today_only_when_active_capacity_has_space_and_honors_horizon(): void
     {
         [$customer, $area] = $this->context();
         $horizon = 2;
         config()->set('app.pickup_booking_horizon_days', $horizon);
+        $today = today('Asia/Jakarta')->toDateString();
         $tomorrow = today('Asia/Jakarta')->addDay()->toDateString();
         $horizonDate = today('Asia/Jakarta')->addDays($horizon)->toDateString();
         $beyondHorizon = today('Asia/Jakarta')->addDays($horizon + 1)->toDateString();
+        $this->capacity($area, 3, '10.000', $today);
         $this->capacity($area, 3, '10.000', $tomorrow);
         $this->capacity($area, 3, '10.000', $horizonDate);
         $this->capacity($area, 3, '10.000', $beyondHorizon);
@@ -208,7 +247,28 @@ final class PickupWaveTest extends TestCase
 
         Livewire::test(PickupRequestForm::class)
             ->set('serviceAreaId', (string) $area->id)
-            ->assertSet('availableDates', [$tomorrow, $horizonDate])
+            ->assertSet('availableDates', [$today, $tomorrow, $horizonDate])
+            ->assertSet('selectedDate', $today);
+    }
+
+    public function test_citizen_pickup_availability_excludes_today_without_capacity_or_when_full(): void
+    {
+        [$customer, $area] = $this->context();
+        $today = today('Asia/Jakarta')->toDateString();
+        $tomorrow = today('Asia/Jakarta')->addDay()->toDateString();
+        $this->capacity($area, 1, '10.000', $today);
+        $this->capacity($area, 3, '10.000', $tomorrow);
+        PickupRequest::query()->create([
+            'request_number' => 'PUP-CITIZEN-TODAY-FULL-0001', 'customer_id' => $customer->id, 'rt_id' => $customer->customerProfile->rt_id,
+            'service_area_id' => $area->id, 'address' => 'Alamat kapasitas penuh warga', 'selected_date' => $today,
+            'estimated_weight_kg' => '1.000', 'status' => PickupStatus::PendingReview,
+        ]);
+
+        $this->actingAs($customer);
+
+        Livewire::test(PickupRequestForm::class)
+            ->set('serviceAreaId', (string) $area->id)
+            ->assertSet('availableDates', [$tomorrow])
             ->assertSet('selectedDate', $tomorrow);
     }
 
@@ -441,6 +501,37 @@ final class PickupWaveTest extends TestCase
 
         self::assertSame(PickupStatus::PendingReview, $pickup->fresh()->status);
         self::assertNull($pickup->fresh()->accepted_at);
+    }
+
+    public function test_filament_schedule_accepts_today_when_active_capacity_has_space(): void
+    {
+        [$customer, $area] = $this->context();
+        $admin = User::factory()->create();
+        $staff = User::factory()->create(['status' => UserStatus::Active]);
+        $this->grant($admin, ['backoffice.access', 'pickup.schedule', 'pickup.view', 'user.view.all']);
+        $staffRole = Role::query()->firstOrCreate(['name' => 'petugas'], ['description' => 'Petugas']);
+        $pickupExecute = Permission::query()->firstOrCreate(['name' => 'pickup.execute'], ['description' => 'pickup.execute']);
+        $staffRole->permissions()->syncWithoutDetaching([$pickupExecute->id]);
+        $staff->roles()->attach($staffRole);
+        StaffProfile::query()->create(['user_id' => $staff->id, 'staff_number' => 'STF-FILAMENT-TODAY-0001', 'service_area_id' => $area->id, 'active_from' => today('Asia/Jakarta'), 'active_to' => null]);
+        $today = today('Asia/Jakarta')->toDateString();
+        $this->capacity($area, 3, '10.000', $today);
+        $pickup = PickupRequest::query()->create([
+            'request_number' => 'PUP-FILAMENT-SCHEDULE-TODAY-0001', 'customer_id' => $customer->id, 'rt_id' => $customer->customerProfile->rt_id,
+            'service_area_id' => $area->id, 'address' => 'Alamat jadwal hari ini', 'selected_date' => $today,
+            'estimated_weight_kg' => '1.000', 'status' => PickupStatus::Accepted, 'accepted_at' => now(),
+        ]);
+        $this->actingAs($admin);
+
+        Livewire::test(ManagePickupRequests::class)
+            ->assertTableActionVisible('schedule', $pickup)
+            ->callTableAction('schedule', $pickup, data: ['assigned_staff_id' => $staff->id, 'scheduled_date' => $today])
+            ->assertHasNoActionErrors();
+
+        $pickup->refresh();
+        self::assertSame(PickupStatus::Scheduled, $pickup->status);
+        self::assertSame($today, $pickup->scheduled_date?->toDateString());
+        self::assertSame($staff->id, $pickup->assigned_staff_id);
     }
 
     public function test_filament_schedule_capacity_failure_keeps_acceptance_and_assignment_unchanged(): void

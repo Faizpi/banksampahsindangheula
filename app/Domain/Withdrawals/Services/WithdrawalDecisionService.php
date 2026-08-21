@@ -78,12 +78,15 @@ final readonly class WithdrawalDecisionService
         if ($withdrawal->approver_id === $payer->id) {
             throw new AuthorizationException('Separation of duties memerlukan payer berbeda dari approver.');
         }
-        if ($payer->status !== UserStatus::Active || ! $payer->roles()->where('name', 'bendahara')->exists() || ! $this->permissions->allows($payer, 'withdrawal.pay') || ! $this->isStaffInArea($payer, $withdrawal)) {
+        if (! $this->isEligiblePayer($payer, $withdrawal)) {
             throw ValidationException::withMessages(['payer_id' => 'Payer aktif dengan permission dan area yang sesuai wajib dipilih.']);
         }
 
         return DB::transaction(function () use ($actor, $withdrawal, $payer): WithdrawalRequest {
             $locked = $this->lockWithdrawal($withdrawal);
+            if (! $this->isEligiblePayer($payer, $locked)) {
+                throw ValidationException::withMessages(['payer_id' => 'Payer aktif dengan permission dan area yang sesuai wajib dipilih.']);
+            }
             $this->assertTransition($locked, WithdrawalStatus::ReadyForPickup);
             $old = $locked->status;
             $locked->forceFill(['status' => WithdrawalStatus::ReadyForPickup, 'payer_id' => $payer->id])->save();
@@ -102,19 +105,28 @@ final readonly class WithdrawalDecisionService
         }
     }
 
-    private function isStaffInArea(User $payer, WithdrawalRequest $withdrawal): bool
+    private function isEligiblePayer(User $payer, WithdrawalRequest $withdrawal): bool
     {
-        $customerProfile = $withdrawal->customerProfile()->with('rt')->first();
-        if ($customerProfile?->rt === null) {
+        if ($payer->status !== UserStatus::Active || ! $payer->roles()->where('name', 'bendahara')->exists() || ! $this->permissions->allows($payer, 'withdrawal.pay')) {
+            return false;
+        }
+
+        return $this->hasActiveSnapshotAreaAssignment($payer, $withdrawal);
+    }
+
+    private function hasActiveSnapshotAreaAssignment(User $payer, WithdrawalRequest $withdrawal): bool
+    {
+        if ($withdrawal->service_area_id === null) {
             return false;
         }
         $today = today()->toDateString();
 
         return StaffServiceArea::query()
             ->where('staff_profile_user_id', $payer->id)
+            ->where('service_area_id', $withdrawal->service_area_id)
             ->where(static fn ($dates) => $dates->whereNull('active_from')->orWhereDate('active_from', '<=', $today))
             ->where(static fn ($dates) => $dates->whereNull('active_to')->orWhereDate('active_to', '>=', $today))
-            ->whereHas('serviceArea', static fn ($area) => $area->where('is_active', true)->whereHas('rts', static fn ($rts) => $rts->whereKey($customerProfile->rt->id)))
+            ->whereHas('serviceArea', static fn ($area) => $area->where('is_active', true))
             ->exists();
     }
 

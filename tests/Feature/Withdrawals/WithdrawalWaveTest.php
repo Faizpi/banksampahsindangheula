@@ -12,6 +12,7 @@ use App\Domain\Identity\Enums\UserStatus;
 use App\Domain\Identity\Models\Permission;
 use App\Domain\Identity\Models\Role;
 use App\Domain\Identity\Models\StaffProfile;
+use App\Domain\Identity\Models\StaffServiceArea;
 use App\Domain\Ledger\Models\BalanceHold;
 use App\Domain\Ledger\Models\LedgerAccount;
 use App\Domain\Ledger\Models\LedgerEntry;
@@ -28,6 +29,7 @@ use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -106,6 +108,44 @@ final class WithdrawalWaveTest extends TestCase
 
         self::assertDatabaseCount('withdrawal_requests', 0);
         self::assertDatabaseCount('balance_holds', 0);
+    }
+
+    public function test_citizen_multi_area_form_requires_a_valid_selection_and_persists_the_selected_snapshot(): void
+    {
+        [$customer, $areaA] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 50_000);
+        $manager = User::factory()->create();
+        $this->grant($manager, ['region.manage']);
+        $rt = $customer->customerProfile()->firstOrFail()->rt()->firstOrFail();
+        $areaB = app(ManageRegions::class)->createServiceArea($manager, 'Area W6 Form '.$customer->id, [$rt]);
+
+        Livewire::actingAs($customer)
+            ->test(WithdrawalRequestForm::class)
+            ->assertSee('Pilih area layanan')
+            ->set('amount', '20000')
+            ->set('pickupLocation', 'Balai warga W6')
+            ->call('submit')
+            ->assertHasErrors(['serviceAreaId']);
+
+        self::assertDatabaseCount('withdrawal_requests', 0);
+        self::assertDatabaseCount('balance_holds', 0);
+
+        Livewire::actingAs($customer)
+            ->test(WithdrawalRequestForm::class)
+            ->set('amount', '20000')
+            ->set('pickupLocation', 'Balai warga W6')
+            ->set('serviceAreaId', (string) $areaB->id)
+            ->call('submit')
+            ->assertHasNoErrors()
+            ->assertRedirect();
+
+        self::assertDatabaseHas('withdrawal_requests', [
+            'customer_id' => $customer->id,
+            'rt_id' => $rt->id,
+            'service_area_id' => $areaB->id,
+        ]);
+        self::assertNotSame($areaA->id, $areaB->id);
     }
 
     public function test_lane_a_requested_amount_is_immutable_after_creation(): void
@@ -556,6 +596,88 @@ final class WithdrawalWaveTest extends TestCase
             ->test(WithdrawalShow::class, ['withdrawal' => $paid])
             ->assertSee('Buka Bukti Pencairan')
             ->assertSeeHtml('href="'.route('citizen.withdrawal.receipt', $paid).'"');
+    }
+
+    public function test_multi_area_bendahara_assignments_allow_snapshot_area_a_or_b_and_reject_area_c(): void
+    {
+        [$customer, $areaA] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 100_000);
+        $manager = User::factory()->create();
+        $this->grant($manager, ['region.manage']);
+        $rt = $customer->customerProfile()->firstOrFail()->rt()->firstOrFail();
+        $regions = app(ManageRegions::class);
+        $areaB = $regions->createServiceArea($manager, 'Area W6 B '.$customer->id, [$rt]);
+        $areaC = $regions->createServiceArea($manager, 'Area W6 C '.$customer->id, [$rt]);
+        $approver = User::factory()->create();
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $payer = $this->payerFor($areaA);
+        StaffServiceArea::query()->create(['staff_profile_user_id' => $payer->id, 'service_area_id' => $areaB->id, 'active_from' => today(), 'active_to' => null]);
+        $service = app(WithdrawalService::class);
+
+        try {
+            $service->request($customer, Arr::except($this->requestPayload($areaA), 'service_area_id') + ['amount' => 20_000], 'w6-snapshot-area-ambiguous-0001');
+            self::fail('A customer in multiple active areas must select an area explicitly.');
+        } catch (ValidationException) {
+            self::assertDatabaseCount('withdrawal_requests', 0);
+            self::assertDatabaseCount('balance_holds', 0);
+        }
+
+        $areaAWithdrawal = $service->approve($approver, $service->request($customer, $this->requestPayload($areaA) + ['amount' => 20_000], 'w6-snapshot-area-a-0001'), true);
+        $areaBWithdrawal = $service->approve($approver, $service->request($customer, $this->requestPayload($areaB) + ['amount' => 20_000], 'w6-snapshot-area-b-0001'), true);
+        $areaCWithdrawal = $service->approve($approver, $service->request($customer, $this->requestPayload($areaC) + ['amount' => 20_000], 'w6-snapshot-area-c-0001'), true);
+
+        self::assertSame($areaA->id, $areaAWithdrawal->service_area_id);
+        self::assertSame($rt->id, $areaAWithdrawal->rt_id);
+        self::assertSame(WithdrawalStatus::ReadyForPickup, $service->assignPayer($approver, $areaAWithdrawal, $payer)->status);
+        self::assertSame(WithdrawalStatus::ReadyForPickup, $service->assignPayer($approver, $areaBWithdrawal, $payer)->status);
+        $this->expectException(ValidationException::class);
+        $service->assignPayer($approver, $areaCWithdrawal, $payer);
+    }
+
+    public function test_post_assignment_expiry_removal_or_inactive_snapshot_area_blocks_payment_without_financial_side_effects(): void
+    {
+        Storage::fake('media_private');
+        [$customer, $area] = $this->context();
+        $this->grant($customer, ['withdrawal.request', 'withdrawal.view']);
+        $this->credit($customer, 100_000);
+        $manager = User::factory()->create();
+        $this->grant($manager, ['region.manage']);
+        $approver = User::factory()->create();
+        $this->grant($approver, ['withdrawal.approve', 'withdrawal.view', 'user.view.all']);
+        $payer = $this->payerFor($area);
+        $service = app(WithdrawalService::class);
+
+        foreach (['expired', 'removed', 'inactive'] as $index => $case) {
+            $withdrawal = $service->assignPayer($approver, $service->approve($approver, $service->request($customer, $this->requestPayload($area) + ['amount' => 20_000], 'w6-post-assignment-'.$case.'-0001'), true), $payer);
+            match ($case) {
+                'expired' => StaffServiceArea::query()->where('staff_profile_user_id', $payer->id)->where('service_area_id', $area->id)->update(['active_from' => today()->subDays(2), 'active_to' => today()->subDay()]),
+                'removed' => StaffServiceArea::query()->where('staff_profile_user_id', $payer->id)->where('service_area_id', $area->id)->delete(),
+                'inactive' => app(ManageRegions::class)->deactivate($manager, $area),
+            };
+
+            try {
+                $service->pay($payer, $withdrawal, 'nomor_nasabah', (string) $customer->customerProfile?->customer_number, UploadedFile::fake()->image($case.'.png'), 'w6-post-assignment-pay-'.$index.'001');
+                self::fail('A payer without a current snapshot-area assignment must not pay.');
+            } catch (AuthorizationException) {
+                self::assertSame(WithdrawalStatus::ReadyForPickup, $withdrawal->fresh()->status);
+                self::assertNull($withdrawal->fresh()->proof_media_id);
+                self::assertNull($withdrawal->fresh()->receipt_ledger_entry_id);
+                self::assertSame(0, LedgerEntry::query()->where('source_type', WithdrawalRequest::class)->where('source_id', $withdrawal->id)->count());
+            }
+
+            if ($case === 'expired') {
+                StaffServiceArea::query()->where('staff_profile_user_id', $payer->id)->where('service_area_id', $area->id)->update(['active_from' => today(), 'active_to' => null]);
+            }
+            if ($case === 'removed') {
+                StaffServiceArea::query()->create(['staff_profile_user_id' => $payer->id, 'service_area_id' => $area->id, 'active_from' => today(), 'active_to' => null]);
+            }
+            if ($case === 'inactive') {
+                app(ManageRegions::class)->activate($manager, $area);
+            }
+        }
+
+        Storage::disk('media_private')->assertDirectoryEmpty('/');
     }
 
     /** @return array{User, ServiceArea} */

@@ -8,7 +8,7 @@ use App\Authorization\PermissionChecker;
 use App\Domain\AuditReconciliation\Services\AuditLogger;
 use App\Domain\Groceries\Enums\GroceryStatus;
 use App\Domain\Groceries\Models\GroceryRedemption;
-use App\Domain\Identity\Queries\VisibleUsers;
+use App\Domain\Groceries\Support\GroceryRedemptionScope;
 use App\Domain\Ledger\Models\BalanceHold;
 use App\Domain\Ledger\Services\LedgerService;
 use App\Domain\Notifications\Data\NotificationPayload;
@@ -26,7 +26,7 @@ final readonly class GroceryTerminalService
         private PermissionChecker $permissions,
         private LedgerService $ledger,
         private AuditLogger $auditLogger,
-        private VisibleUsers $visibleUsers,
+        private GroceryRedemptionScope $scope,
     ) {}
 
     public function cancel(User $actor, GroceryRedemption $redemption, ?string $reason = null): GroceryRedemption
@@ -36,8 +36,8 @@ final readonly class GroceryTerminalService
 
         return DB::transaction(function () use ($actor, $redemption, $reason): GroceryRedemption {
             $locked = $this->lock($redemption);
-            if ($locked->customer_id !== $actor->id && ! ($this->permissions->allows($actor, 'user.view.all') || $this->visibleUsers->queryFor($actor)->whereKey($locked->customer_id)->exists())) {
-                throw new AuthorizationException('Penukaran berada di luar scope Anda.');
+            if ($locked->customer_id !== $actor->id && ! $this->scope->canOperate($actor, $locked)) {
+                throw new AuthorizationException('Penukaran berada di luar scope area snapshot Anda.');
             }
             if ($locked->status === GroceryStatus::Cancelled) {
                 return $locked->fresh(['package', 'balanceHold', 'customer']);
