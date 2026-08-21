@@ -49,7 +49,7 @@ final readonly class DepositService
     public function createDraft(User $actor, User $customer, string $method = 'langsung', ?string $location = null, ?MobileService $mobileService = null): Deposit
     {
         $this->authorize($actor, 'deposit.create');
-        $this->assertCustomerScope($actor, $customer);
+        $this->assertCustomerScope($actor, $customer, $method, $mobileService);
 
         return $this->createDraftRecord($actor, $customer, $method, $location, $mobileService);
     }
@@ -79,6 +79,9 @@ final readonly class DepositService
         if (! in_array($method, ['langsung', 'penjemputan', 'keliling'], true)) {
             throw ValidationException::withMessages(['method' => 'Metode setoran tidak valid.']);
         }
+        if ($method !== 'keliling' && $mobileService !== null) {
+            throw ValidationException::withMessages(['mobile_service_id' => 'Konteks layanan keliling hanya boleh digunakan untuk setoran keliling.']);
+        }
         if ($method === 'keliling' && $mobileService === null) {
             throw ValidationException::withMessages(['mobile_service_id' => 'Setoran keliling wajib terhubung ke jadwal layanan yang dibuka.']);
         }
@@ -91,7 +94,7 @@ final readonly class DepositService
             'customer_id' => $customer->id,
             'staff_id' => $actor->id,
             'method' => $method,
-            'mobile_service_id' => $mobileService?->id,
+            'mobile_service_id' => $method === 'keliling' ? $mobileService->id : null,
             'location' => $location,
             'occurred_at' => now(),
             'status' => Deposit::STATUS_DRAFT,
@@ -356,9 +359,14 @@ final readonly class DepositService
         $media->delete();
     }
 
-    private function assertCustomerScope(User $actor, User $customer): void
+    private function assertCustomerScope(User $actor, User $customer, string $method, ?MobileService $mobileService): void
     {
-        if (! app(VisibleUsers::class)->canView($actor, $customer)) {
+        $visibleUsers = app(VisibleUsers::class);
+        $isVisible = $method === 'keliling' && $mobileService instanceof MobileService
+            ? $visibleUsers->queryForMobileService($actor, $mobileService)->whereKey($customer->getKey())->exists()
+            : $visibleUsers->canView($actor, $customer);
+
+        if (! $isVisible) {
             throw new AuthorizationException('Nasabah berada di luar scope tugas Anda.');
         }
     }

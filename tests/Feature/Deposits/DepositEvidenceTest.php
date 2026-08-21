@@ -195,6 +195,36 @@ final class DepositEvidenceTest extends TestCase
             ->assertSet('items.0.waste_type_id', $type->id);
     }
 
+    public function test_mobile_only_customer_can_create_keliling_draft_only_with_valid_service_context(): void
+    {
+        [$staff, $customer, $type] = $this->context();
+        $rtId = $customer->customerProfile->rt_id;
+        $this->grant($staff, ['deposit.create', 'mobile-service.operate', 'customer.view', 'user.view']);
+        $mobileService = $this->mobileService($staff, $type);
+        $mobileService->forceFill(['rt_id' => $rtId])->save();
+
+        $draft = app(DepositService::class)->createDraft($staff->fresh(), $customer->fresh(), 'keliling', null, $mobileService->fresh());
+
+        self::assertSame('keliling', $draft->method);
+        self::assertSame($mobileService->id, $draft->mobile_service_id);
+
+        $other = User::factory()->create();
+        $this->grant($other, ['deposit.create', 'mobile-service.operate', 'customer.view', 'user.view']);
+        $this->expectException(AuthorizationException::class);
+        app(DepositService::class)->createDraft($other->fresh(), $customer->fresh(), 'keliling', null, $mobileService->fresh());
+    }
+
+    public function test_mobile_context_is_rejected_for_a_direct_deposit_even_when_customer_is_regularly_visible(): void
+    {
+        [$staff, $customer, $type] = $this->context();
+        $this->grant($staff, ['deposit.create', 'mobile-service.operate', 'customer.view', 'user.view', 'user.view.all']);
+        $mobileService = $this->mobileService($staff, $type);
+        $mobileService->forceFill(['rt_id' => $customer->customerProfile->rt_id])->save();
+
+        $this->expectException(ValidationException::class);
+        app(DepositService::class)->createDraft($staff->fresh(), $customer->fresh(), 'langsung', null, $mobileService->fresh());
+    }
+
     public function test_deposit_form_requires_evidence_and_clears_it_after_successful_finalization(): void
     {
         Storage::fake('media_private');

@@ -102,7 +102,7 @@ final class UserResource extends Resource
                     TextInput::make('staff_number')->label('Nomor petugas')->placeholder('Belum dibuat'),
                     TextInput::make('service_area_names')->label('Area pelayanan')->placeholder('Belum diatur'),
                 ])->fillForm(function (User $record): array {
-                    $record->loadMissing(['roles', 'customerProfile', 'staffProfile.serviceAreas.serviceArea']);
+                    $record->loadMissing(['roles', 'customerProfile.rt.rw.dusun', 'staffProfile.serviceAreas.serviceArea']);
 
                     return [
                         'name' => $record->name,
@@ -112,10 +112,11 @@ final class UserResource extends Resource
                         'role_label' => $record->roles->pluck('name')->implode(', ') ?: null,
                         'customer_number' => $record->customerProfile?->customer_number,
                         'staff_number' => $record->staffProfile?->staff_number,
-                        'service_area_names' => $record->staffProfile?->serviceAreas
-                            ->map(fn ($assignment): string => $assignment->serviceArea->name)
-                            ->filter()
-                            ->implode(', ') ?: null,
+                        'service_area_names' => $record->customerProfile?->serviceRegion()
+                            ?? $record->staffProfile?->serviceAreas
+                                ->map(fn ($assignment): string => $assignment->serviceArea->name)
+                                ->filter()
+                                ->implode(', ') ?: null,
                     ];
                 }),
                 EditAction::make()->label('Ubah')->authorize('manageUpdate')->using(fn (User $record, array $data): User => app(ManageUsers::class)->update(self::actor(), $record, $data)),
@@ -177,7 +178,7 @@ final class UserResource extends Resource
         }
 
         return app(VisibleUsers::class)->queryFor($actor, ...UserStatus::cases())
-            ->with(['customerProfile', 'roles', 'staffProfile.serviceArea', 'staffProfile.serviceAreas.serviceArea'])
+            ->with(['customerProfile.rt.rw.dusun', 'roles', 'staffProfile.serviceArea', 'staffProfile.serviceAreas.serviceArea'])
             ->orderByRaw("CASE (SELECT roles.name FROM roles INNER JOIN role_user ON role_user.role_id = roles.id WHERE role_user.user_id = users.id LIMIT 1) WHEN 'superadmin' THEN 1 WHEN 'admin' THEN 2 WHEN 'bendahara' THEN 3 WHEN 'petugas' THEN 4 WHEN 'warga' THEN 5 ELSE 6 END")
             ->orderBy('name');
     }

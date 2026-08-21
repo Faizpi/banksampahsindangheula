@@ -120,6 +120,17 @@
         </x-ui.panel>
     @endif
 
+    @if ($mobileServices->isNotEmpty())
+        <x-ui.panel title="Pilih konteks setoran" description="Pilih layanan keliling aktif sebelum memindai QR atau mencari nomor warga. Pilih setoran langsung untuk memakai cakupan area tugas biasa.">
+            <x-ui.select name="mobileServiceId" label="Metode setoran" wire:model.live="mobileServiceId">
+                <option value="">Setoran langsung</option>
+                @foreach ($mobileServices as $mobileService)
+                    <option value="{{ $mobileService->id }}">Keliling · {{ $mobileService->point }} · {{ $mobileService->starts_at->format('d M H:i') }}</option>
+                @endforeach
+            </x-ui.select>
+        </x-ui.panel>
+    @endif
+
     {{-- Search Form --}}
     <x-ui.panel title="Cari dengan nomor nasabah" description="Gunakan nomor kartu sebagai alternatif ketika pemindaian tidak tersedia.">
         <form wire:submit="find" class="space-y-4" aria-describedby="identification-help">
@@ -169,13 +180,7 @@
                                 $depositLabel = $mobileServiceId === null ? 'Mulai Setoran Langsung' : 'Mulai Setoran Keliling';
                             @endphp
                             <div class="rounded-xl border border-border bg-warm-canvas p-4">
-                                <x-ui.select name="mobileServiceId" label="Metode setoran" wire:model.live="mobileServiceId">
-                                    <option value="">Setoran langsung</option>
-                                    @foreach ($mobileServices as $mobileService)
-                                        <option value="{{ $mobileService->id }}">Keliling · {{ $mobileService->point }} · {{ $mobileService->starts_at->format('d M H:i') }}</option>
-                                    @endforeach
-                                </x-ui.select>
-                                <div class="mt-3 flex flex-col items-end">
+                                <div class="flex flex-col items-end">
                                     <a href="{{ $depositUrl }}" class="inline-flex min-h-touch items-center justify-center gap-2 rounded-xl bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2">
                                         {{ $depositLabel }}
                                         <svg viewBox="0 0 24 24" class="size-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>

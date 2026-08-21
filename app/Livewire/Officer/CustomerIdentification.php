@@ -91,7 +91,7 @@ final class CustomerIdentification extends Component
         $actor = auth()->user();
         $this->resetCandidate();
         $this->validate(['search' => ['required', 'string', 'max:120']]);
-        $matches = $searchCustomers->search($actor, $this->search, 1);
+        $matches = $searchCustomers->search($actor, $this->search, 1, $this->identificationMobileService($actor));
         $this->candidate = $matches[0] ?? null;
     }
 
@@ -103,7 +103,7 @@ final class CustomerIdentification extends Component
         $this->scannerOpen = false;
 
         try {
-            $this->candidate = $identity->scan($actor, $rawToken);
+            $this->candidate = $identity->scan($actor, $rawToken, $this->identificationMobileService($actor));
         } catch (Throwable $exception) {
             if ($exception instanceof ValidationException) {
                 $this->scannerOpen = true;
@@ -144,6 +144,11 @@ final class CustomerIdentification extends Component
         }
 
         $this->selectedService = $service;
+    }
+
+    public function updatedMobileServiceId(): void
+    {
+        $this->resetCandidate();
     }
 
     public function updatedWithdrawalAmount(): void
@@ -342,8 +347,25 @@ final class CustomerIdentification extends Component
             'canCreateAssisted' => $permissions->allows($actor, 'customer.create-assisted'),
             'canCreateAssistedWithdrawal' => $permissions->allows($actor, 'customer.create-assisted') && $permissions->allows($actor, 'withdrawal.request'),
             'candidateAvailableBalance' => $this->candidate === null ? null : $this->availableBalanceFor($this->candidate->userId),
-            'mobileServices' => MobileService::query()->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))->where('status', MobileServiceStatus::Open)->where('ends_at', '>=', now())->orderBy('starts_at')->get(),
+            'mobileServices' => $permissions->allows($actor, 'mobile-service.operate')
+                ? MobileService::query()->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))->where('status', MobileServiceStatus::Open)->where('starts_at', '<=', now())->where('ends_at', '>=', now())->orderBy('starts_at')->get()
+                : collect(),
         ]);
+    }
+
+    private function identificationMobileService(User $actor): ?MobileService
+    {
+        if ($this->mobileServiceId === null || ! app(PermissionChecker::class)->allows($actor, 'mobile-service.operate')) {
+            return null;
+        }
+
+        return MobileService::query()
+            ->whereKey($this->mobileServiceId)
+            ->whereHas('staff', static fn (Builder $staff): Builder => $staff->whereKey($actor->id))
+            ->where('status', MobileServiceStatus::Open)
+            ->where('starts_at', '<=', now())
+            ->where('ends_at', '>=', now())
+            ->first();
     }
 
     private function availableBalanceFor(int $customerId): int
@@ -373,7 +395,7 @@ final class CustomerIdentification extends Component
     {
         $this->clearAssistedEvidence();
         $this->clearWithdrawalEvidence();
-        $this->reset(['candidate', 'confirmed', 'selectedService', 'assistedRecorded', 'assistedServiceId', 'assistedConsent', 'assistedEvidence', 'mobileServiceId', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'assistedWithdrawalServiceId', 'assistedWithdrawalId']);
+        $this->reset(['candidate', 'confirmed', 'selectedService', 'assistedRecorded', 'assistedServiceId', 'assistedConsent', 'assistedEvidence', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'assistedWithdrawalServiceId', 'assistedWithdrawalId']);
         $this->withdrawalDate = today('Asia/Jakarta')->addDay()->toDateString();
         $this->assistedWithdrawalIdempotencyKey = (string) str()->uuid();
         $this->resetErrorBag(['search', 'token', 'assistedConsent', 'assistedEvidence', 'withdrawalConsent', 'withdrawalEvidence', 'withdrawalAmount', 'withdrawalLocation', 'withdrawalDate']);

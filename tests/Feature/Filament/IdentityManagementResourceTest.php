@@ -235,8 +235,44 @@ final class IdentityManagementResourceTest extends TestCase
                 'role_label' => 'petugas',
                 'customer_number' => 'NSB-00000001',
                 'staff_number' => 'STF-00000001',
-                'service_area_names' => 'Area VIEW-STAFF',
+                'service_area_names' => 'RT VIEW, RW VIEW, Dusun VIEW',
             ]);
+    }
+
+    public function test_customer_and_resident_user_views_show_the_customer_profile_region_instead_of_free_form_address(): void
+    {
+        $actor = User::factory()->create();
+        $resident = User::factory()->create(['name' => 'Warga Wilayah']);
+        $rt = $this->createRt('REGION-VIEW');
+        $resident->customerProfile()->create([
+            'customer_number' => 'CST-90757568',
+            'rt_id' => $rt->id,
+            'address' => 'Alamat bebas yang tidak boleh ditampilkan sebagai wilayah',
+        ]);
+        $resident->roles()->attach(Role::factory()->create(['name' => 'warga']));
+        $this->grant($actor, 'region-view-reader', 'user.view', 'user.view.all', 'customer.view', 'customer.update');
+        $this->actingAs($actor->fresh());
+
+        $expectedRegion = 'RT REGION-VIEW, RW REGION-VIEW, Dusun REGION-VIEW';
+
+        Livewire::test(ManageCustomers::class)
+            ->mountTableAction('view', $resident->fresh())
+            ->assertTableActionDataSet([
+                'customer_number' => 'CST-90757568',
+                'service_region' => $expectedRegion,
+            ]);
+
+        Livewire::test(ManageUsersPage::class)
+            ->mountTableAction('view', $resident->fresh())
+            ->assertTableActionDataSet([
+                'customer_number' => 'CST-90757568',
+                'service_area_names' => $expectedRegion,
+            ]);
+
+        $resource = file_get_contents(app_path('Filament/Resources/Identity/Models/Customers/CustomerResource.php'));
+        self::assertIsString($resource);
+        self::assertStringContainsString("label('Wilayah layanan')", $resource);
+        self::assertStringNotContainsString("customerProfile.address')->label('Alamat')", $resource);
     }
 
     public function test_role_edit_action_preloads_persisted_permissions(): void
