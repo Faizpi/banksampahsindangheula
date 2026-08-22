@@ -540,15 +540,14 @@ final class WithdrawalWaveTest extends TestCase
         $this->actingAs($other)->get(route('citizen.withdrawal.show', $paid))->assertNotFound();
         $this->actingAs($other)->get(route('withdrawal.proof', $paid->proofMedia))->assertNotFound();
         $this->actingAs($customer)->get(route('citizen.withdrawal.show', $paid))->assertOk()->assertSee($paid->request_number);
-        $proofUrl = route('withdrawal.proof', $paid->proofMedia);
         $this->actingAs($customer)->get(route('citizen.withdrawal.receipt', $paid))
             ->assertOk()
             ->assertSee('Pencairan berhasil')
             ->assertSee($paid->request_number)
             ->assertSee('Rp25.000')
             ->assertSee('Berhasil')
-            ->assertSeeHtml('<img src="'.$proofUrl.'" alt="Bukti pembayaran pencairan '.$paid->request_number.'" class="max-h-96 w-full object-contain" />')
-            ->assertSeeHtml('href="'.$proofUrl.'"')
+            ->assertSee('Cetak bukti')
+            ->assertDontSee(route('withdrawal.proof', $paid->proofMedia), false)
             ->assertDontSee('storage/')
             ->assertDontSee('Nomor bukti');
         $this->actingAs($customer)->get(route('withdrawal.proof', $paid->proofMedia))->assertOk();
@@ -580,7 +579,7 @@ final class WithdrawalWaveTest extends TestCase
         $this->actingAs($customer)->get(route('citizen.withdrawal.receipt', $paid))
             ->assertOk()
             ->assertDontSee('<img', false)
-            ->assertSeeHtml('href="'.route('withdrawal.proof', $proofMedia).'"');
+            ->assertDontSee(route('withdrawal.proof', $proofMedia), false);
     }
 
     public function test_paid_withdrawal_detail_exposes_the_receipt_action(): void
