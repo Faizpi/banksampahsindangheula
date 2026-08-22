@@ -170,22 +170,26 @@ final class BackofficePanelTest extends TestCase
 
     public function test_backoffice_uses_the_shared_restrained_forest_palette(): void
     {
-        self::assertSame(
-            [
-                50 => '#F3F7F4',
-                100 => '#E2ECE6',
-                200 => '#C7D9CF',
-                300 => '#A3BEAF',
-                400 => '#729B87',
-                500 => '#477B67',
-                600 => '#185746',
-                700 => '#123D32',
-                800 => '#0F3028',
-                900 => '#0A251E',
-                950 => '#061712',
-            ],
-            Filament::getPanel('backoffice')->getColors()['primary'],
-        );
+        $forest = [
+            50 => '#F3F7F4',
+            100 => '#E2ECE6',
+            200 => '#C7D9CF',
+            300 => '#A3BEAF',
+            400 => '#729B87',
+            500 => '#477B67',
+            600 => '#185746',
+            700 => '#123D32',
+            800 => '#0F3028',
+            900 => '#0A251E',
+            950 => '#061712',
+        ];
+        $colors = Filament::getPanel('backoffice')->getColors();
+
+        self::assertSame($forest, $colors['primary']);
+        self::assertSame($forest, $colors['success']);
+        self::assertSame('#FBF2DC', $colors['warning'][50]);
+        self::assertSame('#D6A84B', $colors['warning'][400]);
+        self::assertSame('#8D6726', $colors['warning'][600]);
     }
 
     public function test_backoffice_theme_compiles_shared_actions_at_a_usable_size(): void
@@ -203,12 +207,8 @@ final class BackofficePanelTest extends TestCase
         self::assertStringContainsString('.backoffice-form-control {', $theme);
         self::assertStringContainsString('px-4 py-2', $theme);
         self::assertStringContainsString("input.backoffice-form-control[type='datetime-local']", $theme);
-        self::assertStringContainsString('.fi-modal .fi-color-success {', $theme);
-        self::assertStringContainsString('--color-600: var(--color-primary-600);', $theme);
-        self::assertStringContainsString('.fi-modal .fi-color-warning {', $theme);
-        self::assertStringContainsString('--color-50: var(--color-warning-bg);', $theme);
-        self::assertStringContainsString('.fi-modal .fi-color-warning.fi-btn {', $theme);
-        self::assertStringContainsString('color: var(--color-deep-green);', $theme);
+        self::assertStringNotContainsString('.fi-modal .fi-color-success {', $theme);
+        self::assertStringNotContainsString('.fi-modal .fi-color-warning {', $theme);
     }
 
     public function test_technical_forms_use_the_spacious_shared_control_style(): void

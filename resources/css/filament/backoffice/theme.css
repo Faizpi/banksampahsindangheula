@@ -87,43 +87,6 @@
         min-width: var(--spacing-admin-control);
     }
 
-    /*
-     * Confirmation dialogs inherit Filament's semantic action colors. Keep
-     * success actions inside the established forest family, and soften warning
-     * actions to the restrained harvest palette instead of the bright defaults.
-     */
-    .fi-modal .fi-color-success {
-        --color-50: var(--color-primary-50);
-        --color-100: var(--color-primary-100);
-        --color-200: var(--color-primary-200);
-        --color-300: var(--color-primary-300);
-        --color-400: var(--color-primary-400);
-        --color-500: var(--color-primary-500);
-        --color-600: var(--color-primary-600);
-        --color-700: var(--color-primary-700);
-        --color-800: var(--color-primary-800);
-        --color-900: var(--color-primary-900);
-        --color-950: var(--color-primary-950);
-    }
-
-    .fi-modal .fi-color-warning {
-        --color-50: var(--color-warning-bg);
-        --color-100: #f6e7bd;
-        --color-200: #ecd28b;
-        --color-300: #dfbd63;
-        --color-400: var(--color-harvest-gold);
-        --color-500: #b88932;
-        --color-600: #8d6726;
-        --color-700: #684b20;
-        --color-800: #49351c;
-        --color-900: #322617;
-        --color-950: #1d160d;
-    }
-
-    .fi-modal .fi-color-warning.fi-btn {
-        color: var(--color-deep-green);
-    }
-
     .backoffice-form-control {
         @apply block w-full rounded-lg border border-border bg-surface px-4 py-2 text-sm leading-6 text-text-primary shadow-xs transition duration-180 placeholder:text-text-secondary hover:border-primary-500 focus:border-focus focus:outline-none focus:ring-2 focus:ring-focus/30 disabled:cursor-not-allowed disabled:border-border disabled:bg-disabled-bg disabled:text-text-secondary;
     }

@@ -41,6 +41,21 @@ final class BackofficePanelProvider extends PanelProvider
         950 => '#061712',
     ];
 
+    /** @var array<int, string> */
+    private const WARNING_PALETTE = [
+        50 => '#FBF2DC',
+        100 => '#F6E7BD',
+        200 => '#ECD28B',
+        300 => '#DFBD63',
+        400 => '#D6A84B',
+        500 => '#B88932',
+        600 => '#8D6726',
+        700 => '#684B20',
+        800 => '#49351C',
+        900 => '#322617',
+        950 => '#1D160D',
+    ];
+
     public function panel(Panel $panel): Panel
     {
         return $panel
@@ -50,6 +65,8 @@ final class BackofficePanelProvider extends PanelProvider
             ->login(BackofficeLogin::class)
             ->colors([
                 'primary' => self::PRIMARY_PALETTE,
+                'success' => self::PRIMARY_PALETTE,
+                'warning' => self::WARNING_PALETTE,
             ])
             ->darkMode(false)
             ->themeSwitcher(false)
