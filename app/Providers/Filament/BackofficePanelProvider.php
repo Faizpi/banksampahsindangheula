@@ -53,6 +53,7 @@ final class BackofficePanelProvider extends PanelProvider
             ])
             ->darkMode(false)
             ->themeSwitcher(false)
+            ->maxContentWidth('max-w-[100rem]')
             ->viteTheme('resources/css/filament/backoffice/theme.css')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')

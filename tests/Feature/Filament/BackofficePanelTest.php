@@ -163,6 +163,11 @@ final class BackofficePanelTest extends TestCase
         self::assertFalse(OperationsDashboard::canAccess());
     }
 
+    public function test_backoffice_content_width_matches_the_admin_container_contract(): void
+    {
+        self::assertSame('max-w-[100rem]', Filament::getPanel('backoffice')->getMaxContentWidth());
+    }
+
     public function test_backoffice_uses_the_shared_restrained_forest_palette(): void
     {
         self::assertSame(
@@ -188,6 +193,7 @@ final class BackofficePanelTest extends TestCase
         $theme = file_get_contents(resource_path('css/filament/backoffice/theme.css'));
 
         self::assertIsString($theme);
+        self::assertStringContainsString("@source '../../../../app/Providers/Filament/BackofficePanelProvider.php';", $theme);
         self::assertStringContainsString("@source '../../../../resources/views/components/ui/**/*.blade.php';", $theme);
         self::assertStringContainsString("@source '../../../../resources/views/livewire/treasurer/**/*.blade.php';", $theme);
         self::assertStringContainsString('--spacing-touch: 2.75rem;', $theme);
