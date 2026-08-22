@@ -348,6 +348,45 @@ final class DeveloperCredentialsTest extends TestCase
         }
         self::assertSame(0, WithdrawalRequest::query()->whereNull('rt_id')->orWhereNull('service_area_id')->count());
         self::assertSame(0, GroceryRedemption::query()->whereNull('rt_id')->orWhereNull('service_area_id')->count());
+        self::assertSame(
+            0,
+            MobileService::query()
+                ->whereHas('rt', fn ($query) => $query->whereColumn('rt.rw_id', '!=', 'mobile_services.rw_id'))
+                ->count(),
+            'Every seeded mobile service RT must belong to its selected RW.',
+        );
+    }
+
+    public function test_operational_demo_reseed_repairs_fixture_mobile_service_region_without_touching_unrelated_records(): void
+    {
+        $this->freezeDemoClock();
+        config()->set('app.env', 'production');
+        config()->set('app.demo_mode', true);
+        config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
+        $this->seed(DeveloperUsersSeeder::class);
+        $this->seed(LocalDataSeeder::class);
+
+        $fixture = MobileService::query()->where('service_number', 'like', 'MOB-SH-%')->firstOrFail();
+        $correctRwId = $fixture->rt()->firstOrFail()->rw_id;
+        $wrongRwId = DB::table('rw')->where('id', '!=', $correctRwId)->value('id');
+        self::assertIsInt($wrongRwId);
+
+        $fixtureStaffIds = $fixture->staff()->pluck('users.id')->all();
+        $fixtureWasteTypeIds = $fixture->wasteTypes()->pluck('waste_types.id')->all();
+        $unrelated = $fixture->replicate()->forceFill([
+            'service_number' => 'MOB-EXTERNAL-001',
+            'rw_id' => $wrongRwId,
+        ]);
+        $unrelated->save();
+        $fixture->forceFill(['rw_id' => $wrongRwId])->save();
+
+        $this->seed(LocalDataSeeder::class);
+
+        $fixture->refresh();
+        self::assertSame($fixture->rt()->firstOrFail()->rw_id, $fixture->rw_id);
+        self::assertSame($fixtureStaffIds, $fixture->staff()->pluck('users.id')->all());
+        self::assertSame($fixtureWasteTypeIds, $fixture->wasteTypes()->pluck('waste_types.id')->all());
+        self::assertSame($wrongRwId, $unrelated->refresh()->rw_id);
     }
 
     public function test_operational_demo_reseed_deactivates_legacy_yusuf_and_converges_to_two_operational_staff_per_role(): void

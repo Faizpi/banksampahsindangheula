@@ -418,11 +418,12 @@ final class LocalDataSeeder extends Seeder
             ['number' => $this->fixtureId('MOB', $now, 6), 'start' => $now->addDays(28)->setTime(8, 0), 'end' => $now->addDays(28)->setTime(13, 0), 'status' => MobileServiceStatus::Published, 'point' => 'Lapangan Desa Sindangheula'],
         ];
         foreach ($definitions as $index => $definition) {
-            $service = MobileService::query()->firstOrCreate(
+            $rt = $regions['rts'][$index % count($regions['rts'])];
+            $service = MobileService::query()->updateOrCreate(
                 ['service_number' => $definition['number']],
                 [
-                    'rw_id' => $regions['rws'][$index % count($regions['rws'])]->id,
-                    'rt_id' => $regions['rts'][$index % count($regions['rts'])]->id,
+                    'rw_id' => $rt->rw_id,
+                    'rt_id' => $rt->id,
                     'point' => $definition['point'],
                     'starts_at' => $definition['start'],
                     'ends_at' => $definition['end'],
