@@ -18,6 +18,7 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\PageRegistration;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -26,6 +27,7 @@ use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\ValidationException;
 use UnitEnum;
 
 final class AnnouncementResource extends Resource
@@ -74,8 +76,20 @@ final class AnnouncementResource extends Resource
             EditAction::make()->visible(fn (Announcement $record): bool => in_array($record->status->value, ['draf', 'nonaktif'], true))->fillForm(fn (Announcement $record): array => [
                 'rt_ids' => $record->rts()->pluck('rt.id')->all(),
             ])->using(fn (Announcement $record, array $data): Announcement => self::service()->update(self::actor(), $record, (string) $data['title'], (string) $data['body'], (string) $data['audience'], (string) $data['publish_start'], $data['publish_end'] ?? null, array_map('intval', $data['rt_ids'] ?? []), (int) $data['priority'])),
-            Action::make('publish')->label('Terbitkan')->icon(Heroicon::OutlinedMegaphone)->color('success')->visible(fn (Announcement $record): bool => in_array($record->status->value, ['draf', 'nonaktif'], true))->authorize('publish')->requiresConfirmation()->modalHeading(fn (Announcement $record): string => "Terbitkan pengumuman {$record->title}?")->modalDescription('Pengumuman akan tampil kepada audiens yang dipilih sesuai periode tayang.')->modalSubmitActionLabel('Terbitkan pengumuman')->action(fn (Announcement $record): Announcement => self::service()->publish(self::actor(), $record)),
-            Action::make('unpublish')->label('Nonaktifkan')->icon(Heroicon::OutlinedEyeSlash)->color('warning')->visible(fn (Announcement $record): bool => $record->status === AnnouncementStatus::Published)->authorize('publish')->requiresConfirmation()->modalHeading(fn (Announcement $record): string => "Nonaktifkan pengumuman {$record->title}?")->modalDescription('Pengumuman tidak lagi tampil kepada audiens. Data historis tetap tersimpan.')->modalSubmitActionLabel('Nonaktifkan pengumuman')->action(fn (Announcement $record): Announcement => self::service()->unpublish(self::actor(), $record)),
+            Action::make('publish')->label('Terbitkan')->icon(Heroicon::OutlinedMegaphone)->color('success')->visible(fn (Announcement $record): bool => in_array($record->status->value, ['draf', 'nonaktif'], true))->authorize('publish')->requiresConfirmation()->modalHeading(fn (Announcement $record): string => "Terbitkan pengumuman {$record->title}?")->modalDescription('Pengumuman akan tampil kepada audiens yang dipilih sesuai periode tayang.')->modalSubmitActionLabel('Terbitkan pengumuman')->action(function (Announcement $record): void {
+                try {
+                    self::service()->publish(self::actor(), $record);
+                } catch (ValidationException $exception) {
+                    self::validationNotification('Pengumuman belum dapat diterbitkan', $exception);
+                }
+            }),
+            Action::make('unpublish')->label('Nonaktifkan')->icon(Heroicon::OutlinedEyeSlash)->color('warning')->visible(fn (Announcement $record): bool => $record->status === AnnouncementStatus::Published)->authorize('publish')->requiresConfirmation()->modalHeading(fn (Announcement $record): string => "Nonaktifkan pengumuman {$record->title}?")->modalDescription('Pengumuman tidak lagi tampil kepada audiens. Data historis tetap tersimpan.')->modalSubmitActionLabel('Nonaktifkan pengumuman')->action(function (Announcement $record): void {
+                try {
+                    self::service()->unpublish(self::actor(), $record);
+                } catch (ValidationException $exception) {
+                    self::validationNotification('Pengumuman belum dapat dinonaktifkan', $exception);
+                }
+            }),
         ]);
     }
 
@@ -101,6 +115,11 @@ final class AnnouncementResource extends Resource
     public static function getPages(): array
     {
         return ['index' => ManageAnnouncements::route('/')];
+    }
+
+    private static function validationNotification(string $title, ValidationException $exception): void
+    {
+        Notification::make()->title($title)->body(implode(' ', $exception->validator->errors()->all()))->danger()->send();
     }
 
     private static function service(): AnnouncementService
