@@ -222,6 +222,76 @@ final class BackofficePanelTest extends TestCase
         }
     }
 
+    public function test_dense_backoffice_hubs_keep_fluid_operational_surfaces_and_responsive_copy(): void
+    {
+        $health = file_get_contents(resource_path('views/filament/backoffice/technical-health.blade.php'));
+        $reconciliation = file_get_contents(resource_path('views/filament/backoffice/reconciliation.blade.php'));
+        $directory = file_get_contents(resource_path('views/filament/backoffice/directory.blade.php'));
+
+        self::assertIsString($health);
+        self::assertStringContainsString('<dl class="mt-4 grid w-full min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,12rem),1fr))] gap-3">', $health);
+        self::assertStringContainsString('<dt class=', $health);
+        self::assertStringContainsString('<dd class=', $health);
+        self::assertStringContainsString('[overflow-wrap:anywhere]', $health);
+        self::assertStringNotContainsString('sm:grid-cols-2 xl:grid-cols-5', $health);
+
+        self::assertIsString($reconciliation);
+        self::assertStringContainsString('group mt-6 w-full min-w-0', $reconciliation);
+        self::assertStringContainsString('mt-7 grid w-full min-w-0', $reconciliation);
+        self::assertStringContainsString('w-full min-w-0 rounded-xl', $reconciliation);
+        self::assertStringContainsString('max-w-3xl text-base leading-7', $reconciliation);
+        self::assertStringNotContainsString('grid max-w-3xl gap-x-6', $reconciliation);
+
+        self::assertIsString($directory);
+        self::assertStringContainsString('flex min-w-0 flex-col items-start gap-4 sm:flex-row sm:items-center', $directory);
+        self::assertStringContainsString('max-w-2xl text-sm text-text-secondary [overflow-wrap:anywhere]', $directory);
+    }
+
+    public function test_dormant_technical_forms_keep_accessible_validation_and_safe_responsive_actions(): void
+    {
+        $contracts = [
+            'technical-settings.blade.php' => [
+                'settings-queue-backlog-threshold' => 'settings.queue_backlog_threshold',
+                'settings-backup-max-age-hours' => 'settings.backup_max_age_hours',
+            ],
+            'technical-backups.blade.php' => [
+                'backup-database-alias' => 'backupDatabaseAlias',
+                'backup-media-alias' => 'backupMediaAlias',
+                'backup-database-sha256' => 'backupDatabaseSha256',
+                'backup-media-sha256' => 'backupMediaSha256',
+                'backup-database-size-bytes' => 'backupDatabaseSizeBytes',
+                'backup-media-size-bytes' => 'backupMediaSizeBytes',
+                'backup-retention-until' => 'backupRetentionUntil',
+                'backup-operator-key' => 'backupOperatorKey',
+                'restore-backup-id' => 'restoreBackupId',
+                'restore-target-alias' => 'restoreTargetAlias',
+                'restore-evidence-reference' => 'restoreEvidenceReference',
+                'restore-result' => 'restoreResult',
+            ],
+            'technical-maintenance.blade.php' => [
+                'maintenance-reason' => 'maintenanceReason',
+            ],
+        ];
+
+        foreach ($contracts as $view => $fields) {
+            $contents = file_get_contents(resource_path('views/filament/backoffice/'.$view));
+
+            self::assertIsString($contents);
+            self::assertStringContainsString('w-full max-w-3xl', $contents);
+            self::assertStringContainsString('wire:loading.attr="disabled"', $contents);
+            self::assertStringContainsString('w-full', $contents);
+            self::assertStringContainsString('sm:w-auto', $contents);
+
+            foreach ($fields as $id => $property) {
+                self::assertStringContainsString($id, $contents);
+                self::assertStringContainsString($property, $contents);
+                self::assertStringContainsString('aria-invalid="true"', $contents);
+                self::assertStringContainsString('aria-describedby=', $contents);
+                self::assertStringContainsString('role="alert"', $contents);
+            }
+        }
+    }
+
     public function test_consolidated_hubs_render_for_authorized_backoffice_users(): void
     {
         $this->seed(RolesAndPermissionsSeeder::class);
@@ -272,6 +342,42 @@ final class BackofficePanelTest extends TestCase
                 ->assertOk()
                 ->assertSee('backoffice-page-intro');
         }
+    }
+
+    public function test_audited_backoffice_section_navigation_is_native_focusable_and_route_aware(): void
+    {
+        foreach ([
+            'regions.blade.php' => ['Bagian wilayah', 'regions-navigation-help', "routeIs('filament.backoffice.resources.customers-regions.models.service-areas.*')"],
+            'directory.blade.php' => ['Bagian direktori', 'directory-navigation-help', "routeIs('filament.backoffice.resources.identity.models.customers.*')"],
+            'waste-catalog.blade.php' => ['Bagian katalog sampah', 'waste-catalog-navigation-help', "routeIs('filament.backoffice.resources.waste-master.models.waste-categories.*')"],
+            'operations-dashboard.blade.php' => ['Administrasi sistem', 'operations-navigation-help', "routeIs('filament.backoffice.pages.technical-health-page')"],
+            'reconciliation.blade.php' => ['Bagian rekonsiliasi', 'reconciliation-navigation-help', "routeIs('filament.backoffice.resources.deposits.models.deposits.*')"],
+        ] as $view => [$label, $helpId, $routeFamily]) {
+            $contents = file_get_contents(resource_path('views/filament/backoffice/'.$view));
+
+            self::assertIsString($contents);
+            self::assertStringContainsString('<nav', $contents);
+            self::assertStringContainsString('aria-label="'.$label.'"', $contents);
+            self::assertStringContainsString('tabindex="0"', $contents);
+            self::assertStringContainsString('aria-describedby="'.$helpId.'"', $contents);
+            self::assertStringContainsString('id="'.$helpId.'"', $contents);
+            self::assertStringContainsString($routeFamily, $contents);
+            self::assertStringContainsString('aria-current="page"', $contents);
+            self::assertStringNotContainsString('role="tab', $contents);
+        }
+    }
+
+    public function test_reconciliation_comparison_has_unique_captioned_keyboard_overflow_regions(): void
+    {
+        $contents = file_get_contents(resource_path('views/filament/backoffice/reconciliation.blade.php'));
+
+        self::assertIsString($contents);
+        self::assertStringContainsString('id="reconciliation-comparison-help"', $contents);
+        self::assertStringContainsString('tabindex="0"', $contents);
+        self::assertStringContainsString('aria-describedby="reconciliation-comparison-help reconciliation-comparison-caption-', $contents);
+        self::assertStringContainsString('<caption id="reconciliation-comparison-caption-', $contents);
+        self::assertStringContainsString('Rincian pembanding rekonsiliasi', $contents);
+        self::assertStringContainsString('Geser secara horizontal', $contents);
     }
 
     public function test_admin_and_superadmin_can_open_the_permission_gated_report_page(): void
