@@ -129,6 +129,16 @@ final class RoleDashboardTest extends TestCase
             ->assertDontSee('Data Warga Lain');
     }
 
+    public function test_officer_dashboard_rows_wrap_long_mobile_content_instead_of_truncating_it(): void
+    {
+        $view = file_get_contents(resource_path('views/livewire/officer/dashboard.blade.php'));
+
+        self::assertIsString($view);
+        self::assertStringContainsString('flex-col items-start gap-3', $view);
+        self::assertStringContainsString('break-words text-body-sm text-text-secondary', $view);
+        self::assertStringNotContainsString('block truncate text-body-sm', $view);
+    }
+
     public function test_officer_dashboard_denies_an_authenticated_actor_without_user_view_permission(): void
     {
         $actor = User::factory()->create();

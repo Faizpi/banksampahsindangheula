@@ -324,6 +324,18 @@ final class WithdrawalWaveTest extends TestCase
             ->assertSee($occurredAt);
     }
 
+    public function test_payment_view_keeps_mobile_content_and_actions_fluid(): void
+    {
+        $view = file_get_contents(resource_path('views/livewire/treasurer/withdrawal-payments.blade.php'));
+
+        self::assertIsString($view);
+        self::assertStringContainsString('flex flex-col items-stretch gap-4 sm:flex-row', $view);
+        self::assertStringContainsString('min-h-touch w-full items-center justify-center', $view);
+        self::assertStringContainsString('Saldo warga saat ini', $view);
+        self::assertStringContainsString('Dicek saat pembayaran', $view);
+        self::assertStringNotContainsString('Saldo tersedia sebelum bayar', $view);
+    }
+
     public function test_payment_card_scan_uses_camera_with_manual_fallback_and_cleanup(): void
     {
         $view = file_get_contents(resource_path('views/livewire/treasurer/withdrawal-payments.blade.php'));

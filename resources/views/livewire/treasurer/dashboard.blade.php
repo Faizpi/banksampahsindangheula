@@ -13,9 +13,9 @@
             </div>
             <div class="grid gap-3">
                 @foreach ($readyPayments as $withdrawal)
-                    <a href="{{ route('treasurer.withdrawal.payments') }}" class="flex min-h-[72px] items-center justify-between gap-3 rounded-md border border-warning-bg bg-warning-bg p-4 transition hover:border-harvest-gold">
-                        <span class="min-w-0"><span class="block text-label font-bold text-deep-green">{{ $withdrawal->request_number }}</span><span class="mt-1 block truncate text-body-sm text-text-secondary">{{ $withdrawal->customer?->name ?? 'Nasabah' }} · {{ $withdrawal->pickup_date?->translatedFormat('d M Y') ?? 'Tanggal belum tersedia' }}</span></span>
-                        <span class="shrink-0 amount-tabular text-label font-bold text-deep-green">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</span>
+                    <a href="{{ route('treasurer.withdrawal.payments') }}" class="flex min-h-[72px] flex-col items-start gap-3 rounded-md border border-warning-bg bg-warning-bg p-4 transition hover:border-harvest-gold sm:flex-row sm:items-center sm:justify-between">
+                        <span class="min-w-0"><span class="block break-words text-label font-bold text-deep-green">{{ $withdrawal->request_number }}</span><span class="mt-1 block break-words text-body-sm text-text-secondary">{{ $withdrawal->customer?->name ?? 'Nasabah' }} · {{ $withdrawal->pickup_date?->translatedFormat('d M Y') ?? 'Tanggal belum tersedia' }}</span></span>
+                        <span class="max-w-full shrink-0 amount-tabular break-words text-label font-bold text-deep-green">Rp {{ number_format($withdrawal->amount, 0, ',', '.') }}</span>
                     </a>
                 @endforeach
             </div>
@@ -27,13 +27,13 @@
 <div class="grid gap-6">
 <section aria-labelledby="treasurer-dashboard-title" class="rounded-2xl border border-border bg-surface p-5 shadow-xs sm:p-6">
     <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+        <div class="min-w-0">
             <div class="flex items-center gap-2">
                 <img src="{{ asset('images/landing/mascot-3.png') }}" alt="" class="size-7 object-contain" aria-hidden="true">
                 <span class="text-caption font-semibold text-forest-600 uppercase tracking-wide">Bendahara Bank Sampah</span>
             </div>
-            <h2 id="treasurer-dashboard-title" class="mt-2 text-h2 font-bold text-deep-green">Ringkas keuangan hari ini</h2>
-            <p class="mt-1.5 text-body-sm text-text-secondary">Selesaikan pencairan yang siap dibayar, lalu periksa laporan sesuai akses Anda.</p>
+            <h2 id="treasurer-dashboard-title" class="mt-2 text-pretty text-h2 font-bold text-deep-green">Ringkas keuangan hari ini</h2>
+            <p class="mt-1.5 text-pretty text-body-sm text-text-secondary">Selesaikan pencairan yang siap dibayar, lalu periksa laporan sesuai akses Anda.</p>
         </div>
         <x-ui.mascot variant="12" bubble="Rekap keuangan hari ini!" bubblePosition="top" class="h-24 w-auto shrink-0 sm:h-28" animate />
     </div>
