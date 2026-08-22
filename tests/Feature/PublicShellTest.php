@@ -156,7 +156,7 @@ final class PublicShellTest extends TestCase
         self::assertStringNotContainsString('openModal(', $navigation);
     }
 
-    public function test_shared_header_overlays_public_hero_routes_without_an_extreme_outer_capsule(): void
+    public function test_shared_header_overlays_public_hero_routes_with_the_established_capsule_shape(): void
     {
         foreach ([
             'home',
@@ -171,7 +171,7 @@ final class PublicShellTest extends TestCase
 
             self::assertStringContainsString('data-public-header="overlay"', $html, $routeName);
             self::assertMatchesRegularExpression(
-                '/<header\b[^>]*data-public-header="overlay"[^>]*>\s*<div class="[^"]*\brounded-lg\b[^"]*"/s',
+                '/<header\b[^>]*data-public-header="overlay"[^>]*>\s*<div class="[^"]*\brounded-full\b[^"]*"/s',
                 $html,
                 $routeName,
             );

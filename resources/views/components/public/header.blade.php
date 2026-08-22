@@ -31,7 +31,7 @@
         '-mb-[4.75rem]' => $hasHeroOverlay,
     ])
 >
-    <div class="public-container flex min-h-16 items-center justify-between gap-3 rounded-lg border border-border/90 bg-surface/95 px-3 shadow-sm backdrop-blur sm:px-4">
+    <div class="public-container flex min-h-16 items-center justify-between gap-3 rounded-full border border-border/90 bg-surface/95 px-3 shadow-sm backdrop-blur sm:px-4">
         <a href="{{ route('home') }}" class="flex min-h-touch shrink-0 items-center gap-2 rounded-md focus-visible:outline-offset-4" aria-label="Bank Sampah Digital Sindangheula, beranda">
             <img src="{{ asset('images/landing/mascot-3.png') }}" alt="" class="size-11 shrink-0 object-contain" aria-hidden="true">
             <span class="min-w-0">
