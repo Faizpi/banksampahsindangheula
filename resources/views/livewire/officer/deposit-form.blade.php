@@ -26,7 +26,26 @@
         $depositCurrentStatus = $depositComplete ? 'final' : ($finalizationReviewOpen ? 'review' : ($evidence ? 'evidence' : 'input'));
     @endphp
 
-    <x-ui.panel title="Tahapan setoran" description="Ikuti setiap tahap agar pencatatan setoran tetap jelas.">
+    <x-ui.panel title="Konteks setoran" description="Identitas warga dan metode ini tetap digunakan sampai setoran selesai.">
+        <dl class="grid gap-4 text-body-sm sm:grid-cols-2">
+            <div>
+                <dt class="text-text-secondary">Warga</dt>
+                <dd class="mt-1 text-title font-bold text-deep-green">{{ $customer->name }}</dd>
+                <dd class="text-text-secondary">{{ $customer->customerProfile?->customer_number ?? 'Nomor nasabah tidak tersedia' }}</dd>
+            </div>
+            <div>
+                <dt class="text-text-secondary">Metode</dt>
+                <dd class="mt-1 font-bold text-deep-green">{{ $mobileService ? 'Layanan keliling' : 'Setoran langsung' }}</dd>
+                @if ($mobileService)
+                    <dd class="text-text-secondary">{{ $mobileService->point }} · {{ $mobileService->starts_at->translatedFormat('d M, H:i') }}–{{ $mobileService->ends_at->format('H:i') }}</dd>
+                @else
+                    <dd class="text-text-secondary">Dilayani di area tugas petugas.</dd>
+                @endif
+            </div>
+        </dl>
+    </x-ui.panel>
+
+    <x-ui.panel title="Tahapan setoran" description="Tahap aktif mengikuti data yang sudah siap, bukan sekadar penanda dekoratif.">
         <x-ui.status-stepper :steps="$depositSteps" :current-status="$depositCurrentStatus" :completed-statuses="['final']" label="Tahapan setoran" />
     </x-ui.panel>
 
@@ -57,9 +76,18 @@
     @if ($finalizationReviewOpen)
         <div class="fixed inset-0 z-overlay flex items-end justify-center bg-overlay p-4 sm:items-center" role="presentation">
             <div class="w-full max-w-form rounded-lg border border-border bg-surface p-5 shadow-dialog sm:p-6" role="dialog" aria-modal="true" aria-labelledby="deposit-finalization-title">
-                <h2 id="deposit-finalization-title" class="text-h2 font-bold text-deep-green">Catat setoran?</h2>
-                <p class="mt-2 text-body-sm text-text-secondary">Nilai final akan dihitung ulang di server, bukti privat disimpan, dan saldo dapat bertambah setelah finalisasi atau persetujuan pemeriksa.</p>
-                <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><x-ui.button type="button" variant="secondary" wire:click="cancelFinalizationReview">Ubah data</x-ui.button><x-ui.button type="button" wire:click="finalize" wire:loading.attr="disabled" wire:target="finalize"><span wire:loading.remove wire:target="finalize">Catat setoran</span><span wire:loading wire:target="finalize">Memproses...</span></x-ui.button></div>
+                 <h2 id="deposit-finalization-title" class="text-h2 font-bold text-deep-green">Tinjau setoran final</h2>
+                 <p class="mt-2 text-body-sm text-text-secondary">Pastikan warga, layanan, item, nilai perkiraan, dan bukti sudah benar. Nilai tetap dihitung ulang server saat dicatat.</p>
+                 <dl class="mt-5 divide-y divide-border border-y border-border text-body-sm">
+                     <div class="flex justify-between gap-4 py-3"><dt class="text-text-secondary">Warga</dt><dd class="text-right font-bold text-deep-green">{{ $customer->name }}<span class="block font-normal text-text-secondary">{{ $customer->customerProfile?->customer_number }}</span></dd></div>
+                     <div class="flex justify-between gap-4 py-3"><dt class="text-text-secondary">Metode</dt><dd class="text-right font-bold text-deep-green">{{ $mobileService ? 'Keliling · '.$mobileService->point : 'Setoran langsung' }}</dd></div>
+                     @foreach ($pricePreview['lines'] as $line)
+                         <div class="flex justify-between gap-4 py-3"><dt><span class="font-semibold text-deep-green">{{ $line['name'] }}</span><span class="block text-text-secondary">{{ $line['condition'] }} · {{ \App\Support\WeightFormatter::format($line['weight']) }} kg</span></dt><dd class="amount-tabular font-semibold text-deep-green">Rp {{ number_format($line['subtotal'], 0, ',', '.') }}</dd></div>
+                     @endforeach
+                     <div class="flex justify-between gap-4 py-3"><dt class="font-bold text-deep-green">Perkiraan total</dt><dd class="amount-tabular text-title font-bold text-forest-700">Rp {{ number_format($pricePreview['total'], 0, ',', '.') }}</dd></div>
+                     <div class="flex justify-between gap-4 py-3"><dt class="text-text-secondary">Bukti privat</dt><dd class="font-semibold text-deep-green">Sudah dipilih</dd></div>
+                 </dl>
+                 <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><x-ui.button type="button" variant="secondary" wire:click="cancelFinalizationReview">Ubah data</x-ui.button><x-ui.button type="button" wire:click="finalize" wire:loading.attr="disabled" wire:target="finalize"><span wire:loading.remove wire:target="finalize">Catat setoran</span><span wire:loading wire:target="finalize">Memproses...</span></x-ui.button></div>
             </div>
         </div>
     @endif
@@ -71,7 +99,7 @@
                 <div class="grid gap-3 rounded-xl border border-border bg-warm-canvas p-4 md:grid-cols-[1fr_1fr_1fr_auto] md:items-end"
                     wire:key="deposit-item-{{ $index }}">
                     <x-ui.select name="items.{{ $index }}.waste_type_id" label="Jenis sampah"
-                        wire:model="items.{{ $index }}.waste_type_id"
+                         wire:model.live="items.{{ $index }}.waste_type_id"
                         :error="$errors->first('items.'.$index.'.waste_type_id')">
                         <option value="">Pilih jenis</option>
                         @foreach ($types as $type)
@@ -80,7 +108,7 @@
                     </x-ui.select>
 
                     <x-ui.select name="items.{{ $index }}.condition_id" label="Kondisi"
-                        wire:model="items.{{ $index }}.condition_id"
+                         wire:model.live="items.{{ $index }}.condition_id"
                         :error="$errors->first('items.'.$index.'.condition_id')">
                         <option value="">Pilih kondisi</option>
                         @foreach ($conditions as $condition)
@@ -89,7 +117,7 @@
                     </x-ui.select>
 
                     <x-ui.input name="items.{{ $index }}.weight_kg" label="Berat (kg)"
-                        inputmode="decimal" wire:model="items.{{ $index }}.weight_kg"
+                         inputmode="decimal" wire:model.live.debounce.400ms="items.{{ $index }}.weight_kg"
                         :error="$errors->first('items.'.$index.'.weight_kg')" />
 
                     <button type="button" wire:click="removeItem({{ $index }})"
@@ -145,12 +173,6 @@
              </div>
          </div>
      </x-ui.panel>
-
-     @if ($mobileServiceId)
-         <x-ui.panel title="Layanan keliling" description="Setoran ini ditautkan ke jadwal layanan yang sedang dibuka dan akan masuk rekap titik.">
-             <p class="text-body text-text-secondary">Jadwal layanan keliling dipilih dari titik yang ditugaskan kepada Anda.</p>
-         </x-ui.panel>
-     @endif
 
      <x-ui.panel title="Bukti setoran" description="Unggah bukti foto atau PDF. File disimpan privat dan wajib saat pencatatan.">
          <x-ui.media-picker

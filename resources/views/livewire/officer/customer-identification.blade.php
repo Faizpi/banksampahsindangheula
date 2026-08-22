@@ -36,6 +36,20 @@
         />
     </x-ui.panel>
 
+    @if ($mobileServices->isNotEmpty())
+        <x-ui.panel title="Pilih konteks setoran" description="Tentukan setoran langsung atau layanan keliling aktif sebelum memindai dan mencari warga.">
+            <x-ui.select name="mobileServiceId" label="Metode setoran" wire:model.live="mobileServiceId" :error="$errors->first('mobileServiceId')">
+                <option value="">Setoran langsung</option>
+                @foreach ($mobileServices as $mobileService)
+                    <option value="{{ $mobileService->id }}">Keliling · {{ $mobileService->point }} · {{ $mobileService->starts_at->format('d M H:i') }}</option>
+                @endforeach
+            </x-ui.select>
+            @error('mobileServiceId')
+                <p role="alert" class="mt-2 text-body-sm font-semibold text-terracotta">{{ $message }}</p>
+            @enderror
+        </x-ui.panel>
+    @endif
+
     @if ($scannerOpen)
         <x-ui.panel title="Pindai QR nasabah" description="Arahkan kamera ke QR kartu nasabah. QR hanya digunakan untuk mengenali kartu nasabah; nama tetap harus dikonfirmasi." state="success">
             <div
@@ -117,17 +131,6 @@
                     <x-ui.button type="button" wire:click="openScanner">Buka Pemindai QR</x-ui.button>
                 </div>
             </div>
-        </x-ui.panel>
-    @endif
-
-    @if ($mobileServices->isNotEmpty())
-        <x-ui.panel title="Pilih konteks setoran" description="Pilih layanan keliling aktif sebelum memindai QR atau mencari nomor warga. Pilih setoran langsung untuk memakai cakupan area tugas biasa.">
-            <x-ui.select name="mobileServiceId" label="Metode setoran" wire:model.live="mobileServiceId">
-                <option value="">Setoran langsung</option>
-                @foreach ($mobileServices as $mobileService)
-                    <option value="{{ $mobileService->id }}">Keliling · {{ $mobileService->point }} · {{ $mobileService->starts_at->format('d M H:i') }}</option>
-                @endforeach
-            </x-ui.select>
         </x-ui.panel>
     @endif
 

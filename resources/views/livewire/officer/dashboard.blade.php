@@ -20,9 +20,18 @@
                 @endif
             </div>
         </section>
+    @else
+        <section class="mb-4 rounded-lg border border-border bg-surface p-5 shadow-xs" aria-labelledby="priority-task-empty-title">
+            <p class="text-caption font-semibold text-text-secondary">Fokus sekarang</p>
+            <h2 id="priority-task-empty-title" class="mt-1 text-title font-bold text-deep-green">Tidak ada tugas yang perlu segera ditangani</h2>
+            <p class="mt-2 text-body-sm text-text-secondary">Antrean yang ditugaskan kepada Anda sedang kosong. Anda dapat memulai setoran saat warga datang.</p>
+            @if ($canIdentifyCustomers)
+                <a href="{{ $identificationHref }}" class="mt-4 inline-flex min-h-touch w-full items-center justify-center rounded-md bg-forest-600 px-5 text-label font-bold text-white transition hover:bg-forest-700 sm:w-auto">Mulai setoran warga</a>
+            @endif
+        </section>
     @endif
 
-    <x-ui.panel title="Antrean hari ini" description="Hanya tugas yang ditugaskan kepada Anda yang ditampilkan.">
+    <x-ui.panel title="Antrean hari ini" description="{{ $todayPickups->count() }} tugas hari ini yang ditugaskan kepada Anda.">
         @if ($todayPickups->isEmpty())
             <x-ui.empty-state
                 title="Belum ada tugas hari ini"

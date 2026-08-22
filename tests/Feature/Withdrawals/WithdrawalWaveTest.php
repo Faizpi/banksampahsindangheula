@@ -278,6 +278,10 @@ final class WithdrawalWaveTest extends TestCase
             ->assertSee('Pindai QR kartu nasabah')
             ->assertSee('Ambil dari kamera')
             ->assertSee('Pilih dari galeri')
+            ->assertSee('Cari antrean')
+            ->assertSee('Paling lama menunggu')
+            ->assertSee('Nominal terbesar')
+            ->assertSeeHtml('wire:model.live.debounce.300ms="queueSearch"')
             ->assertSeeHtml('data-photo-picker-max="1"')
             ->assertSeeHtml('accept="image/*"')
             ->assertDontSeeHtml('application/pdf')
@@ -345,7 +349,9 @@ final class WithdrawalWaveTest extends TestCase
         self::assertStringContainsString('navigator.mediaDevices?.getUserMedia', $view);
         self::assertStringContainsString('$wire.scanCustomerCard(rawValue)', $view);
         self::assertStringContainsString('stream?.getTracks().forEach((track) => track.stop())', $view);
-        self::assertStringContainsString('wire:model="scanToken"', $view);
+        self::assertStringContainsString('Gunakan nomor nasabah', $view);
+        self::assertStringContainsString("\$wire.set('recipientVerification', 'nomor_nasabah')", $view);
+        self::assertStringNotContainsString('wire:model="scanToken"', $view);
         self::assertStringContainsString('$wire.closeScanner()', $view);
     }
 

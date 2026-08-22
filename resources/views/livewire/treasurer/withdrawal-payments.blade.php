@@ -29,6 +29,15 @@
     @endif
 
     {{-- Withdrawal List --}}
+    <x-ui.panel title="Antrean pembayaran" description="Cari penerima atau nomor, lalu dahulukan pengajuan terlama atau nominal terbesar.">
+        <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,16rem)]">
+            <x-ui.input wire:model.live.debounce.300ms="queueSearch" name="queueSearch" label="Cari antrean" placeholder="Nama, nomor nasabah, atau nomor pencairan" />
+            <x-ui.select wire:model.live="queueOrder" name="queueOrder" label="Urutkan" :options="['oldest' => 'Paling lama menunggu', 'largest' => 'Nominal terbesar']" />
+        </div>
+        <p wire:loading wire:target="queueSearch,queueOrder" role="status" aria-live="polite" class="mt-3 text-body-sm font-semibold text-text-secondary">Memuat antrean pembayaran...</p>
+    </x-ui.panel>
+
+    <div wire:loading.remove wire:target="queueSearch,queueOrder" class="grid gap-6">
     @forelse ($withdrawals as $withdrawal)
         <x-ui.panel :title="$withdrawal->request_number" :description="$withdrawal->customer?->name ?? 'Nasabah'">
             <div class="flex flex-col items-stretch gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -56,10 +65,21 @@
     @empty
         <div class="rounded-xl border border-border bg-surface p-8 text-center shadow-xs">
             <x-ui.mascot variant="5" class="mx-auto h-24 w-auto" />
-            <p class="mt-3 text-label font-bold text-deep-green">Belum ada pencairan siap bayar</p>
-            <p class="mt-1.5 text-body-sm text-text-secondary">Pencairan yang disetujui dan ditugaskan kepada Anda akan muncul di sini.</p>
+            <p class="mt-3 text-label font-bold text-deep-green">{{ trim($queueSearch) === '' ? 'Belum ada pencairan siap bayar' : 'Antrean tidak ditemukan' }}</p>
+            <p class="mt-1.5 text-body-sm text-text-secondary">{{ trim($queueSearch) === '' ? 'Pencairan yang disetujui dan ditugaskan kepada Anda akan muncul di sini.' : 'Periksa nama atau nomor pencarian, lalu coba lagi.' }}</p>
         </div>
     @endforelse
+    </div>
+
+    <div wire:loading wire:target="queueSearch,queueOrder" class="grid gap-3" aria-hidden="true">
+        @for ($item = 0; $item < 2; $item++)
+            <div class="rounded-xl border border-border bg-surface p-5 shadow-xs">
+                <div class="h-5 w-40 rounded-md bg-disabled-bg"></div>
+                <div class="mt-4 h-8 w-48 rounded-md bg-disabled-bg"></div>
+                <div class="mt-3 h-4 w-64 max-w-full rounded-md bg-disabled-bg"></div>
+            </div>
+        @endfor
+    </div>
 
     {{-- Verification Form --}}
     @if ($selectedWithdrawal !== null)
@@ -95,14 +115,14 @@
                                 error: '',
                                 async start() {
                                     if (!('BarcodeDetector' in window) || ! navigator.mediaDevices?.getUserMedia) {
-                                        this.error = 'Peramban ini belum mendukung pemindaian QR kamera. Masukkan kode QR kartu sebagai alternatif.';
+                                        this.error = 'Peramban ini belum mendukung pemindaian QR kamera. Pilih Masukkan nomor nasabah untuk melanjutkan verifikasi.';
                                         return;
                                     }
 
                                     try {
                                         const formats = await BarcodeDetector.getSupportedFormats();
                                         if (! formats.includes('qr_code')) {
-                                            this.error = 'Pemindaian QR belum tersedia di peramban ini. Masukkan kode QR kartu sebagai alternatif.';
+                                            this.error = 'Pemindaian QR belum tersedia di peramban ini. Pilih Masukkan nomor nasabah untuk melanjutkan verifikasi.';
                                             return;
                                         }
                                         this.detector = new BarcodeDetector({ formats: ['qr_code'] });
@@ -113,8 +133,8 @@
                                         this.read();
                                     } catch (exception) {
                                         this.error = exception?.name === 'NotAllowedError'
-                                            ? 'Izin kamera ditolak. Masukkan kode QR kartu sebagai alternatif.'
-                                            : 'Kamera tidak dapat digunakan. Masukkan kode QR kartu sebagai alternatif.';
+                                            ? 'Izin kamera ditolak. Pilih Masukkan nomor nasabah untuk melanjutkan verifikasi.'
+                                            : 'Kamera tidak dapat digunakan. Pilih Masukkan nomor nasabah untuk melanjutkan verifikasi.';
                                         this.stop();
                                     }
                                 },
@@ -149,9 +169,8 @@
                                 <div class="pointer-events-none absolute inset-8 rounded-xl border-2 border-white/80"></div>
                             </div>
                             <p x-show="error" x-text="error" role="alert" class="text-body-sm font-semibold text-terracotta"></p>
-                            <x-ui.input wire:model="scanToken" label="Kode QR kartu" name="scanToken" placeholder="Masukkan kode QR kartu bila pemindai tidak tersedia" :error="$errors->first('recipientReference')" />
                             <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-                                <x-ui.button type="button" wire:click="scanCustomerCard(scanToken)">Cocokkan kartu</x-ui.button>
+                                <x-ui.button type="button" variant="secondary" x-on:click="stop(); $wire.set('recipientVerification', 'nomor_nasabah')">Gunakan nomor nasabah</x-ui.button>
                                 <x-ui.button type="button" variant="quiet" x-on:click="stop(); $wire.closeScanner()">Tutup</x-ui.button>
                                 <x-ui.button type="button" variant="quiet" x-on:click="stop(); start()">Coba Lagi</x-ui.button>
                             </div>

@@ -66,8 +66,14 @@
 
     {{-- Export --}}
     <x-ui.panel title="Ekspor Excel" description="Unduh data sesuai filter aktif untuk disimpan atau dibagikan secara internal.">
+        @error('export')
+            <div role="alert" class="mb-4 rounded-md border border-terracotta bg-danger-bg p-4 text-body-sm text-text-primary">
+                <p class="font-semibold text-deep-green">Ekspor tidak dapat dibuat</p>
+                <p class="mt-1">{{ $message }}</p>
+            </div>
+        @enderror
         <div class="flex justify-end">
-            <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled" class="min-w-[10.5rem] whitespace-nowrap px-5">
+            <x-ui.button wire:click="export" type="button" wire:loading.attr="disabled" wire:target="export" class="min-w-[10.5rem] whitespace-nowrap px-5">
                 <span wire:loading.remove wire:target="export" class="inline-flex w-full flex-nowrap items-center justify-center gap-2 whitespace-nowrap">
                     <svg viewBox="0 0 24 24" class="size-5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                         <path d="M12 3v12m0 0 5-5m-5 5-5-5M5 19h14a2 2 0 0 0 2-2v-2M5 19a2 2 0 0 1-2-2v-2" />
@@ -80,6 +86,17 @@
     </x-ui.panel>
 
     <x-ui.panel title="Hasil laporan" description="Data yang tampil mengikuti hak akses dan filter yang dipilih.">
+        <p wire:loading wire:target="refreshReport,setPeriod" role="status" aria-live="polite" class="mb-4 text-body-sm font-semibold text-text-secondary">Memuat hasil laporan sesuai filter...</p>
+        <div wire:loading wire:target="refreshReport,setPeriod" class="grid gap-3" aria-hidden="true">
+            @for ($item = 0; $item < 3; $item++)
+                <div class="rounded-md border border-border bg-warm-canvas p-4">
+                    <div class="h-5 w-40 rounded-md bg-disabled-bg"></div>
+                    <div class="mt-3 h-4 w-64 max-w-full rounded-md bg-disabled-bg"></div>
+                    <div class="mt-2 h-4 w-48 max-w-full rounded-md bg-disabled-bg"></div>
+                </div>
+            @endfor
+        </div>
+        <div wire:loading.remove wire:target="refreshReport,setPeriod">
         <div class="grid gap-3 md:hidden">
             @forelse ($rows as $row)
                 @php($isWeight = $row['value_format'] === 'weight')
@@ -144,6 +161,7 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
         </div>
     </x-ui.panel>
 </section>
