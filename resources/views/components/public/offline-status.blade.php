@@ -20,6 +20,7 @@
     x-on:public:offline-action-blocked.window="actionMessage = $event.detail?.message ?? 'Koneksi diperlukan untuk mengirim perubahan ini.'"
     x-show="! online || actionMessage"
     x-cloak
+    data-public-offline-status
     class="border-b border-harvest-gold bg-warning-bg text-deep-green"
 >
     <span

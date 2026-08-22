@@ -118,6 +118,8 @@
     --public-gutter-comfortable: 1.25rem;
     --public-section-space: var(--spacing-section-mobile);
     --public-section-space-wide: var(--spacing-section-desktop);
+    --public-hero-overlay-space: 7rem;
+    --public-hero-overlay-space-wide: 8rem;
     --public-media-radius: var(--radius-lg);
     --public-motion-duration: var(--animate-duration-default);
     --public-motion-ease: var(--ease-standard);
@@ -204,6 +206,15 @@
 
 @utility public-canvas {
     background-color: var(--public-canvas);
+}
+
+[data-public-header='overlay'] + [data-public-offline-status] + main > .public-canvas > section:first-child > .public-container,
+[data-public-header='overlay'] + main > .public-canvas > section:first-child > .public-container {
+    padding-top: var(--public-hero-overlay-space);
+
+    @media (width >= 48rem) {
+        padding-top: var(--public-hero-overlay-space-wide);
+    }
 }
 
 @utility public-hero-grid {

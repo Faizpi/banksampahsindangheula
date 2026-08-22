@@ -188,8 +188,7 @@
     <section class="border-t border-border bg-surface py-16 sm:py-20" aria-labelledby="account-cta-title">
         <div class="public-container flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div class="max-w-2xl">
-                <span class="inline-flex rounded-full border border-forest-600 bg-success-bg px-3.5 py-1 text-xs font-semibold text-forest-700">Bergabung Sekarang</span>
-                <h2 id="account-cta-title" class="mt-3 text-h2 font-extrabold text-deep-green lg:text-h1">Sudah menjadi warga atau petugas?</h2>
+                <h2 id="account-cta-title" class="text-h2 font-extrabold text-deep-green lg:text-h1">Sudah menjadi warga atau petugas?</h2>
                 <p class="mt-3 text-body leading-relaxed text-text-secondary">Masuk untuk melihat saldo, riwayat transaksi, dan pengajuan penjemputan.</p>
             </div>
             <div class="flex flex-col gap-6 sm:flex-row sm:items-center">

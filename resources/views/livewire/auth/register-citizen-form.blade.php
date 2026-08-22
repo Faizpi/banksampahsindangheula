@@ -3,8 +3,7 @@
         <div class="relative isolate overflow-hidden border-b border-border bg-warm-canvas p-6 sm:p-8 text-deep-green">
             <div class="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div class="w-full min-w-0 max-w-lg">
-                    <span class="inline-flex rounded-full border border-forest-600 bg-success-bg px-3 py-1 text-xs font-semibold text-forest-700">Pendaftaran Akun Baru</span>
-                    <h1 id="registration-title" class="mt-2 text-pretty text-h2 font-extrabold text-deep-green lg:text-h1">Daftar sebagai Warga Bank Sampah</h1>
+                    <h1 id="registration-title" class="text-pretty text-h2 font-extrabold text-deep-green lg:text-h1">Daftar sebagai Warga Bank Sampah</h1>
                     <p class="mt-2 text-body-sm text-text-secondary">Data pendaftaran akan diperiksa admin. Akun dapat digunakan untuk masuk setelah verifikasi selesai.</p>
                 </div>
                 <div class="flex items-center justify-between gap-4 md:flex-col md:items-end">
