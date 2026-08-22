@@ -47,6 +47,41 @@ it('updates only allowlisted non-secret settings and audits the sanitized values
         ]);
 });
 
+it('maps each invalid technical setting only to its matching manual field', function (): void {
+    $actor = operationsP2User('system.settings.manage');
+    auth()->login($actor);
+    $page = app(OperationsDashboard::class);
+    $page->settings = [
+        'queue_backlog_threshold' => 0,
+        'backup_max_age_hours' => 48,
+    ];
+
+    try {
+        $page->saveSettings();
+        test()->fail('Expected invalid settings validation.');
+    } catch (ValidationException $exception) {
+        expect($exception->errors())
+            ->toHaveKey('settings.queue_backlog_threshold')
+            ->not->toHaveKey('settings.backup_max_age_hours')
+            ->and($exception->errors()['settings.queue_backlog_threshold'])
+            ->toBe(['Nilai pengaturan berada di luar batas.']);
+    }
+});
+
+it('maps technical dashboard backup validation errors to the manual field properties', function (): void {
+    $page = app(OperationsDashboard::class);
+    $method = new ReflectionMethod($page, 'positiveInteger');
+
+    try {
+        $method->invoke($page, '0', 'Ukuran basis data', 'backupDatabaseSizeBytes');
+        test()->fail('Expected invalid backup size validation.');
+    } catch (ReflectionException $exception) {
+        throw $exception;
+    } catch (ValidationException $exception) {
+        expect($exception->errors())->toHaveKey('backupDatabaseSizeBytes');
+    }
+});
+
 it('rejects secret-like or unknown settings without mutation or audit', function (): void {
     $actor = operationsP2User('system.settings.manage');
     $service = app(OperationalSettingsService::class);
