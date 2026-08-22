@@ -16,7 +16,7 @@ final class CitizenShellTest extends TestCase
         'Beranda' => '/dashboard/warga',
         'Setoran' => '/warga/riwayat-setoran',
         'Layanan' => '/warga/penjemputan/ajukan',
-        'Kartu Nasabah' => '/warga/kartu-nasabah',
+        'Riwayat' => '/warga/riwayat-setoran',
         'Akun' => '/profil/kata-sandi',
     ];
 
@@ -111,8 +111,7 @@ final class CitizenShellTest extends TestCase
 
         $lastPosition = -1;
         foreach (self::DESTINATIONS as $label => $href) {
-            $displayLabel = $label === 'Kartu Nasabah' ? 'Kartu' : $label;
-            $position = strpos($html, '>'.$displayLabel.'</span>');
+            $position = strpos($html, '>'.$label.'</span>');
             self::assertNotFalse($position);
             self::assertGreaterThan($lastPosition, $position);
             self::assertStringContainsString('href="'.$href.'"', $html);
@@ -142,10 +141,10 @@ final class CitizenShellTest extends TestCase
     /** @return iterable<string, array{array<string, string>, string, string}> */
     public static function invalidNavigationProvider(): iterable
     {
-        yield 'missing key' => [array_slice(self::DESTINATIONS, 0, 4, true), 'Beranda', 'Citizen navigation destinations must contain exactly: Beranda, Setoran, Layanan, Kartu Nasabah, Akun.'];
-        yield 'additional key' => [[...self::DESTINATIONS, 'Lainnya' => '/lainnya'], 'Beranda', 'Citizen navigation destinations must contain exactly: Beranda, Setoran, Layanan, Kartu Nasabah, Akun.'];
-        yield 'reordered keys' => [['Setoran' => '/setoran', 'Beranda' => '/', 'Layanan' => '/layanan', 'Riwayat' => '/riwayat', 'Akun' => '/akun'], 'Beranda', 'Citizen navigation destinations must contain exactly: Beranda, Setoran, Layanan, Kartu Nasabah, Akun.'];
-        yield 'unknown active' => [self::DESTINATIONS, 'Lainnya', 'Citizen navigation active item must be one of: Beranda, Setoran, Layanan, Kartu Nasabah, Akun.'];
+        yield 'missing key' => [array_slice(self::DESTINATIONS, 0, 4, true), 'Beranda', 'Citizen navigation destinations must contain exactly: Beranda, Setoran, Layanan, Riwayat, Akun.'];
+        yield 'additional key' => [[...self::DESTINATIONS, 'Lainnya' => '/lainnya'], 'Beranda', 'Citizen navigation destinations must contain exactly: Beranda, Setoran, Layanan, Riwayat, Akun.'];
+        yield 'reordered keys' => [['Setoran' => '/setoran', 'Beranda' => '/', 'Layanan' => '/layanan', 'Riwayat' => '/riwayat', 'Akun' => '/akun'], 'Beranda', 'Citizen navigation destinations must contain exactly: Beranda, Setoran, Layanan, Riwayat, Akun.'];
+        yield 'unknown active' => [self::DESTINATIONS, 'Lainnya', 'Citizen navigation active item must be one of: Beranda, Setoran, Layanan, Riwayat, Akun.'];
     }
 
     /** @param array<string, mixed> $destinations */
