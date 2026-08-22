@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Domain\CustomersRegions\Contracts\QrToken;
 use App\Domain\CustomersRegions\Models\Dusun;
 use App\Domain\CustomersRegions\Models\Rt;
 use App\Domain\CustomersRegions\Models\Rw;
@@ -203,6 +204,21 @@ final class DeveloperUsersSeeder extends Seeder
                     'joined_at' => now()->toDateString(),
                 ],
             );
+
+            // The demo identity must ship a working QR card. Seed the token when
+            // the profile has none (fresh seed) or only carries an orphan hash
+            // whose plaintext was never stored. Re-seeding never rotates a token
+            // that is already complete, so existing demo QR stays valid.
+            /** @var CustomerProfile $profile */
+            $profile = CustomerProfile::query()->where('user_id', $user->id)->firstOrFail();
+            if ($profile->qr_token_hash === null || $profile->qr_token_encrypted === null) {
+                $token = QrToken::generate();
+                $profile->forceFill([
+                    'qr_token_hash' => $token->hash(),
+                    'qr_token_encrypted' => $token->value(),
+                    'qr_rotated_at' => now(),
+                ])->save();
+            }
         }
 
         if ($staff) {

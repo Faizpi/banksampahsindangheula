@@ -289,14 +289,18 @@ final class LocalDataSeeder extends Seeder
             );
             $user->roles()->syncWithoutDetaching([$role->id => ['assigned_by' => $user->id, 'reason' => 'Data awal Sindangheula']]);
             $profile = CustomerProfile::query()->firstOrNew(['user_id' => $user->id]);
-            $token = $profile->qr_token_hash === null ? QrToken::generate() : null;
+            // Regenerate when either half of the token pair is missing: a hash
+            // without its stored plaintext can never be rendered again, so the
+            // whole pair is replaced. Complete pairs survive re-seeding.
+            $needsToken = $profile->qr_token_hash === null || $profile->qr_token_encrypted === null;
+            $token = $needsToken ? QrToken::generate() : null;
             $profile->forceFill([
                 'customer_number' => $profile->customer_number ?? 'CST-'.str_pad((string) $number, 8, '0', STR_PAD_LEFT),
                 'rt_id' => $rts[$index % count($rts)]->id,
                 'address' => $addresses[$index % count($addresses)].', '.$rts[$index % count($rts)]->name.', Desa Sindangheula',
                 'joined_at' => $now->subDays(29 - ($index % 30))->toDateString(),
-                'qr_token_hash' => $profile->qr_token_hash ?? $token?->hash(),
-                'qr_token_encrypted' => $profile->qr_token_encrypted ?? $token?->value(),
+                'qr_token_hash' => $needsToken ? $token?->hash() : $profile->qr_token_hash,
+                'qr_token_encrypted' => $needsToken ? $token?->value() : $profile->qr_token_encrypted,
                 'qr_rotated_at' => $profile->qr_rotated_at ?? now(),
             ])->save();
             $customers[] = $user;

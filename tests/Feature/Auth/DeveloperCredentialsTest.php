@@ -7,6 +7,7 @@ namespace Tests\Feature\Auth;
 use App\Actions\Auth\LogoutUser;
 use App\Domain\Communication\Models\Announcement;
 use App\Domain\CustomersRegions\Actions\ManageRegions;
+use App\Domain\CustomersRegions\Contracts\QrToken;
 use App\Domain\CustomersRegions\Models\Rt;
 use App\Domain\CustomersRegions\Models\ServiceArea;
 use App\Domain\Deposits\Models\Deposit;
@@ -249,6 +250,49 @@ final class DeveloperCredentialsTest extends TestCase
         self::assertNotNull($this->devUser('petugas')->staffProfile);
         self::assertTrue($this->devUser('admin')->canAccessPanel($this->backofficePanel()));
         self::assertTrue($this->devUser('superadmin')->canAccessPanel($this->backofficePanel()));
+    }
+
+    public function test_seeded_demo_warga_ships_a_working_qr_token_without_backoffice_rotation(): void
+    {
+        $this->seed(DeveloperUsersSeeder::class);
+
+        $profile = $this->devUser('warga')->customerProfile;
+
+        self::assertNotNull($profile->qr_token_hash);
+        self::assertNotNull($profile->qr_token_encrypted);
+        self::assertSame($profile->qr_token_hash, QrToken::fromValue((string) $profile->qr_token_encrypted)->hash());
+    }
+
+    public function test_reseeding_the_demo_accounts_never_rotates_a_complete_qr_pair(): void
+    {
+        $this->seed(DeveloperUsersSeeder::class);
+
+        $beforeHash = $this->devUser('warga')->customerProfile->qr_token_hash;
+
+        $this->seed(DeveloperUsersSeeder::class);
+        $this->seed(LocalDataSeeder::class);
+        $this->seed(DeveloperUsersSeeder::class);
+
+        self::assertSame($beforeHash, $this->devUser('warga')->customerProfile->refresh()->qr_token_hash);
+    }
+
+    public function test_operational_demo_seed_repairs_demo_customers_that_lost_their_stored_qr_token(): void
+    {
+        config()->set('app.env', 'production');
+        config()->set('app.demo_mode', true);
+        config()->set('app.demo_password', 'KataSandiUji-Yang-Unik-2026');
+        $this->seed(DeveloperUsersSeeder::class);
+        $this->seed(LocalDataSeeder::class);
+
+        // Simulate a legacy row: the hash survived, the renderable token was lost.
+        $profile = User::query()->where('phone', '6281400000002')->firstOrFail()->customerProfile;
+        $profile->forceFill(['qr_token_encrypted' => null])->save();
+
+        $this->seed(LocalDataSeeder::class);
+
+        $repaired = $profile->refresh();
+        self::assertNotNull($repaired->qr_token_encrypted);
+        self::assertSame($repaired->qr_token_hash, QrToken::fromValue((string) $repaired->qr_token_encrypted)->hash());
     }
 
     public function test_operational_demo_seed_provides_active_future_pickup_capacity_for_every_demo_area(): void
