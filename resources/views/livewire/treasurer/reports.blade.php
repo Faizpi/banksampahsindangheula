@@ -4,13 +4,13 @@
 
 <section class="space-y-6" aria-labelledby="reports-title">
     {{-- Page Header --}}
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+    <div class="flex items-center gap-4 sm:gap-6">
+        <div class="min-w-0 flex-1">
             <p class="text-label font-semibold text-forest-600">Laporan transaksi</p>
             <h1 id="reports-title" class="mt-1 text-h1 font-bold text-deep-green">Laporan {{ $reportTypes[$reportType] ?? 'Tidak diizinkan' }}</h1>
             <p class="mt-2 text-body text-text-secondary">Pilih periode, lihat ringkasan, lalu unduh Excel.</p>
         </div>
-        <x-ui.mascot variant="5" class="hidden h-20 w-auto sm:block" />
+        <x-ui.mascot variant="5" class="h-14 w-auto shrink-0 sm:h-20" />
     </div>
 
     {{-- Metric Cards --}}
