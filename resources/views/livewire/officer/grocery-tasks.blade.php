@@ -84,7 +84,7 @@
         <div class="rounded-xl border border-border bg-surface p-8 text-center shadow-xs">
             <x-ui.mascot variant="9" class="mx-auto h-24 w-auto" />
             <p class="mt-3 text-label font-bold text-deep-green">Belum ada tugas sembako</p>
-            <p class="mt-1.5 text-body-sm text-text-secondary">Penukaran dalam cakupan Anda akan muncul setelah ada keputusan operasional.</p>
+            <p class="mt-1.5 text-body-sm text-text-secondary">Penukaran dalam wilayah tugas Anda akan muncul setelah ada keputusan operasional.</p>
         </div>
     @endforelse
 

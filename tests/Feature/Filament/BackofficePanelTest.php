@@ -90,7 +90,7 @@ final class BackofficePanelTest extends TestCase
 
         $this->actingAs($superadmin->fresh())->get('/backoffice/login')->assertRedirect('/backoffice');
         self::assertSame(
-            ['Health'],
+            ['Kondisi sistem'],
             $this->navigationLabelsForGroup($panel, 'Administrasi sistem', includeChildren: true),
         );
         self::assertContains(
@@ -232,7 +232,7 @@ final class BackofficePanelTest extends TestCase
 
         $this->actingAs($superadmin->fresh());
         $this->get('/backoffice/reconciliation')->assertOk()->assertSee('Rekonsiliasi saldo harian');
-        $this->get('/backoffice/technical-health-page')->assertOk()->assertSee('Health sistem');
+        $this->get('/backoffice/technical-health-page')->assertOk()->assertSee('Kondisi sistem');
 
         foreach ([
             '/backoffice/operations-dashboard',

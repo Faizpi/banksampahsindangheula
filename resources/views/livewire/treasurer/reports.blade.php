@@ -79,7 +79,7 @@
         </div>
     </x-ui.panel>
 
-    <x-ui.panel title="Hasil laporan" description="Data mengikuti cakupan akses dan filter yang dipilih.">
+    <x-ui.panel title="Hasil laporan" description="Data yang tampil mengikuti hak akses dan filter yang dipilih.">
         <div class="grid gap-3 md:hidden">
             @forelse ($rows as $row)
                 @php($isWeight = $row['value_format'] === 'weight')

@@ -8,7 +8,7 @@
             <p class="text-label font-semibold text-forest-700">Identitas warga</p>
             <h1 id="customer-card-title" class="text-h2 font-bold text-deep-green sm:text-h1">Kartu Digital Nasabah</h1>
             <p class="max-w-xl text-body text-text-secondary">
-                Tunjukkan QR ini kepada petugas saat setoran atau penjemputan. QR tidak memuat informasi pribadi peka.
+                Tunjukkan QR ini kepada petugas saat setoran atau penjemputan.
             </p>
         </div>
         <div class="hidden shrink-0 items-center justify-center sm:flex">

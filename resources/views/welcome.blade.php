@@ -47,7 +47,7 @@
                     </div>
                     <div class="rounded-lg border border-border bg-warm-canvas p-3">
                         <dt class="text-caption font-medium text-text-secondary">Pelayanan</dt>
-                        <dd class="mt-0.5 text-label font-bold text-deep-green">Digital &amp; Ramah</dd>
+                        <dd class="mt-0.5 text-label font-bold text-deep-green">Mudah digunakan</dd>
                     </div>
                 </dl>
             </div>
@@ -85,7 +85,7 @@
                             <h3 class="text-title font-bold text-deep-green transition-colors group-hover:text-forest-600">Setoran yang Dapat Ditelusuri</h3>
                             <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Berat, harga saat transaksi, nilai, petugas, dan bukti tersimpan dalam riwayat.</p>
                         </div>
-                        <span class="inline-flex self-start justify-center rounded-full border border-border bg-success-bg px-3 py-1 text-xs font-bold text-forest-600 sm:self-center">Multi-jenis</span>
+                        <span class="inline-flex self-start justify-center rounded-full border border-border bg-success-bg px-3 py-1 text-xs font-bold text-forest-600 sm:self-center">Beragam jenis sampah</span>
                     </article>
 
                     <article class="group grid gap-5 rounded-2xl border border-border bg-surface p-5 shadow-xs transition-all duration-200 hover:border-forest-600/40 hover:shadow-sm sm:grid-cols-[96px_1fr_auto] sm:items-center sm:p-6">
@@ -105,9 +105,9 @@
                         </div>
                         <div>
                             <h3 class="text-title font-bold text-deep-green transition-colors group-hover:text-forest-600">Saldo Rupiah yang Jelas</h3>
-                            <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Saldo tersedia, tertahan, masuk, keluar, dan koreksi dapat diperiksa.</p>
+                            <p class="mt-1.5 text-body-sm leading-relaxed text-text-secondary">Periksa saldo tersedia, dana yang ditahan, pemasukan, pengeluaran, dan koreksi.</p>
                         </div>
-                        <span class="inline-flex self-start justify-center rounded-full border border-border bg-warm-canvas px-3 py-1 text-xs font-bold text-deep-green sm:self-center">Mutasi tercatat</span>
+                        <span class="inline-flex self-start justify-center rounded-full border border-border bg-warm-canvas px-3 py-1 text-xs font-bold text-deep-green sm:self-center">Perubahan saldo tercatat</span>
                     </article>
                 </div>
             </div>
@@ -177,8 +177,8 @@
                 </article>
                 <article class="flex flex-col items-center rounded-2xl border border-border bg-surface p-6 text-center shadow-xs">
                     <x-ui.mascot variant="11" class="h-36 w-auto" />
-                    <h3 class="mt-4 text-title font-bold text-deep-green">Material Punya Tujuan</h3>
-                    <p class="mt-2 text-body-sm leading-relaxed text-text-secondary">Setiap jenis material daur ulang diproses secara bertanggung jawab.</p>
+                    <h3 class="mt-4 text-title font-bold text-deep-green">Sampah yang Bisa Dimanfaatkan</h3>
+                    <p class="mt-2 text-body-sm leading-relaxed text-text-secondary">Setiap jenis sampah yang dapat didaur ulang diproses secara bertanggung jawab.</p>
                 </article>
             </div>
         </div>
@@ -205,7 +205,7 @@
                         </a>
                     @else
                         <a href="{{ route('login') }}" class="inline-flex min-h-touch shrink-0 items-center justify-center gap-2 rounded-xl bg-forest-600 px-6 text-label font-bold text-surface shadow-sm transition duration-200 hover:bg-forest-700 hover:shadow-md active:translate-y-px focus-visible:ring-2 focus-visible:ring-focus">
-                            Masuk Ke Sistem
+                            Masuk ke akun
                             <x-public.icon name="arrow-right" size="size-5" />
                         </a>
                         <a href="{{ route('register') }}" class="inline-flex min-h-touch shrink-0 items-center justify-center rounded-xl border-2 border-forest-600 bg-surface px-6 text-label font-bold text-forest-700 transition duration-200 hover:bg-success-bg active:translate-y-px focus-visible:ring-2 focus-visible:ring-focus">
