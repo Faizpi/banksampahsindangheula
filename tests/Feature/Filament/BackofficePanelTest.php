@@ -203,6 +203,12 @@ final class BackofficePanelTest extends TestCase
         self::assertStringContainsString('.backoffice-form-control {', $theme);
         self::assertStringContainsString('px-4 py-2', $theme);
         self::assertStringContainsString("input.backoffice-form-control[type='datetime-local']", $theme);
+        self::assertStringContainsString('.fi-modal .fi-color-success {', $theme);
+        self::assertStringContainsString('--color-600: var(--color-primary-600);', $theme);
+        self::assertStringContainsString('.fi-modal .fi-color-warning {', $theme);
+        self::assertStringContainsString('--color-50: var(--color-warning-bg);', $theme);
+        self::assertStringContainsString('.fi-modal .fi-color-warning.fi-btn {', $theme);
+        self::assertStringContainsString('color: var(--color-deep-green);', $theme);
     }
 
     public function test_technical_forms_use_the_spacious_shared_control_style(): void
