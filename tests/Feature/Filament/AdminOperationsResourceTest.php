@@ -237,6 +237,44 @@ final class AdminOperationsResourceTest extends TestCase
         self::assertDatabaseHas('audit_logs', ['action' => 'target.closed', 'auditable_id' => $target->id, 'actor_id' => $admin->id]);
     }
 
+    public function test_target_resource_shows_validation_error_when_create_is_rejected(): void
+    {
+        $admin = $this->userWith('backoffice.access', 'target.view', 'target.manage');
+        $this->actingAs($admin);
+
+        Livewire::test(ManageCollectionTargets::class)
+            ->callAction('create', data: [
+                'name' => 'Target internal',
+                'purpose' => 'Pengumpulan khusus wilayah',
+                'period_start' => today()->toDateString(),
+                'period_end' => today()->addDays(30)->toDateString(),
+                'target_weight_kg' => '10.000',
+                'is_public' => false,
+                'scopes' => [],
+            ])
+            ->assertNotified('Target tidak dapat dibuat');
+
+        self::assertDatabaseMissing('collection_targets', ['name' => 'Target internal']);
+    }
+
+    public function test_target_resource_shows_overlap_error_and_keeps_target_as_draft(): void
+    {
+        $admin = $this->userWith('backoffice.access', 'target.view', 'target.manage', 'target.publish');
+        $service = app(TargetService::class);
+        $active = $service->create($admin, 'Target aktif', 'Pengumpulan plastik aktif', today()->toDateString(), today()->addDays(30)->toDateString(), '10.000', true, []);
+        $draft = $service->create($admin, 'Target bertabrakan', 'Pengumpulan plastik bertabrakan', today()->addDay()->toDateString(), today()->addDays(20)->toDateString(), '12.000', true, []);
+        $service->activate($admin, $active);
+
+        $this->actingAs($admin);
+        Livewire::test(ManageCollectionTargets::class)
+            ->assertTableActionVisible('activate', $draft)
+            ->callTableAction('activate', $draft)
+            ->assertNotified('Target belum dapat diterbitkan');
+
+        self::assertSame(TargetStatus::Draft, $draft->fresh()->status);
+        self::assertNull($draft->fresh()->published_by);
+    }
+
     public function test_mobile_service_resource_shows_safe_error_and_keeps_draft_when_publish_schedule_collides(): void
     {
         [$admin, $staff, $rt, $type] = $this->mobileContext();
@@ -252,6 +290,65 @@ final class AdminOperationsResourceTest extends TestCase
             ->assertNotified('Layanan belum dapat dipublikasikan');
 
         self::assertSame(MobileServiceStatus::Draft, $draft->fresh()->status);
+    }
+
+    public function test_mobile_service_create_resets_an_incompatible_rt_when_rw_changes(): void
+    {
+        [$admin, $staff, $firstRt, $type] = $this->mobileContext();
+        $secondRt = $this->createRt('RESOURCE-SECOND');
+        $this->actingAs($admin);
+
+        Livewire::test(ManageMobileServices::class)
+            ->mountAction('create')
+            ->setActionData(['rw_id' => $firstRt->rw_id])
+            ->set('mountedActions.0.data.rt_id', $firstRt->id)
+            ->set('mountedActions.0.data.rw_id', $secondRt->rw_id)
+            ->assertActionDataSet(['rw_id' => $secondRt->rw_id, 'rt_id' => null]);
+    }
+
+    public function test_mobile_service_create_supports_rw_only_and_rt_only_regions(): void
+    {
+        [$admin, $staff, $rt, $type] = $this->mobileContext();
+        $this->actingAs($admin);
+        $base = [
+            'point' => 'Balai wilayah',
+            'starts_at' => '2026-08-12 09:00:00',
+            'ends_at' => '2026-08-12 11:00:00',
+            'capacity' => 20,
+            'notes' => '',
+            'staff_ids' => [$staff->id],
+            'waste_type_ids' => [$type->id],
+        ];
+
+        Livewire::test(ManageMobileServices::class)
+            ->callAction('create', data: [...$base, 'rw_id' => $rt->rw_id, 'rt_id' => null]);
+        Livewire::test(ManageMobileServices::class)
+            ->callAction('create', data: [...$base, 'point' => 'Balai RT', 'rw_id' => null, 'rt_id' => $rt->id]);
+
+        self::assertDatabaseHas('mobile_services', ['point' => 'Balai wilayah', 'rw_id' => $rt->rw_id, 'rt_id' => null]);
+        self::assertDatabaseHas('mobile_services', ['point' => 'Balai RT', 'rw_id' => null, 'rt_id' => $rt->id]);
+    }
+
+    public function test_mobile_service_create_reports_hierarchy_validation_failure(): void
+    {
+        [$admin, $staff, $rt, $type] = $this->mobileContext();
+        $this->actingAs($admin);
+
+        Livewire::test(ManageMobileServices::class)
+            ->callAction('create', data: [
+                'rw_id' => null,
+                'rt_id' => $rt->id,
+                'point' => 'Balai gagal disimpan',
+                'starts_at' => '2026-08-12 11:00:00',
+                'ends_at' => '2026-08-12 09:00:00',
+                'capacity' => 20,
+                'notes' => '',
+                'staff_ids' => [$staff->id],
+                'waste_type_ids' => [$type->id],
+            ])
+            ->assertNotified('Layanan belum dapat disimpan');
+
+        self::assertDatabaseMissing('mobile_services', ['point' => 'Balai gagal disimpan']);
     }
 
     public function test_mobile_service_resource_creates_publishes_opens_and_closes_a_schedule(): void
